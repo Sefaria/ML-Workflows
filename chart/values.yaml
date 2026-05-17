@@ -1,0 +1,22 @@
+deployEnv: "dev"
+
+prefectWorker:
+  containerImage:
+    imageRegistry: prefecthq/prefect
+    tag: 3-latest
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  server:
+    apiUrl: "https://prefect.sefaria.org/api"
+  workPool:
+    name: "sefaria-k8s"
+  # Reference to a K8s Secret containing an `api-key` key.
+  # Leave blank if the Prefect server requires no authentication.
+  apiKey:
+    ref: ""

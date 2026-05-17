@@ -1,0 +1,5 @@
+apiVersion: v2
+name: prefect-worker
+description: Prefect Kubernetes worker for the Sefaria ML embedding pipeline
+type: application
+version: 0.1.0

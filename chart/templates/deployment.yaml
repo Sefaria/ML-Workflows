@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.deployEnv }}-prefect-worker"
+  labels:
+    deployEnv: "{{ .Values.deployEnv }}"
+    app: prefect-worker-{{ .Values.deployEnv }}
+spec:
+  replicas: {{ .Values.prefectWorker.replicaCount }}
+  selector:
+    matchLabels:
+      app: prefect-worker-{{ .Values.deployEnv }}
+  template:
+    metadata:
+      labels:
+        app: prefect-worker-{{ .Values.deployEnv }}
+        tier: ml
+        deployEnv: "{{ .Values.deployEnv }}"
+        stackRole: prefect-worker
+    spec:
+      serviceAccountName: "{{ .Values.deployEnv }}-prefect-worker"
+      containers:
+        - name: prefect-worker
+          image: "{{ .Values.prefectWorker.containerImage.imageRegistry }}:{{ .Values.prefectWorker.containerImage.tag }}"
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - "pip install prefect-kubernetes && prefect worker start --pool {{ .Values.prefectWorker.workPool.name }} --type kubernetes"
+          env:
+            - name: PREFECT_API_URL
+              value: "{{ .Values.prefectWorker.server.apiUrl }}"
+            - name: PREFECT_INTEGRATIONS_KUBERNETES_OBSERVER_NAMESPACES
+              value: "{{ .Release.Namespace }}"
+            {{- if .Values.prefectWorker.apiKey.ref }}
+            - name: PREFECT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.prefectWorker.apiKey.ref }}
+                  key: api-key
+            {{- end }}
+          resources: {{ toYaml .Values.prefectWorker.resources | nindent 12 }}

@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Values.deployEnv }}-prefect-worker"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    deployEnv: "{{ .Values.deployEnv }}"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: "{{ .Values.deployEnv }}-prefect-worker"
+  labels:
+    deployEnv: "{{ .Values.deployEnv }}"
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete", "patch"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ .Values.deployEnv }}-prefect-worker"
+  labels:
+    deployEnv: "{{ .Values.deployEnv }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ .Values.deployEnv }}-prefect-worker"
+    namespace: "{{ .Release.Namespace }}"
+roleRef:
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+  name: "{{ .Values.deployEnv }}-prefect-worker"
