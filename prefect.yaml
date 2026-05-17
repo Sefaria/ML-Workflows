@@ -11,7 +11,7 @@ deployments:
   - name: create-dataset
     tags: ["data-processing"]
     description: "Pull raw data from GCS, chunk it, and push the dataset back to GCS"
-    entrypoint: app/flows/create_dataset.py:create_dataset_flow
+    entrypoint: flows/create_dataset.py:create_dataset_flow
     parameters: {}
     work_pool:
       name: sefaria-k8s
@@ -23,7 +23,7 @@ deployments:
   - name: train-embeddings
     tags: ["ml", "gpu"]
     description: "Pull normalized dataset from GCS and fine-tune a sentence embedding model"
-    entrypoint: app/flows/train_embeddings.py:train_embeddings_flow
+    entrypoint: flows/train_embeddings.py:train_embeddings_flow
     parameters: {}
     work_pool:
       name: sefaria-k8s
