@@ -29,7 +29,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           token_format: access_token
-          workload_identity_provider: projects/${{ secrets.GKE_PROJECT_ID }}/locations/global/workloadIdentityPools/github/providers/github
+          workload_identity_provider: projects/${{ secrets.DEV_GKE_PROJECT_ID }}/locations/global/workloadIdentityPools/github/providers/github
           service_account: ${{ secrets.GKE_SA }}
 
       - name: Login to GAR
@@ -46,8 +46,8 @@ jobs:
           push: true
           file: Dockerfile
           tags: |
-            us-docker.pkg.dev/${{ secrets.GKE_PROJECT }}/container/mlworkflows:latest
-            us-docker.pkg.dev/${{ secrets.GKE_PROJECT }}/container/mlworkflows:sha-${{ steps.short_sha.outputs.sha }}
+            us-docker.pkg.dev/${{ secrets.DEV_GKE_PROJECT }}/container/mlworkflows:latest
+            us-docker.pkg.dev/${{ secrets.DEV_GKE_PROJECT }}/container/mlworkflows:sha-${{ steps.short_sha.outputs.sha }}
 
   deploy:
     name: Deploy Prefect Flows
@@ -67,7 +67,7 @@ jobs:
       - name: Deploy flows
         env:
           PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
-          GKE_PROJECT: ${{ secrets.GKE_PROJECT }}
+          GKE_PROJECT: ${{ secrets.DEV_GKE_PROJECT }}
         run: |
           sed -i "s/YOUR_GKE_PROJECT/${GKE_PROJECT}/g" prefect.yaml
           prefect deploy --all
