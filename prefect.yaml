@@ -16,7 +16,7 @@ deployments:
     work_pool:
       name: sefaria-k8s
       job_variables:
-        image: us-docker.pkg.dev/YOUR_GKE_PROJECT/container/mlworkflows:latest
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
     schedules: []
 
   - name: train-embeddings
@@ -27,7 +27,7 @@ deployments:
     work_pool:
       name: sefaria-k8s
       job_variables:
-        image: us-docker.pkg.dev/YOUR_GKE_PROJECT/container/mlworkflows:latest
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
