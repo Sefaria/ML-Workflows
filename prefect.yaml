@@ -1,0 +1,31 @@
+name: mlworkflows
+
+# Build/push is handled by GitHub Actions (.github/workflows/build.yaml).
+# This file is used only for `prefect deploy`.
+
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /app
+
+deployments:
+  - name: normalize-dataset
+    tags: ["data-processing"]
+    description: "Pull raw data from GCS, normalize it, and push the dataset back to GCS"
+    entrypoint: flows/normalize.py:normalize_flow
+    parameters: {}
+    work_pool:
+      name: kubernetes-cpu  # TODO: replace with your CPU work pool name
+      job_variables:
+        image: us-docker.pkg.dev/YOUR_GKE_PROJECT/container/mlworkflows:latest
+    schedules: []
+
+  - name: train-embeddings
+    tags: ["ml", "gpu"]
+    description: "Pull normalized dataset from GCS and fine-tune a sentence embedding model"
+    entrypoint: flows/train_embeddings.py:train_embeddings_flow
+    parameters: {}
+    work_pool:
+      name: kubernetes-gpu  # TODO: replace with your GPU work pool name
+      job_variables:
+        image: us-docker.pkg.dev/YOUR_GKE_PROJECT/container/mlworkflows:latest
+    schedules: []
