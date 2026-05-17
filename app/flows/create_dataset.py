@@ -33,7 +33,7 @@ def upload_to_gcs(df: pd.DataFrame, bucket: str, blob_path: str) -> None:
 
 
 @flow(log_prints=True)
-def normalize_flow(
+def create_dataset_flow(
     source_bucket: str,
     source_blob: str,
     dest_bucket: str,
