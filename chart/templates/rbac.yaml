@@ -10,6 +10,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "{{ .Values.deployEnv }}-prefect-worker"
+  namespace: "{{ .Release.Namespace }}"
   labels:
     deployEnv: "{{ .Values.deployEnv }}"
 rules:
@@ -24,6 +25,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: "{{ .Values.deployEnv }}-prefect-worker"
+  namespace: "{{ .Release.Namespace }}"
   labels:
     deployEnv: "{{ .Values.deployEnv }}"
 subjects:

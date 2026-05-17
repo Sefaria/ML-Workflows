@@ -1,0 +1,28 @@
+name: Deploy Prefect Flows
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Prefect Flows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Prefect
+        run: pip install prefect>=3.0.0 prefect-gcp>=0.6.0
+
+      - name: Deploy flows
+        env:
+          PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
+          GKE_PROJECT: ${{ secrets.DEV_GKE_PROJECT }}
+        run: |
+          sed -i "s/YOUR_GKE_PROJECT/${GKE_PROJECT}/g" prefect.yaml
+          prefect deploy --all
