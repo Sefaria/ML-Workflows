@@ -25,4 +25,4 @@ jobs:
           GKE_PROJECT: ${{ secrets.DEV_GKE_PROJECT }}
         run: |
           sed -i "s/YOUR_GKE_PROJECT/${GKE_PROJECT}/g" prefect.yaml
-          prefect deploy --all
+          cd app && prefect deploy --all --prefect-file ../prefect.yaml
