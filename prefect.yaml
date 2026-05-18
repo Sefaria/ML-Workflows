@@ -18,6 +18,7 @@ deployments:
       job_variables:
         image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
         namespace: ml-infra
+        service_account_name: ml-workflows-runner
     schedules: []
 
   - name: train-embeddings
@@ -30,6 +31,7 @@ deployments:
       job_variables:
         image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
         namespace: ml-infra
+        service_account_name: ml-workflows-runner
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists

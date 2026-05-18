@@ -1,6 +1,14 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  name: ml-workflows-runner
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    iam.gke.io/workload-identity: "{{ .Values.workflowRunner.gcpServiceAccount }}"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
   name: "{{ .Values.deployEnv }}-prefect-worker"
   namespace: "{{ .Release.Namespace }}"
   labels:
