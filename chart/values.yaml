@@ -21,7 +21,3 @@ prefectWorker:
   apiKey:
     ref: ""
 
-workflowRunner:
-  # GCP service account to bind via Workload Identity for flow pod GCS access.
-  # Format: SA_NAME@PROJECT_ID.iam.gserviceaccount.com
-  gcpServiceAccount: "ml-workflows-sa@development-205018.iam.gserviceaccount.com"
