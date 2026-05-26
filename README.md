@@ -14,9 +14,10 @@ Pulls the normalized dataset from GCS and fine-tunes a sentence embedding model.
 
 ```
 app/
-  flows/
-    create_dataset.py       # create-dataset flow
-    train_embeddings.py     # train-embeddings flow
+  embeddings/
+    flows/
+      create_dataset.py     # create-dataset flow
+      train_embeddings.py   # train-embeddings flow
   utils/
     gcs.py                  # shared GCS helpers
 chart/                      # Helm chart for the Prefect Kubernetes worker
@@ -66,5 +67,5 @@ Copy `.env.example` to `.env` and fill in values, then run flows directly:
 
 ```bash
 pip install -r requirements.txt
-python -c "from app.flows.create_dataset import create_dataset_flow; create_dataset_flow(...)"
+python -c "from app.embeddings.flows.create_dataset import create_dataset_flow; create_dataset_flow(...)"
 ```
