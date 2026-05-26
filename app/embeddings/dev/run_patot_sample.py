@@ -7,18 +7,21 @@ from typing import Optional
 
 from app.embeddings.steps.patot.config import ChunkerConfig
 from app.embeddings.steps.patot.chunker import PatotChunker
+from app.embeddings.steps.patot.debug_report import write_debug_pdf
 from app.embeddings.steps.patot.json_loader import load_segment_records_from_json_file
 from transformers import AutoTokenizer
 
 
 DEFAULT_INPUT_PATH = Path("app/embeddings/temp_data/sampled_library_sections.json")
 DEFAULT_OUTPUT_PATH = Path("app/embeddings/temp_data/output/patot_sample_output.json")
+DEFAULT_PDF_DIR = Path("app/embeddings/temp_data/output/pdfs")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the PATOT chunker against the sample library sections JSON.")
     parser.add_argument("--input-path", type=Path, default=DEFAULT_INPUT_PATH)
     parser.add_argument("--output-path", type=Path, default=DEFAULT_OUTPUT_PATH)
+    parser.add_argument("--pdf-dir", type=Path, default=None, help="Write one PDF report per processed section into this directory.")
     parser.add_argument("--limit", type=int, default=1, help="Number of sections to process.")
     parser.add_argument("--section-ref", help="Process only the section with this exact ref.")
     parser.add_argument("--api-key", help="Gemini API key. Falls back to GEMINI_API_KEY.")
@@ -44,10 +47,17 @@ def _select_sections(sections: list[dict], section_ref: Optional[str], limit: in
     return sections[:limit]
 
 
-def _build_output_rows(selected_sections: list[dict], all_segment_rows: list[list], chunker: PatotChunker) -> list[dict]:
+def _slugify(text: str) -> str:
+    return "".join(char if char.isalnum() else "_" for char in text).strip("_") or "section"
+
+
+def _build_output_rows(selected_sections: list[dict], all_segment_rows: list[list], chunker: PatotChunker, config: ChunkerConfig, pdf_dir: Optional[Path]) -> list[dict]:
     output_rows: list[dict] = []
     for section, segment_rows in zip(selected_sections, all_segment_rows):
         result = chunker.chunk_segments(segment_rows)
+        if pdf_dir is not None:
+            pdf_path = pdf_dir / f"{_slugify(section['ref'])}.pdf"
+            write_debug_pdf(pdf_path, result, section["ref"], section.get("language", "he"), config)
         output_rows.append(
             {
                 "section_ref": section["ref"],
@@ -120,9 +130,11 @@ def main() -> None:
         if section["ref"] in section_refs:
             all_segment_rows.append(segment_rows)
 
-    config = replace(ChunkerConfig(), debug=args.debug)
+    enable_debug = args.debug or args.pdf_dir is not None
+    config = replace(ChunkerConfig(), debug=enable_debug)
     chunker = PatotChunker(api_key=api_key, config=config)
-    output_rows = _build_output_rows(selected_sections, all_segment_rows, chunker)
+    pdf_dir = args.pdf_dir if args.pdf_dir is not None else None
+    output_rows = _build_output_rows(selected_sections, all_segment_rows, chunker, config, pdf_dir)
     _verify_chunk_token_bounds(output_rows, config.tokenizer_model)
 
     args.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -130,6 +142,8 @@ def main() -> None:
 
     print(f"Processed {len(output_rows)} section(s)")
     print(f"Wrote output to {args.output_path}")
+    if pdf_dir is not None:
+        print(f"Wrote PDF reports to {pdf_dir}")
     for row in output_rows:
         print(
             " ".join(
