@@ -18,6 +18,8 @@ app/
     flows/
       create_dataset.py     # create-dataset flow
       train_embeddings.py   # train-embeddings flow
+    steps/
+      patot/                # PATOT chunker port and JSON-backed segment loader
   utils/
     gcs.py                  # shared GCS helpers
 chart/                      # Helm chart for the Prefect Kubernetes worker
