@@ -8,6 +8,22 @@ pull:
       directory: /app
 
 deployments:
+  - name: probe-runtime
+    tags: ["infrastructure", "debug"]
+    description: "Probe the flow-run pod runtime environment and upload a JSON report to GCS"
+    entrypoint: embeddings/flows/probe_runtime.py:probe_runtime_flow
+    parameters:
+      dest_bucket: development-research
+      dest_blob: workflow_runtime_probe.json
+      scratch_path: /tmp
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: create-dataset
     tags: ["data-processing"]
     description: "Pull raw data from GCS, chunk it, and push the dataset back to GCS"
