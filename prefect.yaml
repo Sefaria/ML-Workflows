@@ -14,7 +14,9 @@ deployments:
     entrypoint: flows/create_dataset.py:create_dataset_flow
     parameters:
       source_bucket: development-research
+      source_blob: sampled_library_sections.json
       dest_bucket: development-research
+      dest_blob: sampled_library_sections_processed_clean_chunked.jsonl
     work_pool:
       name: sefaria-k8s
       job_variables:
