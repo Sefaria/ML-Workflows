@@ -8,6 +8,23 @@ pull:
       directory: /app
 
 deployments:
+  - name: test-cache-volume
+    tags: ["infrastructure", "debug", "storage"]
+    description: "Write a probe file into the mounted cache volume and upload a JSON report to GCS"
+    entrypoint: embeddings/flows/test_cache_volume.py:test_cache_volume_flow
+    parameters:
+      dest_bucket: development-research
+      dest_blob: cache_volume_probe.json
+      cache_path: /cache
+      probe_subdir: prefect-cache-probe
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: probe-runtime
     tags: ["infrastructure", "debug"]
     description: "Probe the flow-run pod runtime environment and upload a JSON report to GCS"
