@@ -8,6 +8,45 @@ pull:
       directory: /app
 
 deployments:
+  - name: chunk-documents
+    tags: ["embeddings", "chunking"]
+    description: "Chunk source sections into final embedding documents and upload the JSONL output to GCS"
+    entrypoint: embeddings/flows/chunk_documents.py:chunk_documents_flow
+    parameters:
+      source_bucket: development-research
+      source_blob: sampled_library_sections.json
+      dest_bucket: development-research
+      dest_blob: sampled_library_sections_chunked_documents.jsonl
+      max_workers: 48
+      cache_path: /cache/patot/embedding_cache.sqlite
+      section_limit: null
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
+  - name: generate-query-dataset
+    tags: ["embeddings", "query-generation"]
+    description: "Generate retrieval queries and qrels from chunked documents and upload dataset artifacts to GCS"
+    entrypoint: embeddings/flows/generate_query_dataset.py:generate_query_dataset_flow
+    parameters:
+      source_bucket: development-research
+      source_blob: sampled_library_sections_chunked_documents.jsonl
+      dest_bucket: development-research
+      dest_prefix: sampled_library_sections_query_dataset
+      model: claude-sonnet-4-6
+      max_workers: 4
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: test-cache-volume
     tags: ["infrastructure", "debug", "storage"]
     description: "Write a probe file into the mounted cache volume and upload a JSON report to GCS"

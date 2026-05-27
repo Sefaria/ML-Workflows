@@ -23,4 +23,6 @@ class ChunkerConfig:
     extract_html_footnotes_to_segments: bool = True
     stanza_model_dir: str = "/Users/yon/stanza_resources"
     enforce_hard_max_in_pass3: bool = True
+    embedding_cache_enabled: bool = True
+    embedding_cache_path: str = "/cache/patot/embedding_cache.sqlite"
     debug: bool = True

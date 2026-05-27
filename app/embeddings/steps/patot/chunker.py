@@ -102,7 +102,11 @@ class GeminiRouterEncoder(BaseEncoder):
     def __init__(self, api_key: str, config: ChunkerConfig):
         super().__init__()
         _, doc_task_type = EMBEDDING_001_TASK_SETUPS[config.setup]
-        self._embedder = GeminiEmbedder(api_key=api_key)
+        self._embedder = GeminiEmbedder(
+            api_key=api_key,
+            cache_enabled=config.embedding_cache_enabled,
+            cache_path=config.embedding_cache_path,
+        )
         self._doc_task_type = doc_task_type
         self._config = config
 

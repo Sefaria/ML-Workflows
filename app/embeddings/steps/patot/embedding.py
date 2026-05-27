@@ -5,6 +5,8 @@ from typing import Optional
 
 import requests
 
+from .cache import cache_lookup, cache_update
+
 
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
@@ -30,11 +32,15 @@ class GeminiEmbedder:
     def __init__(
         self,
         api_key: str,
+        cache_enabled: bool = False,
+        cache_path: Optional[str] = None,
         timeout_seconds: int = 60,
         max_retries: int = 5,
         initial_backoff_seconds: float = 1.0,
     ):
         self.api_key = api_key
+        self.cache_enabled = cache_enabled
+        self.cache_path = cache_path
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.initial_backoff_seconds = initial_backoff_seconds
@@ -61,6 +67,15 @@ class GeminiEmbedder:
         output_dimensionality: int,
         task_type: Optional[str],
     ) -> list[float]:
+        llm_string = (
+            f"gemini_embedding|model={model}|"
+            f"output_dimensionality={output_dimensionality}|task_type={task_type or ''}"
+        )
+        if self.cache_enabled and self.cache_path:
+            cached = cache_lookup(text, llm_string, self.cache_path)
+            if cached is not None:
+                return cached
+
         body = {
             "content": {"parts": [{"text": text}]},
             "outputDimensionality": output_dimensionality,
@@ -87,6 +102,8 @@ class GeminiEmbedder:
             values = embedding.get("values")
             if values is None:
                 raise EmbeddingError(f"Missing embedding values in response: {payload}")
+            if self.cache_enabled and self.cache_path:
+                cache_update(text, llm_string, values, self.cache_path)
             return values
 
         raise EmbeddingError(f"Embedding call failed after {self.max_retries} retries for model={model}")
@@ -97,4 +114,3 @@ def l2_normalize_vector(vector: list[float]) -> list[float]:
     if norm == 0:
         return vector
     return [value / norm for value in vector]
-
