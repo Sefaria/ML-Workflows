@@ -8,8 +8,8 @@ from typing import Optional
 import ijson
 from prefect import flow, task
 
-from app.embeddings.steps.patot.config import ChunkerConfig
-from app.embeddings.steps.patot.pipeline import iter_chunked_documents_parallel
+from embeddings.steps.patot.config import ChunkerConfig
+from embeddings.steps.patot.pipeline import iter_chunked_documents_parallel
 from utils.gcs import download_blob, upload_blob
 
 

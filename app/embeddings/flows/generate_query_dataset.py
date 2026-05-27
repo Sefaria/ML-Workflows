@@ -6,7 +6,7 @@ from pathlib import Path
 
 from prefect import flow, task
 
-from app.embeddings.steps.query_generation import QueryGenerationConfig, generate_queries_and_qrels
+from embeddings.steps.query_generation import QueryGenerationConfig, generate_queries_and_qrels
 from utils.gcs import download_blob, upload_directory
 
 
