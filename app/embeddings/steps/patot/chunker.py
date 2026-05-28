@@ -2,10 +2,10 @@ import math
 from dataclasses import dataclass
 from typing import Optional
 
+from pydantic.v1 import BaseModel
 from pydantic.v1 import PrivateAttr
 from semantic_chunkers import StatisticalChunker
 from semantic_chunkers.chunkers import statistical as statistical_chunker_module
-from semantic_router.encoders.base import BaseEncoder
 from transformers import AutoTokenizer
 
 from .config import ChunkerConfig
@@ -21,6 +21,16 @@ from .text_utils import (
     strip_hebrew_niqqud,
     strip_html,
 )
+
+class BaseEncoder(BaseModel):
+    """Minimal encoder contract expected by StatisticalChunker."""
+
+    name: str
+    score_threshold: Optional[float] = None
+    type: str = "base"
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 @dataclass(frozen=True)
