@@ -9,6 +9,10 @@ TITLE_FONT = "Helvetica-Bold"
 UI_FONT = "Helvetica"
 BODY_FONT = "DebugReportBody"
 BODY_FONT_PATHS = [
+    Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+    Path("/usr/share/fonts/dejavu/DejaVuSans.ttf"),
+    Path("/usr/share/fonts/truetype/noto/NotoSansHebrew-Regular.ttf"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansHebrew-Regular.ttf"),
     Path("/Library/Fonts/Arial Unicode.ttf"),
     Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
 ]
