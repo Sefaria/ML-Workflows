@@ -43,8 +43,8 @@ def chunk_documents(
     max_workers: int,
     cache_path: str,
     section_limit: Optional[int],
-    analytics: ChunkingRuntimeAnalytics,
 ) -> dict:
+    analytics = ChunkingRuntimeAnalytics()
     config = ChunkerConfig(
         debug=False,
         embedding_cache_enabled=True,
@@ -133,7 +133,6 @@ def chunk_documents_flow(
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".jsonl", dir="/tmp") as tmp:
         output_local_path = tmp.name
 
-    analytics = ChunkingRuntimeAnalytics()
     started_at = datetime.now(timezone.utc).isoformat()
     started_monotonic = time.monotonic()
 
@@ -145,7 +144,6 @@ def chunk_documents_flow(
             max_workers,
             cache_path,
             section_limit,
-            analytics,
         )
         upload_chunked_documents(output_local_path, dest_bucket, dest_blob)
         finished_at = datetime.now(timezone.utc).isoformat()
