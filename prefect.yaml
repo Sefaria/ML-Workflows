@@ -14,9 +14,9 @@ deployments:
     entrypoint: embeddings/flows/chunk_documents.py:chunk_documents_flow
     parameters:
       source_bucket: development-research
-      source_blob: sampled_library_sections.json
+      source_blob: custom_embeddings/sampled_library_sections.json
       dest_bucket: development-research
-      dest_blob: sampled_library_sections_chunked_documents.jsonl
+      dest_blob: custom_embeddings/sampled_library_sections_chunked_documents.jsonl
       max_workers: 48
       cache_path: /cache/patot/embedding_cache.sqlite
       section_limit: null
@@ -35,9 +35,9 @@ deployments:
     entrypoint: embeddings/flows/generate_query_dataset.py:generate_query_dataset_flow
     parameters:
       source_bucket: development-research
-      source_blob: sampled_library_sections_chunked_documents.jsonl
+      source_blob: custom_embeddings/sampled_library_sections_chunked_documents.jsonl
       dest_bucket: development-research
-      dest_prefix: sampled_library_sections_query_dataset
+      dest_prefix: custom_embeddings/sampled_library_sections_query_dataset
       model: claude-sonnet-4-6
       max_workers: 4
     work_pool:
@@ -88,9 +88,9 @@ deployments:
     entrypoint: embeddings/flows/create_dataset.py:create_dataset_flow
     parameters:
       source_bucket: development-research
-      source_blob: sampled_library_sections.json
+      source_blob: custom_embeddings/sampled_library_sections.json
       dest_bucket: development-research
-      dest_blob: sampled_library_sections_processed_clean_chunked.jsonl
+      dest_blob: custom_embeddings/sampled_library_sections_processed_clean_chunked.jsonl
     work_pool:
       name: sefaria-k8s
       job_variables:
