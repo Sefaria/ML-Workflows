@@ -24,6 +24,7 @@ deployments:
       name: sefaria-k8s
       job_variables:
         image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
     schedules: []
@@ -43,6 +44,7 @@ deployments:
       name: sefaria-k8s
       job_variables:
         image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
     schedules: []
