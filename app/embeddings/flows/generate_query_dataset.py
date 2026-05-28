@@ -40,6 +40,8 @@ def build_query_dataset(
     cache_path: str,
     flush_llm_cache: bool,
     document_limit: Optional[int],
+    queries_per_type_per_doc: int,
+    query_types_per_doc: int,
 ) -> None:
     documents = _read_jsonl(local_path, document_limit=document_limit)
     analytics = QueryGenerationAnalytics()
@@ -51,6 +53,8 @@ def build_query_dataset(
         llm_max_workers=max_workers,
         llm_cache_enabled=True,
         llm_cache_path=cache_path,
+        queries_per_type_per_doc=queries_per_type_per_doc,
+        query_types_per_doc=query_types_per_doc,
         runtime_analytics=analytics,
         verbose=True,
     )
@@ -113,6 +117,8 @@ def generate_query_dataset_flow(
     cache_path: str = "/cache/query_generation/llm_cache.sqlite",
     flush_llm_cache: bool = False,
     document_limit: Optional[int] = None,
+    queries_per_type_per_doc: int = 1,
+    query_types_per_doc: int = 2,
 ) -> None:
     source_local_path = download_chunked_documents(source_bucket, source_blob)
     output_dir = tempfile.mkdtemp(dir="/tmp")
@@ -126,6 +132,8 @@ def generate_query_dataset_flow(
             cache_path,
             flush_llm_cache,
             document_limit,
+            queries_per_type_per_doc,
+            query_types_per_doc,
         )
         upload_query_dataset(output_dir, dest_bucket, dest_prefix)
     finally:

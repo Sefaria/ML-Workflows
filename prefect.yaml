@@ -43,6 +43,8 @@ deployments:
       cache_path: /cache/query_generation/llm_cache.sqlite
       flush_llm_cache: false
       document_limit: null
+      queries_per_type_per_doc: 1
+      query_types_per_doc: 2
     work_pool:
       name: sefaria-k8s
       job_variables:
