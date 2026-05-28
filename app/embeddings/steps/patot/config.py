@@ -1,5 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from .analytics import ChunkingRuntimeAnalytics
 
 
 @dataclass(frozen=True)
@@ -25,4 +28,5 @@ class ChunkerConfig:
     enforce_hard_max_in_pass3: bool = True
     embedding_cache_enabled: bool = True
     embedding_cache_path: str = "/cache/patot/embedding_cache.sqlite"
+    runtime_analytics: Optional["ChunkingRuntimeAnalytics"] = None
     debug: bool = True

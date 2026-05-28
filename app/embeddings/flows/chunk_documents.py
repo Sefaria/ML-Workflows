@@ -1,11 +1,14 @@
 import json
 import os
 import tempfile
+import time
+from datetime import datetime, timezone
 from itertools import islice
 from pathlib import Path
 from typing import Optional
 
 import ijson
+from embeddings.steps.patot.analytics import ChunkingRuntimeAnalytics
 from prefect import flow, task
 
 from embeddings.steps.patot.config import ChunkerConfig
@@ -40,13 +43,19 @@ def chunk_documents(
     max_workers: int,
     cache_path: str,
     section_limit: Optional[int],
-) -> None:
+    analytics: ChunkingRuntimeAnalytics,
+) -> dict:
     config = ChunkerConfig(
         debug=False,
         embedding_cache_enabled=True,
         embedding_cache_path=cache_path,
+        runtime_analytics=analytics,
     )
     count = 0
+    progress_log_every_sections = 100
+    progress_log_every_seconds = 30.0
+    last_logged_sections = 0
+    last_log_time = time.monotonic()
     with open(output_path, "w") as fout:
         for row in iter_chunked_documents_parallel(
             _iter_limited_sections(local_path, section_limit),
@@ -56,13 +65,54 @@ def chunk_documents(
         ):
             fout.write(json.dumps(row, ensure_ascii=False) + "\n")
             count += 1
+            snapshot = analytics.snapshot()
+            sections_processed = snapshot["sections_processed"]
+            now = time.monotonic()
+            should_log = False
+            if sections_processed >= last_logged_sections + progress_log_every_sections:
+                should_log = True
+            elif now - last_log_time >= progress_log_every_seconds and sections_processed > last_logged_sections:
+                should_log = True
+            if should_log:
+                progress_label = (
+                    f"{sections_processed}/{section_limit}"
+                    if section_limit is not None
+                    else str(sections_processed)
+                )
+                print(
+                    "Chunking progress: "
+                    f"sections={progress_label}, "
+                    f"docs={snapshot['chunked_documents_written']}, "
+                    f"cache_hits={snapshot['cache']['hits']}, "
+                    f"cache_misses={snapshot['cache']['misses']}, "
+                    f"remote_requests={snapshot['embeddings']['remote_requests_succeeded']}, "
+                    f"estimated_remote_cost_usd={snapshot['estimated_cost']['remote_estimated_cost_usd']:.6f}"
+                )
+                last_logged_sections = sections_processed
+                last_log_time = now
     print(f"Wrote {count} chunked documents to {output_path}")
+    return {
+        "chunked_documents_written": count,
+        "runtime_analytics": analytics.snapshot(),
+    }
 
 
 @task(log_prints=True)
 def upload_chunked_documents(local_path: str, bucket: str, blob_path: str) -> None:
     print(f"Uploading chunked documents to gs://{bucket}/{blob_path}")
     upload_blob(local_path, bucket, blob_path)
+
+
+@task(log_prints=True)
+def upload_runtime_analytics(report: dict, bucket: str, blob_path: str) -> None:
+    print(f"Uploading chunking runtime analytics to gs://{bucket}/{blob_path}")
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json", dir="/tmp") as tmp:
+        json.dump(report, tmp, ensure_ascii=False, indent=2)
+        local_path = tmp.name
+    try:
+        upload_blob(local_path, bucket, blob_path)
+    finally:
+        Path(local_path).unlink(missing_ok=True)
 
 
 @flow(log_prints=True)
@@ -83,9 +133,49 @@ def chunk_documents_flow(
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".jsonl", dir="/tmp") as tmp:
         output_local_path = tmp.name
 
+    analytics = ChunkingRuntimeAnalytics()
+    started_at = datetime.now(timezone.utc).isoformat()
+    started_monotonic = time.monotonic()
+
     try:
-        chunk_documents(source_local_path, output_local_path, api_key, max_workers, cache_path, section_limit)
+        chunk_result = chunk_documents(
+            source_local_path,
+            output_local_path,
+            api_key,
+            max_workers,
+            cache_path,
+            section_limit,
+            analytics,
+        )
         upload_chunked_documents(output_local_path, dest_bucket, dest_blob)
+        finished_at = datetime.now(timezone.utc).isoformat()
+        duration_seconds = time.monotonic() - started_monotonic
+        analytics_blob = f"{dest_blob}.runtime_analytics.json"
+        analytics_report = {
+            "generated_at": finished_at,
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "duration_seconds": duration_seconds,
+            "source_bucket": source_bucket,
+            "source_blob": source_blob,
+            "dest_bucket": dest_bucket,
+            "dest_blob": dest_blob,
+            "cache_path": cache_path,
+            "max_workers": max_workers,
+            "section_limit": section_limit,
+            "chunked_documents_written": chunk_result["chunked_documents_written"],
+            "runtime_analytics": chunk_result["runtime_analytics"],
+        }
+        summary = analytics_report["runtime_analytics"]
+        print(
+            "Chunking analytics summary: "
+            f"sections={summary['sections_processed']}, "
+            f"docs={summary['chunked_documents_written']}, "
+            f"cache_hits={summary['cache']['hits']}, "
+            f"cache_misses={summary['cache']['misses']}, "
+            f"estimated_remote_cost_usd={summary['estimated_cost']['remote_estimated_cost_usd']:.6f}"
+        )
+        upload_runtime_analytics(analytics_report, dest_bucket, analytics_blob)
     finally:
         Path(source_local_path).unlink(missing_ok=True)
         Path(output_local_path).unlink(missing_ok=True)

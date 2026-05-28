@@ -66,6 +66,7 @@ class GeminiEmbedder:
         text: str,
         output_dimensionality: int,
         task_type: Optional[str],
+        runtime_analytics=None,
     ) -> list[float]:
         llm_string = (
             f"gemini_embedding|model={model}|"
@@ -74,7 +75,11 @@ class GeminiEmbedder:
         if self.cache_enabled and self.cache_path:
             cached = cache_lookup(text, llm_string, self.cache_path)
             if cached is not None:
+                if runtime_analytics is not None:
+                    runtime_analytics.record_cache_hit(text)
                 return cached
+            if runtime_analytics is not None:
+                runtime_analytics.record_cache_miss(text)
 
         body = {
             "content": {"parts": [{"text": text}]},
@@ -92,18 +97,26 @@ class GeminiEmbedder:
                 timeout=self.timeout_seconds,
             )
             if response.status_code in {429, 500, 502, 503, 504}:
+                if runtime_analytics is not None:
+                    runtime_analytics.record_remote_retryable_response()
                 backoff = self.initial_backoff_seconds * (2 ** attempt)
                 time.sleep(backoff)
                 continue
             if not response.ok:
+                if runtime_analytics is not None:
+                    runtime_analytics.record_remote_non_retryable_failure()
                 raise EmbeddingError(f"Embedding call failed: {response.status_code} {response.text}")
             payload = response.json()
             embedding = payload.get("embedding") or {}
             values = embedding.get("values")
             if values is None:
                 raise EmbeddingError(f"Missing embedding values in response: {payload}")
+            if runtime_analytics is not None:
+                runtime_analytics.record_remote_success(text)
             if self.cache_enabled and self.cache_path:
                 cache_update(text, llm_string, values, self.cache_path)
+                if runtime_analytics is not None:
+                    runtime_analytics.record_cache_write()
             return values
 
         raise EmbeddingError(f"Embedding call failed after {self.max_retries} retries for model={model}")

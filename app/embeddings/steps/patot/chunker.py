@@ -128,6 +128,7 @@ class GeminiRouterEncoder(BaseEncoder):
                 text=doc,
                 output_dimensionality=self._config.dim,
                 task_type=self._doc_task_type,
+                runtime_analytics=self._config.runtime_analytics,
             )
             if self._config.norm:
                 vector = l2_normalize_vector(vector)

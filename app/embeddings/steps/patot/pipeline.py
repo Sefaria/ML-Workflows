@@ -49,6 +49,8 @@ def build_chunked_documents_for_section(
                 },
             }
         )
+    if config.runtime_analytics is not None:
+        config.runtime_analytics.record_section_processed(len(output_rows))
     return output_rows
 
 
