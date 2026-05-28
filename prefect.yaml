@@ -75,6 +75,26 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: visualize-query-dataset
+    tags: ["embeddings", "query-generation", "debug"]
+    description: "Sample generated query-dataset documents and upload one combined PDF visualization to GCS"
+    entrypoint: embeddings/flows/visualize_query_dataset.py:visualize_query_dataset_flow
+    parameters:
+      source_bucket: development-research
+      source_prefix: custom_embeddings/sampled_library_sections_query_dataset
+      dest_bucket: development-research
+      dest_blob: custom_embeddings/sampled_library_sections_query_dataset_samples.pdf
+      sample_count: 10
+      sample_seed: 0
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: test-cache-volume
     tags: ["infrastructure", "debug", "storage"]
     description: "Write a probe file into the mounted cache volume and upload a JSON report to GCS"
