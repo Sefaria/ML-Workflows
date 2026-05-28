@@ -49,6 +49,29 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: visualize-chunk-samples
+    tags: ["embeddings", "chunking", "debug"]
+    description: "Sample chunked sections, rerun PATOT in debug mode, and upload one combined PDF visualization to GCS"
+    entrypoint: embeddings/flows/visualize_chunk_samples.py:visualize_chunk_samples_flow
+    parameters:
+      source_bucket: development-research
+      source_blob: custom_embeddings/sampled_library_sections.json
+      chunked_bucket: development-research
+      chunked_blob: custom_embeddings/sampled_library_sections_chunked_documents.jsonl
+      dest_bucket: development-research
+      dest_blob: custom_embeddings/sampled_library_sections_chunk_samples.pdf
+      sample_count: 10
+      sample_seed: 0
+      cache_path: /cache/patot/embedding_cache.sqlite
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: test-cache-volume
     tags: ["infrastructure", "debug", "storage"]
     description: "Write a probe file into the mounted cache volume and upload a JSON report to GCS"

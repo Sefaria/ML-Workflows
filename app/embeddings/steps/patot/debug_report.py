@@ -334,3 +334,34 @@ def write_debug_pdf(output_path: Path, result: PatotChunkResult, tref: str, lang
     add_annotated_table_page(pdf, build_table_rows(result), page_width, page_height)
     add_final_chunks_page(pdf, result, page_width, page_height)
     pdf.save()
+
+
+def write_debug_pdf_bundle(output_path: Path, entries: list[dict]) -> None:
+    if not entries:
+        raise ValueError("At least one entry is required for PDF bundle output.")
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+    except ImportError as exc:
+        raise RuntimeError("Missing dependency: reportlab\nInstall it with:\npython -m pip install reportlab") from exc
+
+    ensure_report_fonts()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    pdf = canvas.Canvas(str(output_path), pagesize=A4)
+    page_width, page_height = A4
+    pdf.setTitle("Patot Chunking Visualization Bundle")
+
+    for entry in entries:
+        result = entry["result"]
+        if not result.debug_trace:
+            raise RuntimeError("Debug trace is required for PDF output. Run the chunker with debug=True.")
+        tref = entry["tref"]
+        lang = entry["lang"]
+        config = entry["config"]
+        add_summary_page(pdf, result, tref, lang, config, page_width, page_height)
+        add_annotated_table_page(pdf, build_table_rows(result), page_width, page_height)
+        add_final_chunks_page(pdf, result, page_width, page_height)
+
+    pdf.save()
