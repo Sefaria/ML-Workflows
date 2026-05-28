@@ -8,6 +8,8 @@ from typing import Dict, List, Tuple
 
 from anthropic import Anthropic
 
+from .analytics import QueryGenerationAnalytics
+from .cache import cache_lookup, cache_update
 from .config import QueryGenerationConfig
 from .prompts import build_query_type_prompt, build_system_prompt
 from .sampling import choose_query_types_for_doc
@@ -49,15 +51,41 @@ def call_anthropic_for_query_type(
     config: QueryGenerationConfig,
 ) -> dict:
     prompt = build_query_type_prompt(doc, query_type, config)
+    system_prompt = build_system_prompt()
+    llm_string = (
+        f"anthropic_messages|model={config.model}|"
+        f"max_tokens={config.max_tokens}|temperature=0|"
+        f"system={system_prompt}"
+    )
+    analytics = config.runtime_analytics
+    if config.llm_cache_enabled and config.llm_cache_path:
+        cached = cache_lookup(prompt, llm_string, config.llm_cache_path)
+        if cached is not None:
+            if analytics is not None:
+                analytics.record_cache_hit(cached.get("usage"))
+            return parse_json_response(cached["content"])
+        if analytics is not None:
+            analytics.record_cache_miss()
+
     log(f"Calling Anthropic {config.model} for {doc.doc_id} {query_type}", config)
     response = client.messages.create(
         model=config.model,
         temperature=0,
         max_tokens=config.max_tokens,
-        system=build_system_prompt(),
+        system=system_prompt,
         messages=[{"role": "user", "content": prompt}],
     )
     content = "".join(block.text for block in response.content if getattr(block, "type", None) == "text")
+    usage = {
+        "input_tokens": int(getattr(response.usage, "input_tokens", 0) or 0),
+        "output_tokens": int(getattr(response.usage, "output_tokens", 0) or 0),
+    }
+    if analytics is not None:
+        analytics.record_remote_success(usage["input_tokens"], usage["output_tokens"])
+    if config.llm_cache_enabled and config.llm_cache_path:
+        cache_update(prompt, llm_string, content, usage, config.llm_cache_path)
+        if analytics is not None:
+            analytics.record_cache_write()
     return parse_json_response(content)
 
 
@@ -119,14 +147,25 @@ def generate_queries_for_documents(
             for query_type in choose_query_types_for_doc(doc, config)
         )
     ]
+    if config.runtime_analytics is not None:
+        config.runtime_analytics.record_documents_count(len(documents))
+        config.runtime_analytics.record_jobs_count(len(jobs))
 
     all_queries: List[QueryRecord] = []
     all_qrels: List[QrelRecord] = []
     start = time.perf_counter()
 
     def run_job(job: Dict) -> Tuple[List[QueryRecord], List[QrelRecord]]:
-        output = call_llm_for_query_type(job["doc"], job["query_type"], config)
-        return normalize_query_type_output(output, job["doc"], job["query_type"], job["index"], config)
+        try:
+            output = call_llm_for_query_type(job["doc"], job["query_type"], config)
+        except Exception:
+            if config.runtime_analytics is not None:
+                config.runtime_analytics.record_remote_non_retryable_failure()
+            raise
+        queries, qrels = normalize_query_type_output(output, job["doc"], job["query_type"], job["index"], config)
+        if config.runtime_analytics is not None:
+            config.runtime_analytics.record_generated_counts(len(queries), len(qrels))
+        return queries, qrels
 
     with ThreadPoolExecutor(max_workers=config.llm_max_workers) as executor:
         futures = [executor.submit(run_job, job) for job in jobs]

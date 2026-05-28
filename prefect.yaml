@@ -40,6 +40,8 @@ deployments:
       dest_prefix: custom_embeddings/sampled_library_sections_query_dataset
       model: claude-sonnet-4-6
       max_workers: 4
+      cache_path: /cache/query_generation/llm_cache.sqlite
+      flush_llm_cache: false
     work_pool:
       name: sefaria-k8s
       job_variables:

@@ -6,6 +6,8 @@ from pathlib import Path
 
 from prefect import flow, task
 
+from embeddings.steps.query_generation.analytics import QueryGenerationAnalytics
+from embeddings.steps.query_generation.cache import flush_cache
 from embeddings.steps.query_generation import QueryGenerationConfig, generate_queries_and_qrels
 from utils.gcs import download_blob, upload_directory
 
@@ -27,11 +29,25 @@ def download_chunked_documents(bucket: str, blob_path: str) -> str:
 
 
 @task(log_prints=True)
-def build_query_dataset(local_path: str, output_dir: str, model: str, max_workers: int) -> None:
+def build_query_dataset(
+    local_path: str,
+    output_dir: str,
+    model: str,
+    max_workers: int,
+    cache_path: str,
+    flush_llm_cache: bool,
+) -> None:
     documents = _read_jsonl(local_path)
+    analytics = QueryGenerationAnalytics()
+    if flush_llm_cache:
+        print(f"Flushing persistent LLM cache at {cache_path}")
+        flush_cache(cache_path)
     config = QueryGenerationConfig(
         model=model,
         llm_max_workers=max_workers,
+        llm_cache_enabled=True,
+        llm_cache_path=cache_path,
+        runtime_analytics=analytics,
         verbose=True,
     )
     queries, qrels = generate_queries_and_qrels(documents, config)
@@ -57,8 +73,21 @@ def build_query_dataset(local_path: str, output_dir: str, model: str, max_worker
         "query_types_per_doc": config.query_types_per_doc,
         "queries_per_type_per_doc": config.queries_per_type_per_doc,
         "llm_max_workers": max_workers,
+        "llm_cache_path": cache_path,
+        "flush_llm_cache": flush_llm_cache,
     }
     (output_root / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2))
+    runtime_analytics = analytics.snapshot()
+    (output_root / "runtime_analytics.json").write_text(json.dumps(runtime_analytics, ensure_ascii=False, indent=2))
+    print(
+        "Query generation analytics summary: "
+        f"documents={runtime_analytics['documents_count']}, "
+        f"jobs={runtime_analytics['jobs_count']}, "
+        f"queries={runtime_analytics['queries_generated']}, "
+        f"cache_hits={runtime_analytics['cache']['hits']}, "
+        f"cache_misses={runtime_analytics['cache']['misses']}, "
+        f"estimated_remote_cost_usd={runtime_analytics['estimated_cost']['remote_estimated_cost_usd']:.6f}"
+    )
     print(f"Wrote dataset artifacts to {output_root}")
 
 
@@ -76,12 +105,14 @@ def generate_query_dataset_flow(
     dest_prefix: str,
     model: str = "claude-sonnet-4-6",
     max_workers: int = 4,
+    cache_path: str = "/cache/query_generation/llm_cache.sqlite",
+    flush_llm_cache: bool = False,
 ) -> None:
     source_local_path = download_chunked_documents(source_bucket, source_blob)
     output_dir = tempfile.mkdtemp(dir="/tmp")
 
     try:
-        build_query_dataset(source_local_path, output_dir, model, max_workers)
+        build_query_dataset(source_local_path, output_dir, model, max_workers, cache_path, flush_llm_cache)
         upload_query_dataset(output_dir, dest_bucket, dest_prefix)
     finally:
         Path(source_local_path).unlink(missing_ok=True)
