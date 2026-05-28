@@ -42,6 +42,7 @@ deployments:
       max_workers: 4
       cache_path: /cache/query_generation/llm_cache.sqlite
       flush_llm_cache: false
+      document_limit: null
     work_pool:
       name: sefaria-k8s
       job_variables:

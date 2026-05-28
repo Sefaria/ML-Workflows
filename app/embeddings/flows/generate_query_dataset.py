@@ -2,7 +2,9 @@ import json
 import shutil
 import tempfile
 from datetime import datetime, timezone
+from itertools import islice
 from pathlib import Path
+from typing import Optional
 
 from prefect import flow, task
 
@@ -12,10 +14,11 @@ from embeddings.steps.query_generation import QueryGenerationConfig, generate_qu
 from utils.gcs import download_blob, upload_directory
 
 
-def _read_jsonl(path: str) -> list[dict]:
+def _read_jsonl(path: str, document_limit: Optional[int] = None) -> list[dict]:
     rows = []
     with open(path, "r") as fin:
-        for line in fin:
+        line_iter = fin if document_limit is None else islice(fin, document_limit)
+        for line in line_iter:
             line = line.strip()
             if line:
                 rows.append(json.loads(line))
@@ -36,8 +39,9 @@ def build_query_dataset(
     max_workers: int,
     cache_path: str,
     flush_llm_cache: bool,
+    document_limit: Optional[int],
 ) -> None:
-    documents = _read_jsonl(local_path)
+    documents = _read_jsonl(local_path, document_limit=document_limit)
     analytics = QueryGenerationAnalytics()
     if flush_llm_cache:
         print(f"Flushing persistent LLM cache at {cache_path}")
@@ -75,6 +79,7 @@ def build_query_dataset(
         "llm_max_workers": max_workers,
         "llm_cache_path": cache_path,
         "flush_llm_cache": flush_llm_cache,
+        "document_limit": document_limit,
     }
     (output_root / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2))
     runtime_analytics = analytics.snapshot()
@@ -107,12 +112,21 @@ def generate_query_dataset_flow(
     max_workers: int = 4,
     cache_path: str = "/cache/query_generation/llm_cache.sqlite",
     flush_llm_cache: bool = False,
+    document_limit: Optional[int] = None,
 ) -> None:
     source_local_path = download_chunked_documents(source_bucket, source_blob)
     output_dir = tempfile.mkdtemp(dir="/tmp")
 
     try:
-        build_query_dataset(source_local_path, output_dir, model, max_workers, cache_path, flush_llm_cache)
+        build_query_dataset(
+            source_local_path,
+            output_dir,
+            model,
+            max_workers,
+            cache_path,
+            flush_llm_cache,
+            document_limit,
+        )
         upload_query_dataset(output_dir, dest_bucket, dest_prefix)
     finally:
         Path(source_local_path).unlink(missing_ok=True)
