@@ -54,7 +54,11 @@ def prefect_flow_run_url() -> Optional[str]:
     except MissingContextError:
         return None
 
-    flow_run_id = getattr(context.flow_run, "id", None)
+    flow_run = getattr(context, "flow_run", None)
+    flow_run_id = getattr(flow_run, "id", None)
+    if flow_run_id is None:
+        task_run = getattr(context, "task_run", None)
+        flow_run_id = getattr(task_run, "flow_run_id", None)
     if not flow_run_id:
         return None
 
