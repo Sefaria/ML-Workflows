@@ -1,10 +1,10 @@
 import os
 
 import pandas as pd
-from prefect import flow, task
+from prefect import task
 
 from utils.gcs import download_blob, upload_blob
-from utils.slack import notify_workflow_started
+from utils.slack import slack_notified_flow
 
 
 @task(log_prints=True)
@@ -33,20 +33,13 @@ def upload_to_gcs(df: pd.DataFrame, bucket: str, blob_path: str) -> None:
     os.remove(local_path)
 
 
-@flow(log_prints=True)
+@slack_notified_flow(workflow_name="create-dataset", log_prints=True)
 def create_dataset_flow(
     source_bucket: str,
     source_blob: str,
     dest_bucket: str,
     dest_blob: str,
 ) -> None:
-    notify_workflow_started(
-        "create-dataset",
-        {
-            "Source": f"gs://{source_bucket}/{source_blob}",
-            "Destination": f"gs://{dest_bucket}/{dest_blob}",
-        },
-    )
     local_path = download_from_gcs(source_bucket, source_blob)
     df = normalize_data(local_path)
     upload_to_gcs(df, dest_bucket, dest_blob)

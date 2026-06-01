@@ -6,13 +6,13 @@ from itertools import islice
 from pathlib import Path
 from typing import Optional
 
-from prefect import flow, task
+from prefect import task
 
 from embeddings.steps.query_generation.analytics import QueryGenerationAnalytics
 from embeddings.steps.query_generation.cache import flush_cache
 from embeddings.steps.query_generation import QueryGenerationConfig, generate_queries_and_qrels
 from utils.gcs import download_blob, upload_directory
-from utils.slack import notify_workflow_started
+from utils.slack import slack_notified_flow
 
 
 def _read_jsonl(path: str, document_limit: Optional[int] = None) -> list[dict]:
@@ -119,7 +119,7 @@ def upload_query_dataset(local_dir: str, bucket: str, prefix: str) -> None:
     upload_directory(local_dir, bucket, prefix)
 
 
-@flow(log_prints=True)
+@slack_notified_flow(workflow_name="generate-query-dataset", log_prints=True)
 def generate_query_dataset_flow(
     source_bucket: str,
     source_blob: str,
@@ -133,20 +133,6 @@ def generate_query_dataset_flow(
     queries_per_type_per_doc: int = 1,
     query_types_per_doc: int = 2,
 ) -> None:
-    notify_workflow_started(
-        "generate-query-dataset",
-        {
-            "Source": f"gs://{source_bucket}/{source_blob}",
-            "Destination": f"gs://{dest_bucket}/{dest_prefix}",
-            "Model": model,
-            "Max workers": max_workers,
-            "Cache path": cache_path,
-            "Flush cache": flush_llm_cache,
-            "Document limit": document_limit,
-            "Queries per type per doc": queries_per_type_per_doc,
-            "Query types per doc": query_types_per_doc,
-        },
-    )
     source_local_path = download_chunked_documents(source_bucket, source_blob)
     output_dir = tempfile.mkdtemp(dir="/tmp")
 

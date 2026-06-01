@@ -2,11 +2,11 @@ import json
 import tempfile
 from pathlib import Path
 
-from prefect import flow, task
+from prefect import task
 
 from embeddings.steps.query_generation.report import write_query_dataset_pdf
 from utils.gcs import download_blob, upload_blob
-from utils.slack import notify_workflow_started
+from utils.slack import slack_notified_flow
 
 
 def _read_jsonl(path: str) -> list[dict]:
@@ -72,7 +72,7 @@ def upload_visualization_pdf(local_path: str, bucket: str, blob_path: str) -> No
     upload_blob(local_path, bucket, blob_path)
 
 
-@flow(log_prints=True)
+@slack_notified_flow(workflow_name="visualize-query-dataset", log_prints=True)
 def visualize_query_dataset_flow(
     source_bucket: str,
     source_prefix: str,
@@ -81,15 +81,6 @@ def visualize_query_dataset_flow(
     sample_count: int = 10,
     sample_seed: int = 0,
 ) -> None:
-    notify_workflow_started(
-        "visualize-query-dataset",
-        {
-            "Source": f"gs://{source_bucket}/{source_prefix}",
-            "Destination": f"gs://{dest_bucket}/{dest_blob}",
-            "Sample count": sample_count,
-            "Sample seed": sample_seed,
-        },
-    )
     documents_path = download_dataset_artifact(source_bucket, f"{source_prefix}/documents.jsonl")
     queries_path = download_dataset_artifact(source_bucket, f"{source_prefix}/queries.jsonl")
     qrels_path = download_dataset_artifact(source_bucket, f"{source_prefix}/qrels.jsonl")

@@ -9,12 +9,12 @@ from typing import Optional
 
 import ijson
 from embeddings.steps.patot.analytics import ChunkingRuntimeAnalytics
-from prefect import flow, task
+from prefect import task
 
 from embeddings.steps.patot.config import ChunkerConfig
 from embeddings.steps.patot.pipeline import iter_chunked_documents_parallel
 from utils.gcs import download_blob, upload_blob
-from utils.slack import SlackProgressReporter, SlackWebhookClient, notify_workflow_started
+from utils.slack import SlackProgressReporter, SlackWebhookClient, slack_notified_flow
 
 
 @task(log_prints=True)
@@ -163,7 +163,7 @@ def upload_runtime_analytics(report: dict, bucket: str, blob_path: str) -> None:
         Path(local_path).unlink(missing_ok=True)
 
 
-@flow(log_prints=True)
+@slack_notified_flow(workflow_name="chunk-documents", log_prints=True)
 def chunk_documents_flow(
     source_bucket: str,
     source_blob: str,
@@ -173,16 +173,6 @@ def chunk_documents_flow(
     cache_path: str = "/cache/patot/embedding_cache.sqlite",
     section_limit: Optional[int] = None,
 ) -> None:
-    notify_workflow_started(
-        "chunk-documents",
-        {
-            "Source": f"gs://{source_bucket}/{source_blob}",
-            "Destination": f"gs://{dest_bucket}/{dest_blob}",
-            "Max workers": max_workers,
-            "Cache path": cache_path,
-            "Section limit": section_limit,
-        },
-    )
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("Missing GOOGLE_API_KEY or GEMINI_API_KEY for chunking embeddings.")

@@ -5,10 +5,10 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from prefect import flow, task
+from prefect import task
 
 from utils.gcs import upload_blob
-from utils.slack import notify_workflow_started
+from utils.slack import slack_notified_flow
 
 
 def _statvfs_report(path: str) -> dict:
@@ -66,20 +66,12 @@ def upload_report(report: dict, bucket: str, blob_path: str) -> None:
         Path(local_path).unlink(missing_ok=True)
 
 
-@flow(log_prints=True)
+@slack_notified_flow(workflow_name="test-cache-volume", log_prints=True)
 def test_cache_volume_flow(
     dest_bucket: str,
     dest_blob: str,
     cache_path: str = "/cache",
     probe_subdir: str = "prefect-cache-probe",
 ) -> None:
-    notify_workflow_started(
-        "test-cache-volume",
-        {
-            "Destination": f"gs://{dest_bucket}/{dest_blob}",
-            "Cache path": cache_path,
-            "Probe subdir": probe_subdir,
-        },
-    )
     report = write_cache_probe(cache_path, probe_subdir)
     upload_report(report, dest_bucket, dest_blob)

@@ -1,8 +1,11 @@
 import os
+from functools import wraps
+from inspect import signature
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import requests
+from prefect import flow
 from prefect.context import MissingContextError, get_run_context
 
 
@@ -41,6 +44,10 @@ class SlackWebhookClient:
         return True
 
 
+SENSITIVE_DETAIL_PARTS = ("api_key", "apikey", "key", "password", "secret", "token", "webhook")
+MAX_DETAIL_VALUE_LENGTH = 200
+
+
 def prefect_flow_run_url() -> Optional[str]:
     try:
         context = get_run_context()
@@ -59,6 +66,59 @@ def prefect_flow_run_url() -> Optional[str]:
         ui_url = api_url.removesuffix("/api").rstrip("/")
 
     return f"{ui_url.rstrip('/')}/runs/flow-run/{flow_run_id}"
+
+
+def slack_notified_flow(
+    *,
+    workflow_name: Optional[str] = None,
+    detail_keys: Optional[tuple[str, ...]] = None,
+    **flow_kwargs: Any,
+) -> Callable:
+    def decorator(fn: Callable) -> Any:
+        @wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            details = workflow_start_details(fn, args, kwargs, detail_keys)
+            notify_workflow_started(workflow_name or fn.__name__, details)
+            return fn(*args, **kwargs)
+
+        return flow(**flow_kwargs)(wrapper)
+
+    return decorator
+
+
+def workflow_start_details(
+    fn: Callable,
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    detail_keys: Optional[tuple[str, ...]] = None,
+) -> dict[str, Any]:
+    bound = signature(fn).bind_partial(*args, **kwargs)
+    bound.apply_defaults()
+
+    items = bound.arguments.items()
+    if detail_keys is not None:
+        selected_keys = set(detail_keys)
+        items = ((key, value) for key, value in items if key in selected_keys)
+
+    details = {}
+    for key, value in items:
+        display_value = safe_detail_value(key, value)
+        if display_value is not None:
+            details[key] = display_value
+    return details
+
+
+def safe_detail_value(key: str, value: Any) -> Optional[Any]:
+    normalized_key = key.lower()
+    if any(part in normalized_key for part in SENSITIVE_DETAIL_PARTS):
+        return "[redacted]"
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        if len(value) <= MAX_DETAIL_VALUE_LENGTH:
+            return value
+        return f"{value[:MAX_DETAIL_VALUE_LENGTH]}..."
+    return None
 
 
 def notify_workflow_started(
