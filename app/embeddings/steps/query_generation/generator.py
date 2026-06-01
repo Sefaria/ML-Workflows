@@ -231,12 +231,18 @@ def generate_queries_for_documents(
 
     with ThreadPoolExecutor(max_workers=config.llm_max_workers) as executor:
         futures = [executor.submit(run_job, job) for job in jobs]
-        for future in as_completed(futures):
+        for completed_jobs, future in enumerate(as_completed(futures), start=1):
             queries, qrels, failure = future.result()
             all_queries.extend(queries)
             all_qrels.extend(qrels)
             if failure is not None:
                 all_failures.append(failure)
+            if config.progress_callback is not None:
+                snapshot = config.runtime_analytics.snapshot() if config.runtime_analytics is not None else {}
+                try:
+                    config.progress_callback(completed_jobs, len(jobs), snapshot)
+                except Exception as error:
+                    print(f"Query generation progress callback failed: {type(error).__name__}: {error}")
 
     log(
         f"Generated {len(all_queries)} queries and {len(all_qrels)} qrels "

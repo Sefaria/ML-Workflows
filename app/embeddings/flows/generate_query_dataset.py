@@ -1,6 +1,7 @@
 import json
 import shutil
 import tempfile
+from dataclasses import replace
 from datetime import datetime, timezone
 from itertools import islice
 from pathlib import Path
@@ -12,7 +13,7 @@ from embeddings.steps.query_generation.analytics import QueryGenerationAnalytics
 from embeddings.steps.query_generation.cache import flush_cache
 from embeddings.steps.query_generation import QueryGenerationConfig, generate_queries_and_qrels
 from utils.gcs import download_blob, upload_directory
-from utils.slack import slack_notified_flow
+from utils.slack import SlackProgressReporter, SlackWebhookClient, slack_notified_flow
 
 
 def _read_jsonl(path: str, document_limit: Optional[int] = None) -> list[dict]:
@@ -29,6 +30,18 @@ def _read_jsonl(path: str, document_limit: Optional[int] = None) -> list[dict]:
 def _documents_with_qrels(documents: list[dict], qrels: list[dict]) -> list[dict]:
     relevant_doc_ids = {str(qrel["doc_id"]) for qrel in qrels}
     return [document for document in documents if str(document["doc_id"]) in relevant_doc_ids]
+
+
+def query_generation_progress_details(snapshot: dict) -> dict:
+    return {
+        "Queries": snapshot.get("queries_generated", 0),
+        "Qrels": snapshot.get("qrels_generated", 0),
+        "Cache hits": snapshot.get("cache", {}).get("hits", 0),
+        "Cache misses": snapshot.get("cache", {}).get("misses", 0),
+        "Remote requests": snapshot.get("llm", {}).get("remote_requests_succeeded", 0),
+        "Failures": snapshot.get("llm", {}).get("remote_non_retryable_failures", 0),
+        "Estimated remote cost": f"${snapshot.get('estimated_cost', {}).get('remote_estimated_cost_usd', 0.0):.6f}",
+    }
 
 
 @task(log_prints=True)
@@ -54,6 +67,7 @@ def build_query_dataset(
     if flush_llm_cache:
         print(f"Flushing persistent LLM cache at {cache_path}")
         flush_cache(cache_path)
+
     config = QueryGenerationConfig(
         model=model,
         llm_max_workers=max_workers,
@@ -64,6 +78,33 @@ def build_query_dataset(
         runtime_analytics=analytics,
         verbose=True,
     )
+    total_jobs = len(documents) * min(config.query_types_per_doc, len(config.query_types))
+    slack_reporter = SlackProgressReporter(
+        workflow_name="Generate query dataset",
+        total_units=total_jobs,
+        client=SlackWebhookClient(username="ml-workflows"),
+        unit_label="jobs",
+    )
+    slack_reporter.notify_start(
+        {
+            "Documents": len(documents),
+            "Model": model,
+            "Max workers": max_workers,
+            "Cache path": cache_path,
+            "Flush cache": flush_llm_cache,
+            "Document limit": document_limit,
+        }
+    )
+
+    def report_progress(completed_jobs: int, total_jobs_from_generator: int, snapshot: dict) -> None:
+        if total_jobs_from_generator != slack_reporter.total_units:
+            print(
+                "Query generation progress total mismatch: "
+                f"estimated={slack_reporter.total_units}, actual={total_jobs_from_generator}"
+            )
+        slack_reporter.notify_progress_if_due(completed_jobs, query_generation_progress_details(snapshot))
+
+    config = replace(config, progress_callback=report_progress)
     queries, qrels, failures = generate_queries_and_qrels(documents, config)
     dataset_documents = _documents_with_qrels(documents, qrels)
 
@@ -111,6 +152,14 @@ def build_query_dataset(
         f"estimated_remote_cost_usd={runtime_analytics['estimated_cost']['remote_estimated_cost_usd']:.6f}"
     )
     print(f"Wrote dataset artifacts to {output_root}")
+    slack_reporter.notify_success(
+        {
+            "Documents kept": len(dataset_documents),
+            "Documents dropped": len(documents) - len(dataset_documents),
+            **query_generation_progress_details(runtime_analytics),
+            "Output path": str(output_root),
+        }
+    )
 
 
 @task(log_prints=True)

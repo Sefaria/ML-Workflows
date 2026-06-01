@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Callable, Tuple
 
 if TYPE_CHECKING:
     from .analytics import QueryGenerationAnalytics
@@ -19,6 +21,7 @@ class QueryGenerationConfig:
     query_type_sample_seed: int = 613
     verbose: bool = True
     runtime_analytics: "QueryGenerationAnalytics | None" = None
+    progress_callback: Callable[[int, int, dict], None] | None = None
     query_language_names: dict = field(
         default_factory=lambda: {
             "en": "English",

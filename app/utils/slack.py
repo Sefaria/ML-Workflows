@@ -78,8 +78,13 @@ def slack_notified_flow(
         @wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             details = workflow_start_details(fn, args, kwargs, detail_keys)
-            notify_workflow_started(workflow_name or fn.__name__, details)
-            return fn(*args, **kwargs)
+            resolved_workflow_name = workflow_name or fn.__name__
+            notify_workflow_started(resolved_workflow_name, details)
+            try:
+                return fn(*args, **kwargs)
+            except Exception as exc:
+                notify_workflow_failed(resolved_workflow_name, exc, details)
+                raise
 
         return flow(**flow_kwargs)(wrapper)
 
@@ -137,12 +142,33 @@ def notify_workflow_started(
     return client.post("\n".join(lines))
 
 
+def notify_workflow_failed(
+    workflow_name: str,
+    exc: BaseException,
+    details: Optional[dict[str, Any]] = None,
+    client: Optional[SlackWebhookClient] = None,
+) -> bool:
+    client = client or SlackWebhookClient(username="ml-workflows")
+    lines = [
+        f"{workflow_name} run failed",
+        f"Error: {type(exc).__name__}: {exc}",
+    ]
+
+    run_url = prefect_flow_run_url()
+    if run_url:
+        lines.append(f"Run: {run_url}")
+
+    lines.extend(_format_details(details))
+    return client.post("\n".join(lines))
+
+
 @dataclass
 class SlackProgressReporter:
     workflow_name: str
     total_units: int
     client: SlackWebhookClient = field(default_factory=SlackWebhookClient)
     notify_every_fraction: float = 0.1
+    unit_label: str = "sections"
     _next_fraction: float = field(init=False, default=0.1)
 
     def __post_init__(self) -> None:
@@ -152,8 +178,11 @@ class SlackProgressReporter:
     def notify_start(self, details: Optional[dict[str, Any]] = None) -> None:
         lines = [
             f"{self.workflow_name} started",
-            f"Total sections: {self.total_units}",
+            f"Total {self.unit_label}: {self.total_units}",
         ]
+        run_url = prefect_flow_run_url()
+        if run_url:
+            lines.append(f"Run: {run_url}")
         lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 
@@ -173,13 +202,19 @@ class SlackProgressReporter:
         percent = min(100, round(crossed_fraction * 100))
         lines = [
             f"{self.workflow_name} progress: {percent}%",
-            f"Sections: {min(completed_units, self.total_units)}/{self.total_units}",
+            f"{self.unit_label.title()}: {min(completed_units, self.total_units)}/{self.total_units}",
         ]
+        run_url = prefect_flow_run_url()
+        if run_url:
+            lines.append(f"Run: {run_url}")
         lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 
     def notify_success(self, details: Optional[dict[str, Any]] = None) -> None:
         lines = [f"{self.workflow_name} completed"]
+        run_url = prefect_flow_run_url()
+        if run_url:
+            lines.append(f"Run: {run_url}")
         lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 
@@ -188,6 +223,9 @@ class SlackProgressReporter:
             f"{self.workflow_name} failed",
             f"Error: {type(exc).__name__}: {exc}",
         ]
+        run_url = prefect_flow_run_url()
+        if run_url:
+            lines.append(f"Run: {run_url}")
         lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 

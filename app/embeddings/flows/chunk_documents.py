@@ -226,19 +226,6 @@ def chunk_documents_flow(
             f"estimated_remote_cost_usd={summary['estimated_cost']['remote_estimated_cost_usd']:.6f}"
         )
         upload_runtime_analytics(analytics_report, dest_bucket, analytics_blob)
-    except Exception as exc:
-        SlackProgressReporter(
-            workflow_name="Chunk documents",
-            total_units=max(total_sections, 1),
-            client=SlackWebhookClient(username="ml-workflows"),
-        ).notify_failure(
-            exc,
-            {
-                "Source": f"gs://{source_bucket}/{source_blob}",
-                "Destination": f"gs://{dest_bucket}/{dest_blob}",
-            },
-        )
-        raise
     finally:
         Path(source_local_path).unlink(missing_ok=True)
         Path(output_local_path).unlink(missing_ok=True)
