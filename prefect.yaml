@@ -130,6 +130,23 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: test-slack-webhook
+    tags: ["infrastructure", "debug", "slack", "temporary"]
+    description: "Temporarily post a test message to the configured Slack webhook"
+    entrypoint: embeddings/flows/test_slack_webhook.py:test_slack_webhook_flow
+    parameters:
+      message: "ML Workflows Slack webhook test"
+      include_timestamp: true
+      username: ml-workflows
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: create-dataset
     tags: ["data-processing"]
     description: "Pull raw data from GCS, chunk it, and push the dataset back to GCS"
