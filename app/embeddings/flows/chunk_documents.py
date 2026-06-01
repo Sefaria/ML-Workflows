@@ -14,6 +14,7 @@ from prefect import flow, task
 from embeddings.steps.patot.config import ChunkerConfig
 from embeddings.steps.patot.pipeline import iter_chunked_documents_parallel
 from utils.gcs import download_blob, upload_blob
+from utils.slack import SlackProgressReporter, SlackWebhookClient
 
 
 @task(log_prints=True)
@@ -36,6 +37,28 @@ def _iter_limited_sections(local_path: str, section_limit: Optional[int]):
 
 
 @task(log_prints=True)
+def count_source_sections(local_path: str, section_limit: Optional[int]) -> int:
+    if section_limit is not None:
+        print(f"Using section_limit={section_limit} as chunking progress total")
+        return section_limit
+
+    print(f"Counting source sections in {local_path}")
+    count = sum(1 for _ in _iter_sections(local_path))
+    print(f"Counted {count} source sections")
+    return count
+
+
+def chunking_progress_details(snapshot: dict) -> dict:
+    return {
+        "Docs": snapshot["chunked_documents_written"],
+        "Cache hits": snapshot["cache"]["hits"],
+        "Cache misses": snapshot["cache"]["misses"],
+        "Remote requests": snapshot["embeddings"]["remote_requests_succeeded"],
+        "Estimated remote cost": f"${snapshot['estimated_cost']['remote_estimated_cost_usd']:.6f}",
+    }
+
+
+@task(log_prints=True)
 def chunk_documents(
     local_path: str,
     output_path: str,
@@ -43,6 +66,7 @@ def chunk_documents(
     max_workers: int,
     cache_path: str,
     section_limit: Optional[int],
+    total_sections: int,
 ) -> dict:
     analytics = ChunkingRuntimeAnalytics()
     config = ChunkerConfig(
@@ -56,6 +80,18 @@ def chunk_documents(
     progress_log_every_seconds = 30.0
     last_logged_sections = 0
     last_log_time = time.monotonic()
+    slack_reporter = SlackProgressReporter(
+        workflow_name="Chunk documents",
+        total_units=total_sections,
+        client=SlackWebhookClient(username="ml-workflows"),
+    )
+    slack_reporter.notify_start(
+        {
+            "Input path": local_path,
+            "Max workers": max_workers,
+            "Cache path": cache_path,
+        }
+    )
     with open(output_path, "w") as fout:
         for row in iter_chunked_documents_parallel(
             _iter_limited_sections(local_path, section_limit),
@@ -67,6 +103,10 @@ def chunk_documents(
             count += 1
             snapshot = analytics.snapshot()
             sections_processed = snapshot["sections_processed"]
+            slack_reporter.notify_progress_if_due(
+                sections_processed,
+                chunking_progress_details(snapshot),
+            )
             now = time.monotonic()
             should_log = False
             if sections_processed >= last_logged_sections + progress_log_every_sections:
@@ -75,8 +115,8 @@ def chunk_documents(
                 should_log = True
             if should_log:
                 progress_label = (
-                    f"{sections_processed}/{section_limit}"
-                    if section_limit is not None
+                    f"{sections_processed}/{total_sections}"
+                    if total_sections
                     else str(sections_processed)
                 )
                 print(
@@ -91,9 +131,17 @@ def chunk_documents(
                 last_logged_sections = sections_processed
                 last_log_time = now
     print(f"Wrote {count} chunked documents to {output_path}")
+    final_snapshot = analytics.snapshot()
+    slack_reporter.notify_success(
+        {
+            "Sections": f"{final_snapshot['sections_processed']}/{total_sections}",
+            **chunking_progress_details(final_snapshot),
+            "Output path": output_path,
+        }
+    )
     return {
         "chunked_documents_written": count,
-        "runtime_analytics": analytics.snapshot(),
+        "runtime_analytics": final_snapshot,
     }
 
 
@@ -135,8 +183,10 @@ def chunk_documents_flow(
 
     started_at = datetime.now(timezone.utc).isoformat()
     started_monotonic = time.monotonic()
+    total_sections = 0
 
     try:
+        total_sections = count_source_sections(source_local_path, section_limit)
         chunk_result = chunk_documents(
             source_local_path,
             output_local_path,
@@ -144,6 +194,7 @@ def chunk_documents_flow(
             max_workers,
             cache_path,
             section_limit,
+            total_sections,
         )
         upload_chunked_documents(output_local_path, dest_bucket, dest_blob)
         finished_at = datetime.now(timezone.utc).isoformat()
@@ -161,6 +212,7 @@ def chunk_documents_flow(
             "cache_path": cache_path,
             "max_workers": max_workers,
             "section_limit": section_limit,
+            "total_sections": total_sections,
             "chunked_documents_written": chunk_result["chunked_documents_written"],
             "runtime_analytics": chunk_result["runtime_analytics"],
         }
@@ -174,6 +226,19 @@ def chunk_documents_flow(
             f"estimated_remote_cost_usd={summary['estimated_cost']['remote_estimated_cost_usd']:.6f}"
         )
         upload_runtime_analytics(analytics_report, dest_bucket, analytics_blob)
+    except Exception as exc:
+        SlackProgressReporter(
+            workflow_name="Chunk documents",
+            total_units=max(total_sections, 1),
+            client=SlackWebhookClient(username="ml-workflows"),
+        ).notify_failure(
+            exc,
+            {
+                "Source": f"gs://{source_bucket}/{source_blob}",
+                "Destination": f"gs://{dest_bucket}/{dest_blob}",
+            },
+        )
+        raise
     finally:
         Path(source_local_path).unlink(missing_ok=True)
         Path(output_local_path).unlink(missing_ok=True)
