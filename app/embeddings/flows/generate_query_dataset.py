@@ -25,6 +25,11 @@ def _read_jsonl(path: str, document_limit: Optional[int] = None) -> list[dict]:
     return rows
 
 
+def _documents_with_qrels(documents: list[dict], qrels: list[dict]) -> list[dict]:
+    relevant_doc_ids = {str(qrel["doc_id"]) for qrel in qrels}
+    return [document for document in documents if str(document["doc_id"]) in relevant_doc_ids]
+
+
 @task(log_prints=True)
 def download_chunked_documents(bucket: str, blob_path: str) -> str:
     print(f"Downloading chunked documents from gs://{bucket}/{blob_path}")
@@ -58,14 +63,16 @@ def build_query_dataset(
         runtime_analytics=analytics,
         verbose=True,
     )
-    queries, qrels = generate_queries_and_qrels(documents, config)
+    queries, qrels, failures = generate_queries_and_qrels(documents, config)
+    dataset_documents = _documents_with_qrels(documents, qrels)
 
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
     for filename, rows in (
-        ("documents.jsonl", documents),
+        ("documents.jsonl", dataset_documents),
         ("queries.jsonl", queries),
         ("qrels.jsonl", qrels),
+        ("failures.jsonl", failures),
     ):
         with (output_root / filename).open("w") as fout:
             for row in rows:
@@ -74,13 +81,18 @@ def build_query_dataset(
     metadata = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": model,
-        "documents_count": len(documents),
+        "input_documents_count": len(documents),
+        "documents_count": len(dataset_documents),
+        "dropped_documents_count": len(documents) - len(dataset_documents),
         "queries_count": len(queries),
         "qrels_count": len(qrels),
+        "failures_count": len(failures),
         "query_types": list(config.query_types),
         "query_types_per_doc": config.query_types_per_doc,
         "queries_per_type_per_doc": config.queries_per_type_per_doc,
         "llm_max_workers": max_workers,
+        "llm_max_retries": config.max_retries,
+        "llm_request_timeout_seconds": config.request_timeout_seconds,
         "llm_cache_path": cache_path,
         "flush_llm_cache": flush_llm_cache,
         "document_limit": document_limit,

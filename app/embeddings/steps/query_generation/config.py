@@ -8,7 +8,8 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class QueryGenerationConfig:
     model: str = "claude-sonnet-4-6"
-    max_tokens: int = 4096
+    max_retries: int = 6
+    request_timeout_seconds: float = 120.0
     llm_max_workers: int = 4
     llm_cache_enabled: bool = True
     llm_cache_path: str = "/cache/query_generation/llm_cache.sqlite"
