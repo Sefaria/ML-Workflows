@@ -1,4 +1,5 @@
 import math
+import random
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -9,6 +10,10 @@ from .cache import cache_lookup, cache_update
 
 
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+RETRYABLE_REQUEST_EXCEPTIONS = (
+    requests.exceptions.ConnectionError,
+    requests.exceptions.Timeout,
+)
 
 
 class EmbeddingError(Exception):
@@ -45,6 +50,11 @@ class GeminiEmbedder:
         self.max_retries = max_retries
         self.initial_backoff_seconds = initial_backoff_seconds
         self.session = requests.Session()
+
+    def _sleep_before_retry(self, attempt: int) -> None:
+        backoff = self.initial_backoff_seconds * (2**attempt)
+        jitter = random.uniform(0, self.initial_backoff_seconds)
+        time.sleep(backoff + jitter)
 
     def list_models(self) -> list[str]:
         url = f"{GEMINI_API_BASE}/models"
@@ -89,19 +99,31 @@ class GeminiEmbedder:
             body["taskType"] = task_type
         url = f"{GEMINI_API_BASE}/models/{model}:embedContent"
 
+        last_error: Exception | None = None
         for attempt in range(self.max_retries):
-            response = self.session.post(
-                url,
-                params={"key": self.api_key},
-                json=body,
-                timeout=self.timeout_seconds,
-            )
+            try:
+                response = self.session.post(
+                    url,
+                    params={"key": self.api_key},
+                    json=body,
+                    timeout=self.timeout_seconds,
+                )
+            except RETRYABLE_REQUEST_EXCEPTIONS as exc:
+                last_error = exc
+                if runtime_analytics is not None:
+                    runtime_analytics.record_remote_retryable_response()
+                if attempt < self.max_retries - 1:
+                    self._sleep_before_retry(attempt)
+                    continue
+                break
+
             if response.status_code in {429, 500, 502, 503, 504}:
                 if runtime_analytics is not None:
                     runtime_analytics.record_remote_retryable_response()
-                backoff = self.initial_backoff_seconds * (2 ** attempt)
-                time.sleep(backoff)
-                continue
+                if attempt < self.max_retries - 1:
+                    self._sleep_before_retry(attempt)
+                    continue
+                break
             if not response.ok:
                 if runtime_analytics is not None:
                     runtime_analytics.record_remote_non_retryable_failure()
@@ -119,7 +141,8 @@ class GeminiEmbedder:
                     runtime_analytics.record_cache_write()
             return values
 
-        raise EmbeddingError(f"Embedding call failed after {self.max_retries} retries for model={model}")
+        detail = f": {last_error}" if last_error is not None else ""
+        raise EmbeddingError(f"Embedding call failed after {self.max_retries} attempts for model={model}{detail}")
 
 
 def l2_normalize_vector(vector: list[float]) -> list[float]:
