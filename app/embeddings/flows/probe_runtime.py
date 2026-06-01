@@ -10,6 +10,7 @@ from pathlib import Path
 from prefect import flow, task
 
 from utils.gcs import upload_blob
+from utils.slack import notify_workflow_started
 
 
 def _run_command(command: list[str]) -> dict:
@@ -117,5 +118,12 @@ def probe_runtime_flow(
     dest_blob: str,
     scratch_path: str = "/tmp",
 ) -> None:
+    notify_workflow_started(
+        "probe-runtime",
+        {
+            "Destination": f"gs://{dest_bucket}/{dest_blob}",
+            "Scratch path": scratch_path,
+        },
+    )
     report = collect_runtime_report(scratch_path)
     upload_report(report, dest_bucket, dest_blob)

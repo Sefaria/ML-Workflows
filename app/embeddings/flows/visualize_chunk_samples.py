@@ -12,6 +12,7 @@ from embeddings.steps.patot.config import ChunkerConfig
 from embeddings.steps.patot.debug_report import write_debug_pdf_bundle
 from embeddings.steps.patot.json_loader import load_segment_records_from_section
 from utils.gcs import download_blob, upload_blob
+from utils.slack import notify_workflow_started
 
 
 def _iter_sections(local_path: str):
@@ -121,6 +122,17 @@ def visualize_chunk_samples_flow(
     sample_seed: int = 0,
     cache_path: str = "/cache/patot/embedding_cache.sqlite",
 ) -> None:
+    notify_workflow_started(
+        "visualize-chunk-samples",
+        {
+            "Source": f"gs://{source_bucket}/{source_blob}",
+            "Chunked input": f"gs://{chunked_bucket}/{chunked_blob}",
+            "Destination": f"gs://{dest_bucket}/{dest_blob}",
+            "Sample count": sample_count,
+            "Sample seed": sample_seed,
+            "Cache path": cache_path,
+        },
+    )
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("Missing GOOGLE_API_KEY or GEMINI_API_KEY for chunk visualization.")

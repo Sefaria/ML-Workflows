@@ -14,6 +14,7 @@ from embeddings.steps.training import (
     validate_masked_lm_model,
 )
 from utils.gcs import download_blob, upload_blob, upload_directory
+from utils.slack import notify_workflow_started
 
 
 @task(log_prints=True)
@@ -125,6 +126,27 @@ def train_embeddings_flow(
     max_examples: Optional[int] = None,
     use_amp: Optional[bool] = None,
 ) -> None:
+    notify_workflow_started(
+        "train-embeddings",
+        {
+            "Source": f"gs://{source_bucket}/{source_prefix}",
+            "Model destination": f"gs://{model_bucket}/{model_prefix}",
+            "Report": f"gs://{report_bucket}/{report_blob}",
+            "Model repo": model_repo_id,
+            "Revision": revision,
+            "Cache root": cache_root,
+            "Force download": force_download,
+            "Validate model": validate_model,
+            "Max sequence length": max_seq_length,
+            "Normalize embeddings": normalize_embeddings,
+            "Batch size": batch_size,
+            "Epochs": epochs,
+            "Warmup steps": warmup_steps,
+            "Learning rate": learning_rate,
+            "Max examples": max_examples,
+            "Use AMP": use_amp,
+        },
+    )
     safe_model_name = model_repo_id.replace("/", "__")
     base_model_dir = str(Path(cache_root) / "models" / safe_model_name)
     hub_cache_dir = str(Path(cache_root) / "hub")

@@ -6,6 +6,7 @@ from prefect import flow, task
 
 from embeddings.steps.query_generation.report import write_query_dataset_pdf
 from utils.gcs import download_blob, upload_blob
+from utils.slack import notify_workflow_started
 
 
 def _read_jsonl(path: str) -> list[dict]:
@@ -80,6 +81,15 @@ def visualize_query_dataset_flow(
     sample_count: int = 10,
     sample_seed: int = 0,
 ) -> None:
+    notify_workflow_started(
+        "visualize-query-dataset",
+        {
+            "Source": f"gs://{source_bucket}/{source_prefix}",
+            "Destination": f"gs://{dest_bucket}/{dest_blob}",
+            "Sample count": sample_count,
+            "Sample seed": sample_seed,
+        },
+    )
     documents_path = download_dataset_artifact(source_bucket, f"{source_prefix}/documents.jsonl")
     queries_path = download_dataset_artifact(source_bucket, f"{source_prefix}/queries.jsonl")
     qrels_path = download_dataset_artifact(source_bucket, f"{source_prefix}/qrels.jsonl")

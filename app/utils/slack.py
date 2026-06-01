@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 import requests
+from prefect.context import MissingContextError, get_run_context
 
 
 class SlackWebhookClient:
@@ -40,6 +41,42 @@ class SlackWebhookClient:
         return True
 
 
+def prefect_flow_run_url() -> Optional[str]:
+    try:
+        context = get_run_context()
+    except MissingContextError:
+        return None
+
+    flow_run_id = getattr(context.flow_run, "id", None)
+    if not flow_run_id:
+        return None
+
+    ui_url = os.getenv("PREFECT_UI_URL")
+    if not ui_url:
+        api_url = os.getenv("PREFECT_API_URL")
+        if not api_url:
+            return None
+        ui_url = api_url.removesuffix("/api").rstrip("/")
+
+    return f"{ui_url.rstrip('/')}/runs/flow-run/{flow_run_id}"
+
+
+def notify_workflow_started(
+    workflow_name: str,
+    details: Optional[dict[str, Any]] = None,
+    client: Optional[SlackWebhookClient] = None,
+) -> bool:
+    client = client or SlackWebhookClient(username="ml-workflows")
+    lines = [f"{workflow_name} run started"]
+
+    run_url = prefect_flow_run_url()
+    if run_url:
+        lines.append(f"Run: {run_url}")
+
+    lines.extend(_format_details(details))
+    return client.post("\n".join(lines))
+
+
 @dataclass
 class SlackProgressReporter:
     workflow_name: str
@@ -57,7 +94,7 @@ class SlackProgressReporter:
             f"{self.workflow_name} started",
             f"Total sections: {self.total_units}",
         ]
-        lines.extend(self._format_details(details))
+        lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 
     def notify_progress_if_due(self, completed_units: int, details: Optional[dict[str, Any]] = None) -> None:
@@ -78,12 +115,12 @@ class SlackProgressReporter:
             f"{self.workflow_name} progress: {percent}%",
             f"Sections: {min(completed_units, self.total_units)}/{self.total_units}",
         ]
-        lines.extend(self._format_details(details))
+        lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 
     def notify_success(self, details: Optional[dict[str, Any]] = None) -> None:
         lines = [f"{self.workflow_name} completed"]
-        lines.extend(self._format_details(details))
+        lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 
     def notify_failure(self, exc: BaseException, details: Optional[dict[str, Any]] = None) -> None:
@@ -91,10 +128,11 @@ class SlackProgressReporter:
             f"{self.workflow_name} failed",
             f"Error: {type(exc).__name__}: {exc}",
         ]
-        lines.extend(self._format_details(details))
+        lines.extend(_format_details(details))
         self.client.post("\n".join(lines))
 
-    def _format_details(self, details: Optional[dict[str, Any]]) -> list[str]:
-        if not details:
-            return []
-        return [f"{key}: {value}" for key, value in details.items()]
+
+def _format_details(details: Optional[dict[str, Any]]) -> list[str]:
+    if not details:
+        return []
+    return [f"{key}: {value}" for key, value in details.items()]

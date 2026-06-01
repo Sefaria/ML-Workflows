@@ -14,7 +14,7 @@ from prefect import flow, task
 from embeddings.steps.patot.config import ChunkerConfig
 from embeddings.steps.patot.pipeline import iter_chunked_documents_parallel
 from utils.gcs import download_blob, upload_blob
-from utils.slack import SlackProgressReporter, SlackWebhookClient
+from utils.slack import SlackProgressReporter, SlackWebhookClient, notify_workflow_started
 
 
 @task(log_prints=True)
@@ -173,6 +173,16 @@ def chunk_documents_flow(
     cache_path: str = "/cache/patot/embedding_cache.sqlite",
     section_limit: Optional[int] = None,
 ) -> None:
+    notify_workflow_started(
+        "chunk-documents",
+        {
+            "Source": f"gs://{source_bucket}/{source_blob}",
+            "Destination": f"gs://{dest_bucket}/{dest_blob}",
+            "Max workers": max_workers,
+            "Cache path": cache_path,
+            "Section limit": section_limit,
+        },
+    )
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("Missing GOOGLE_API_KEY or GEMINI_API_KEY for chunking embeddings.")

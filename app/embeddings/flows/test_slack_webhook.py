@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 import requests
 from prefect import flow, task
 
+from utils.slack import notify_workflow_started
+
 
 @task(log_prints=True)
 def post_slack_test_message(message: str, username: str | None = None) -> dict:
@@ -34,6 +36,14 @@ def test_slack_webhook_flow(
     include_timestamp: bool = True,
     username: str | None = "ml-workflows",
 ) -> dict:
+    notify_workflow_started(
+        "test-slack-webhook",
+        {
+            "Message": message,
+            "Include timestamp": include_timestamp,
+            "Username": username,
+        },
+    )
     if include_timestamp:
         timestamp = datetime.now(timezone.utc).isoformat()
         message = f"{message}\nUTC: {timestamp}"

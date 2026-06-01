@@ -8,6 +8,7 @@ from pathlib import Path
 from prefect import flow, task
 
 from utils.gcs import upload_blob
+from utils.slack import notify_workflow_started
 
 
 def _statvfs_report(path: str) -> dict:
@@ -72,5 +73,13 @@ def test_cache_volume_flow(
     cache_path: str = "/cache",
     probe_subdir: str = "prefect-cache-probe",
 ) -> None:
+    notify_workflow_started(
+        "test-cache-volume",
+        {
+            "Destination": f"gs://{dest_bucket}/{dest_blob}",
+            "Cache path": cache_path,
+            "Probe subdir": probe_subdir,
+        },
+    )
     report = write_cache_probe(cache_path, probe_subdir)
     upload_report(report, dest_bucket, dest_blob)
