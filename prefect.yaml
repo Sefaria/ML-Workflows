@@ -148,23 +148,22 @@ deployments:
     schedules: []
 
   - name: train-embeddings
-    tags: ["ml", "gpu"]
-    description: "Pull normalized dataset from GCS and fine-tune a sentence embedding model"
+    tags: ["ml", "training", "model-cache"]
+    description: "Temporary training workflow: cache and validate the base Hugging Face model on the persistent volume"
     entrypoint: embeddings/flows/train_embeddings.py:train_embeddings_flow
     parameters:
-      source_bucket: development-research
-      model_bucket: development-research
+      report_bucket: development-research
+      report_blob: custom_embeddings/training_base_model_cache_probe.json
+      model_repo_id: dicta-il/BEREL_3.0
+      revision: null
+      cache_root: /cache/huggingface
+      force_download: false
+      validate_model: true
     work_pool:
       name: sefaria-k8s
       job_variables:
         image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
-        tolerations:
-          - key: nvidia.com/gpu
-            operator: Exists
-            effect: NoSchedule
-        resources:
-          limits:
-            nvidia.com/gpu: "1"
     schedules: []
