@@ -1,6 +1,7 @@
 import json
 import shutil
 import tempfile
+import time
 from dataclasses import replace
 from datetime import datetime, timezone
 from itertools import islice
@@ -33,6 +34,7 @@ def _documents_with_qrels(documents: list[dict], qrels: list[dict]) -> list[dict
 
 
 def query_generation_progress_details(snapshot: dict) -> dict:
+    estimated_cost = snapshot.get("estimated_cost", {})
     return {
         "Queries": snapshot.get("queries_generated", 0),
         "Qrels": snapshot.get("qrels_generated", 0),
@@ -40,7 +42,7 @@ def query_generation_progress_details(snapshot: dict) -> dict:
         "Cache misses": snapshot.get("cache", {}).get("misses", 0),
         "Remote requests": snapshot.get("llm", {}).get("remote_requests_succeeded", 0),
         "Failures": snapshot.get("llm", {}).get("remote_non_retryable_failures", 0),
-        "Estimated remote cost": f"${snapshot.get('estimated_cost', {}).get('remote_estimated_cost_usd', 0.0):.6f}",
+        "Estimated remote cost": f"${estimated_cost.get('remote_estimated_cost_usd', 0.0):.6f}",
     }
 
 
@@ -95,14 +97,41 @@ def build_query_dataset(
             "Document limit": document_limit,
         }
     )
+    progress_log_every_jobs = 100
+    progress_log_every_seconds = 30.0
+    last_logged_jobs = 0
+    last_log_time = time.monotonic()
 
     def report_progress(completed_jobs: int, total_jobs_from_generator: int, snapshot: dict) -> None:
+        nonlocal last_logged_jobs, last_log_time
         if total_jobs_from_generator != slack_reporter.total_units:
             print(
                 "Query generation progress total mismatch: "
                 f"estimated={slack_reporter.total_units}, actual={total_jobs_from_generator}"
             )
         slack_reporter.notify_progress_if_due(completed_jobs, query_generation_progress_details(snapshot))
+        now = time.monotonic()
+        should_log = False
+        if completed_jobs >= last_logged_jobs + progress_log_every_jobs:
+            should_log = True
+        elif now - last_log_time >= progress_log_every_seconds and completed_jobs > last_logged_jobs:
+            should_log = True
+
+        if should_log:
+            estimated_cost = snapshot.get("estimated_cost", {})
+            print(
+                "Query generation progress: "
+                f"jobs={completed_jobs}/{total_jobs_from_generator}, "
+                f"queries={snapshot.get('queries_generated', 0)}, "
+                f"qrels={snapshot.get('qrels_generated', 0)}, "
+                f"cache_hits={snapshot.get('cache', {}).get('hits', 0)}, "
+                f"cache_misses={snapshot.get('cache', {}).get('misses', 0)}, "
+                f"remote_requests={snapshot.get('llm', {}).get('remote_requests_succeeded', 0)}, "
+                f"failures={snapshot.get('llm', {}).get('remote_non_retryable_failures', 0)}, "
+                f"estimated_remote_cost_usd={estimated_cost.get('remote_estimated_cost_usd', 0.0):.6f}"
+            )
+            last_logged_jobs = completed_jobs
+            last_log_time = now
 
     config = replace(config, progress_callback=report_progress)
     queries, qrels, failures = generate_queries_and_qrels(documents, config)
