@@ -1,7 +1,10 @@
 import math
+import threading
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
+from huggingface_hub import snapshot_download
 from pydantic.v1 import BaseModel
 from pydantic.v1 import PrivateAttr
 from semantic_chunkers import StatisticalChunker
@@ -21,6 +24,19 @@ from .text_utils import (
     strip_hebrew_niqqud,
     strip_html,
 )
+
+
+_TOKENIZER_CACHE = {}
+_TOKENIZER_CACHE_LOCK = threading.Lock()
+_TOKENIZER_DOWNLOAD_ROOT = Path("/tmp/huggingface/tokenizers")
+_TOKENIZER_ALLOW_PATTERNS = (
+    "config.json",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "vocab.txt",
+)
+
 
 class BaseEncoder(BaseModel):
     """Minimal encoder contract expected by StatisticalChunker."""
@@ -261,8 +277,35 @@ class PatotChunker:
 
     def _get_tokenizer(self):
         if self._tokenizer is None:
-            self._tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_model)
+            with _TOKENIZER_CACHE_LOCK:
+                tokenizer_source = self._resolve_tokenizer_source()
+                if self.config.debug and tokenizer_source != self.config.tokenizer_model:
+                    self._debug(f"tokenizer_source={tokenizer_source}")
+                cache_key = str(tokenizer_source)
+                if cache_key not in _TOKENIZER_CACHE:
+                    _TOKENIZER_CACHE[cache_key] = AutoTokenizer.from_pretrained(
+                        tokenizer_source,
+                        local_files_only=True,
+                    )
+            self._tokenizer = _TOKENIZER_CACHE[cache_key]
         return self._tokenizer
+
+    def _resolve_tokenizer_source(self) -> str:
+        configured = Path(self.config.tokenizer_model)
+        if configured.exists():
+            return str(configured)
+
+        return self._download_tokenizer_files(self.config.tokenizer_model)
+
+    def _download_tokenizer_files(self, tokenizer_model: str) -> str:
+        safe_model_name = tokenizer_model.replace("/", "__")
+        local_dir = _TOKENIZER_DOWNLOAD_ROOT / safe_model_name
+        local_dir.mkdir(parents=True, exist_ok=True)
+        return snapshot_download(
+            repo_id=tokenizer_model,
+            local_dir=str(local_dir),
+            allow_patterns=list(_TOKENIZER_ALLOW_PATTERNS),
+        )
 
     def _normalize_for_tokenizer(self, text: str) -> str:
         tokenizer = self._get_tokenizer()
