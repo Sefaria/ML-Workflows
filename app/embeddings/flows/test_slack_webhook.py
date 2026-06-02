@@ -1,32 +1,34 @@
-import os
 from datetime import datetime, timezone
 
-import requests
 from prefect import task
 
-from utils.slack import slack_notified_flow
+from utils.slack import SlackWebhookClient, slack_notified_flow
 
 
 @task(log_prints=True)
 def post_slack_test_message(message: str, username: str | None = None) -> dict:
-    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
-    if not webhook_url:
+    client = SlackWebhookClient(username=username)
+    if not client.is_configured:
         raise ValueError("Missing SLACK_WEBHOOK_URL environment variable.")
 
-    payload = {
-        "text": message,
-    }
-    if username:
-        payload["username"] = username
+    posted = client.post(
+        message,
+        blocks=[
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Slack webhook test*\n```{message}```",
+                },
+            }
+        ],
+    )
+    if not posted:
+        raise RuntimeError("Slack webhook test post failed.")
 
-    response = requests.post(webhook_url, json=payload, timeout=20)
-    response.raise_for_status()
-
-    print(f"Slack webhook test posted successfully: status_code={response.status_code}")
+    print("Slack webhook test posted successfully")
     return {
         "status": "success",
-        "status_code": response.status_code,
-        "response_text": response.text,
     }
 
 

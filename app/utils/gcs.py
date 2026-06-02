@@ -35,3 +35,15 @@ def upload_directory(local_dir: str, bucket_name: str, gcs_prefix: str) -> None:
             relative = os.path.relpath(local_file, local_dir)
             blob_name = f"{gcs_prefix}/{relative}"
             bucket.blob(blob_name).upload_from_filename(local_file)
+
+
+def delete_prefix(bucket_name: str, gcs_prefix: str) -> int:
+    """Delete all blobs under a GCS prefix. Returns the number of deleted blobs."""
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    normalized_prefix = gcs_prefix.rstrip("/") + "/"
+    deleted_count = 0
+    for blob in client.list_blobs(bucket, prefix=normalized_prefix):
+        blob.delete()
+        deleted_count += 1
+    return deleted_count

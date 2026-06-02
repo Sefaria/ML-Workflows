@@ -183,11 +183,14 @@ deployments:
       max_seq_length: 512
       normalize_embeddings: true
       batch_size: 16
-      epochs: 1
+      epochs: 3
       warmup_steps: null
       learning_rate: 0.00002
       max_examples: null
       use_amp: null
+      validation_fraction: 0.1
+      validation_seed: 0
+      evaluation_steps: null
     work_pool:
       name: sefaria-k8s
       job_variables:

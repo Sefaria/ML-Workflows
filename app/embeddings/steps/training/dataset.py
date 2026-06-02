@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 from typing import Optional
 
@@ -63,3 +64,53 @@ def build_positive_pair_examples(
         "non_positive_qrels": non_positive_qrels,
     }
     return examples, report
+
+
+def split_qrels_for_validation(
+    qrels: list[dict],
+    validation_fraction: float,
+    validation_seed: int,
+    max_examples: Optional[int] = None,
+) -> tuple[list[dict], list[dict], dict]:
+    if validation_fraction < 0 or validation_fraction >= 1:
+        raise ValueError("validation_fraction must be >= 0 and < 1.")
+
+    positive_qrels = [qrel for qrel in qrels if int(qrel.get("relevance") or 0) > 0]
+    if max_examples is not None:
+        positive_qrels = positive_qrels[:max_examples]
+
+    positive_doc_ids = sorted({str(qrel["doc_id"]) for qrel in positive_qrels})
+
+    if not positive_qrels or validation_fraction == 0:
+        report = {
+            "strategy": "random_positive_doc_id_split",
+            "validation_fraction": validation_fraction,
+            "validation_seed": validation_seed,
+            "positive_qrels_considered": len(positive_qrels),
+            "positive_doc_ids_considered": len(positive_doc_ids),
+            "validation_doc_ids_count": 0,
+            "train_qrels_count": len(positive_qrels),
+            "validation_qrels_count": 0,
+        }
+        return positive_qrels, [], report
+
+    random.Random(validation_seed).shuffle(positive_doc_ids)
+    validation_doc_count = max(1, int(len(positive_doc_ids) * validation_fraction))
+    validation_doc_ids = set(positive_doc_ids[:validation_doc_count])
+    validation_qrels = [qrel for qrel in positive_qrels if str(qrel["doc_id"]) in validation_doc_ids]
+    train_qrels = [qrel for qrel in positive_qrels if str(qrel["doc_id"]) not in validation_doc_ids]
+    if not train_qrels:
+        train_qrels, validation_qrels = validation_qrels[:1], validation_qrels[1:]
+        validation_doc_ids = {str(qrel["doc_id"]) for qrel in validation_qrels}
+
+    report = {
+        "strategy": "random_positive_doc_id_split",
+        "validation_fraction": validation_fraction,
+        "validation_seed": validation_seed,
+        "positive_qrels_considered": len(positive_qrels),
+        "positive_doc_ids_considered": len(positive_doc_ids),
+        "validation_doc_ids_count": len(validation_doc_ids),
+        "train_qrels_count": len(train_qrels),
+        "validation_qrels_count": len(validation_qrels),
+    }
+    return train_qrels, validation_qrels, report

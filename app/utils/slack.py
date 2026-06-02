@@ -46,6 +46,8 @@ class SlackWebhookClient:
 
 SENSITIVE_DETAIL_PARTS = ("api_key", "apikey", "key", "password", "secret", "token", "webhook")
 MAX_DETAIL_VALUE_LENGTH = 200
+MAX_SLACK_FIELD_LENGTH = 1900
+MAX_SLACK_FIELDS_PER_BLOCK = 10
 
 
 def prefect_flow_run_url() -> Optional[str]:
@@ -136,14 +138,15 @@ def notify_workflow_started(
     client: Optional[SlackWebhookClient] = None,
 ) -> bool:
     client = client or SlackWebhookClient(username="ml-workflows")
-    lines = [f"{workflow_name} run started"]
-
     run_url = prefect_flow_run_url()
-    if run_url:
-        lines.append(f"Run: {run_url}")
-
-    lines.extend(_format_details(details))
-    return client.post("\n".join(lines))
+    text = f"{workflow_name} run started"
+    blocks = _workflow_blocks(
+        title=text,
+        status="started",
+        run_url=run_url,
+        details=details,
+    )
+    return client.post(text, blocks=blocks)
 
 
 def notify_workflow_failed(
@@ -153,17 +156,48 @@ def notify_workflow_failed(
     client: Optional[SlackWebhookClient] = None,
 ) -> bool:
     client = client or SlackWebhookClient(username="ml-workflows")
-    lines = [
-        f"{workflow_name} run failed",
-        f"Error: {type(exc).__name__}: {exc}",
-    ]
-
     run_url = prefect_flow_run_url()
-    if run_url:
-        lines.append(f"Run: {run_url}")
+    text = f"{workflow_name} run failed"
+    failure_details = {
+        "error": f"{type(exc).__name__}: {exc}",
+        **(details or {}),
+    }
+    blocks = _workflow_blocks(
+        title=text,
+        status="failed",
+        run_url=run_url,
+        details=failure_details,
+    )
+    return client.post(text, blocks=blocks)
 
-    lines.extend(_format_details(details))
-    return client.post("\n".join(lines))
+
+def notify_training_validation_metric(
+    *,
+    workflow_name: str,
+    epoch: float,
+    total_epochs: int,
+    steps: int,
+    metrics: dict[str, Any],
+    details: Optional[dict[str, Any]] = None,
+    client: Optional[SlackWebhookClient] = None,
+) -> bool:
+    client = client or SlackWebhookClient(username="ml-workflows")
+    run_url = prefect_flow_run_url()
+    epoch_label = _format_epoch(epoch)
+    text = f"{workflow_name} validation: epoch {epoch_label}/{total_epochs}"
+    metric_details = {
+        "epoch": f"{epoch_label}/{total_epochs}",
+        "steps": steps,
+        **metrics,
+        **(details or {}),
+    }
+    blocks = _workflow_blocks(
+        title=text,
+        status="validation",
+        run_url=run_url,
+        details=metric_details,
+    )
+    return client.post(text, blocks=blocks)
 
 
 @dataclass
@@ -180,15 +214,19 @@ class SlackProgressReporter:
             raise ValueError("total_units must not be negative for SlackProgressReporter.")
 
     def notify_start(self, details: Optional[dict[str, Any]] = None) -> None:
-        lines = [
-            f"{self.workflow_name} started",
-            f"Total {self.unit_label}: {self.total_units}",
-        ]
         run_url = prefect_flow_run_url()
-        if run_url:
-            lines.append(f"Run: {run_url}")
-        lines.extend(_format_details(details))
-        self.client.post("\n".join(lines))
+        text = f"{self.workflow_name} started"
+        start_details = {
+            f"total_{self.unit_label}": self.total_units,
+            **(details or {}),
+        }
+        blocks = _workflow_blocks(
+            title=text,
+            status="started",
+            run_url=run_url,
+            details=start_details,
+        )
+        self.client.post(text, blocks=blocks)
 
     def notify_progress_if_due(self, completed_units: int, details: Optional[dict[str, Any]] = None) -> None:
         if self.total_units == 0 or completed_units <= 0:
@@ -204,37 +242,123 @@ class SlackProgressReporter:
             self._next_fraction += self.notify_every_fraction
 
         percent = min(100, round(crossed_fraction * 100))
-        lines = [
-            f"{self.workflow_name} progress: {percent}%",
-            f"{self.unit_label.title()}: {min(completed_units, self.total_units)}/{self.total_units}",
-        ]
         run_url = prefect_flow_run_url()
-        if run_url:
-            lines.append(f"Run: {run_url}")
-        lines.extend(_format_details(details))
-        self.client.post("\n".join(lines))
+        text = f"{self.workflow_name} progress: {percent}%"
+        progress_details = {
+            "progress": f"{percent}%",
+            self.unit_label: f"{min(completed_units, self.total_units)}/{self.total_units}",
+            **(details or {}),
+        }
+        blocks = _workflow_blocks(
+            title=text,
+            status="in progress",
+            run_url=run_url,
+            details=progress_details,
+        )
+        self.client.post(text, blocks=blocks)
 
     def notify_success(self, details: Optional[dict[str, Any]] = None) -> None:
-        lines = [f"{self.workflow_name} completed"]
         run_url = prefect_flow_run_url()
-        if run_url:
-            lines.append(f"Run: {run_url}")
-        lines.extend(_format_details(details))
-        self.client.post("\n".join(lines))
+        text = f"{self.workflow_name} completed"
+        blocks = _workflow_blocks(
+            title=text,
+            status="completed",
+            run_url=run_url,
+            details=details,
+        )
+        self.client.post(text, blocks=blocks)
 
     def notify_failure(self, exc: BaseException, details: Optional[dict[str, Any]] = None) -> None:
-        lines = [
-            f"{self.workflow_name} failed",
-            f"Error: {type(exc).__name__}: {exc}",
-        ]
         run_url = prefect_flow_run_url()
-        if run_url:
-            lines.append(f"Run: {run_url}")
-        lines.extend(_format_details(details))
-        self.client.post("\n".join(lines))
+        text = f"{self.workflow_name} failed"
+        failure_details = {
+            "error": f"{type(exc).__name__}: {exc}",
+            **(details or {}),
+        }
+        blocks = _workflow_blocks(
+            title=text,
+            status="failed",
+            run_url=run_url,
+            details=failure_details,
+        )
+        self.client.post(text, blocks=blocks)
 
 
 def _format_details(details: Optional[dict[str, Any]]) -> list[str]:
     if not details:
         return []
     return [f"{key}: {value}" for key, value in details.items()]
+
+
+def _format_epoch(epoch: float) -> str:
+    if float(epoch).is_integer():
+        return str(int(epoch))
+    return f"{epoch:.2f}".rstrip("0").rstrip(".")
+
+
+def _workflow_blocks(
+    *,
+    title: str,
+    status: str,
+    run_url: Optional[str],
+    details: Optional[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*{_escape_mrkdwn(title)}*",
+            },
+        }
+    ]
+
+    context_elements = [{"type": "mrkdwn", "text": f"*Status:* `{_escape_mrkdwn(status)}`"}]
+    if run_url:
+        context_elements.append({"type": "mrkdwn", "text": f"<{run_url}|Open Prefect run>"})
+    blocks.append({"type": "context", "elements": context_elements})
+
+    detail_fields = _detail_fields(details)
+    for start in range(0, len(detail_fields), MAX_SLACK_FIELDS_PER_BLOCK):
+        blocks.append(
+            {
+                "type": "section",
+                "fields": detail_fields[start : start + MAX_SLACK_FIELDS_PER_BLOCK],
+            }
+        )
+
+    return blocks
+
+
+def _detail_fields(details: Optional[dict[str, Any]]) -> list[dict[str, str]]:
+    if not details:
+        return []
+    fields = []
+    for key, value in details.items():
+        fields.append(
+            {
+                "type": "mrkdwn",
+                "text": f"*{_escape_mrkdwn(str(key))}:*\n{_format_detail_value_for_slack(value)}",
+            }
+        )
+    return fields
+
+
+def _format_detail_value_for_slack(value: Any) -> str:
+    if value is None:
+        return "`null`"
+    if isinstance(value, bool):
+        return f"`{str(value).lower()}`"
+    if isinstance(value, (int, float)):
+        return f"`{value}`"
+
+    text = _escape_mrkdwn(str(value))
+    if len(text) > MAX_SLACK_FIELD_LENGTH:
+        text = f"{text[:MAX_SLACK_FIELD_LENGTH]}..."
+    if "\n" in text:
+        return text
+    return f"`{text}`"
+
+
+def _escape_mrkdwn(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
