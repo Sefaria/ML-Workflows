@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from sentence_transformers.evaluation import InformationRetrievalEvaluator
+from sentence_transformers.evaluation import InformationRetrievalEvaluator, SentenceEvaluator
 
 
 PRIMARY_RETRIEVAL_METRIC = "ndcg@10"
@@ -8,12 +8,13 @@ PRIMARY_SCORE_FUNCTION = "cosine"
 SENTENCE_TRANSFORMERS_PRIMARY_METRIC = f"{PRIMARY_SCORE_FUNCTION}_{PRIMARY_RETRIEVAL_METRIC}"
 
 
-class ReportingInformationRetrievalEvaluator:
+class ReportingInformationRetrievalEvaluator(SentenceEvaluator):
     def __init__(
         self,
         evaluator: InformationRetrievalEvaluator,
         callback: Callable[[dict[str, float], float, int], None],
     ):
+        super().__init__()
         self.evaluator = evaluator
         self.callback = callback
         self.primary_metric = evaluator.primary_metric
@@ -24,6 +25,9 @@ class ReportingInformationRetrievalEvaluator:
         self.primary_metric = self.evaluator.primary_metric
         self.callback(metrics, epoch, steps)
         return metrics
+
+    def get_config_dict(self) -> dict:
+        return self.evaluator.get_config_dict()
 
 
 def build_ir_validation_evaluator(
