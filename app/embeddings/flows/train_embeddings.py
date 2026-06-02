@@ -15,7 +15,7 @@ from embeddings.steps.training import (
     validate_masked_lm_model,
 )
 from utils.gcs import delete_prefix, download_blob, upload_blob, upload_directory
-from utils.slack import notify_training_validation_metric, slack_notified_flow
+from utils.slack import notify_training_validation_metric, notify_workflow_event, slack_notified_flow
 
 
 @task(log_prints=True)
@@ -40,6 +40,55 @@ def cache_base_model(
 def validate_base_model(model_path: str) -> dict:
     print(f"Validating base model can be loaded from {model_path}")
     return validate_masked_lm_model(model_path)
+
+
+@task(log_prints=True)
+def probe_training_accelerator() -> dict:
+    import torch
+
+    cuda_available = torch.cuda.is_available()
+    device_count = torch.cuda.device_count() if cuda_available else 0
+    devices = []
+    for index in range(device_count):
+        props = torch.cuda.get_device_properties(index)
+        devices.append(
+            {
+                "index": index,
+                "name": torch.cuda.get_device_name(index),
+                "total_memory_bytes": int(props.total_memory),
+                "major": int(props.major),
+                "minor": int(props.minor),
+            }
+        )
+
+    report = {
+        "torch_version": torch.__version__,
+        "cuda_available": cuda_available,
+        "cuda_version": torch.version.cuda,
+        "device_count": device_count,
+        "devices": devices,
+        "selected_device": "cuda" if cuda_available else "cpu",
+    }
+    print(
+        "Training accelerator probe: "
+        f"cuda_available={cuda_available}, "
+        f"device_count={device_count}, "
+        f"selected_device={report['selected_device']}, "
+        f"devices={[device['name'] for device in devices]}"
+    )
+    notify_workflow_event(
+        workflow_name="train-embeddings",
+        title="train-embeddings accelerator detected",
+        status="runtime",
+        details={
+            "selected_device": report["selected_device"],
+            "cuda_available": cuda_available,
+            "device_count": device_count,
+            "cuda_version": report["cuda_version"],
+            "gpu": devices[0]["name"] if devices else None,
+        },
+    )
+    return report
 
 
 @task(log_prints=True)
@@ -74,6 +123,7 @@ def train_model(
     print(f"Training SentenceTransformer model from base model {base_model_path}")
 
     def report_validation_metric(metrics: dict[str, float], epoch: float, steps: int) -> None:
+        progress = training_epoch_progress(epoch, epochs)
         metric_values = {
             "ndcg@10": metrics.get("validation_cosine_ndcg@10"),
             "mrr@10": metrics.get("validation_cosine_mrr@10"),
@@ -86,17 +136,20 @@ def train_model(
             if value is not None
         }
         print(
-            f"Training validation metric: epoch={epoch:.4g}/{epochs}, "
+            "Training progress: "
+            f"epoch={progress['epoch']}/{epochs}, "
+            f"epoch_progress={progress['percent']}%, "
             f"steps={steps}, "
             + ", ".join(f"{name}={value}" for name, value in compact_metric_values.items())
         )
         notify_training_validation_metric(
             workflow_name="train-embeddings",
-            epoch=epoch,
+            epoch=progress["epoch"],
             total_epochs=epochs,
             steps=steps,
             metrics=compact_metric_values,
             details={
+                "epoch_progress": f"{progress['percent']}%",
                 "selection_metric": "ndcg@10",
                 "base_model": base_model_path,
             },
@@ -121,6 +174,25 @@ def train_model(
         evaluation_steps=evaluation_steps,
         evaluation_callback=report_validation_metric,
     )
+
+
+def training_epoch_progress(epoch: float, total_epochs: int) -> dict:
+    if epoch <= 0:
+        return {"epoch": 1, "percent": 0}
+
+    completed_epochs = int(epoch)
+    if abs(epoch - completed_epochs) < 1e-9:
+        return {
+            "epoch": min(max(completed_epochs, 1), total_epochs),
+            "percent": 100,
+        }
+
+    current_epoch = min(completed_epochs + 1, total_epochs)
+    percent = round((epoch - completed_epochs) * 100)
+    return {
+        "epoch": current_epoch,
+        "percent": min(100, max(0, percent)),
+    }
 
 
 @task(log_prints=True)
@@ -234,6 +306,7 @@ def train_embeddings_flow(
         )
         validation_report = validate_base_model(base_model_dir) if validate_model else None
         downloaded_artifacts = download_query_dataset_artifacts(source_bucket, source_prefix)
+        accelerator_report = probe_training_accelerator()
         training_report = train_model(
             documents_path=downloaded_artifacts["documents.jsonl"],
             queries_path=downloaded_artifacts["queries.jsonl"],
@@ -292,6 +365,7 @@ def train_embeddings_flow(
             "validate_model": validate_model,
             "cache": cache_report,
             "validation": validation_report,
+            "accelerator": accelerator_report,
             "training": training_report,
             "report_upload": expected_report_upload,
             "environment": {

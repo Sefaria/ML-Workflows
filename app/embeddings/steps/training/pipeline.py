@@ -93,7 +93,7 @@ def train_from_query_dataset_artifacts(
         resolved_warmup_steps = max(1, int(steps_per_epoch * epochs * 0.1))
     resolved_evaluation_steps = evaluation_steps
     if evaluator is not None and resolved_evaluation_steps is None:
-        resolved_evaluation_steps = steps_per_epoch
+        resolved_evaluation_steps = max(1, math.ceil(steps_per_epoch * 0.1))
     if evaluator is not None and resolved_evaluation_steps <= 0:
         raise ValueError("evaluation_steps must be positive when validation is enabled.")
     if evaluator is None:
@@ -124,6 +124,9 @@ def train_from_query_dataset_artifacts(
         "steps_per_epoch": steps_per_epoch,
         "warmup_steps": resolved_warmup_steps,
         "evaluation_steps": resolved_evaluation_steps,
+        "evaluation_interval_fraction_of_epoch": (
+            resolved_evaluation_steps / steps_per_epoch if evaluator is not None and steps_per_epoch else None
+        ),
         "learning_rate": learning_rate,
         "use_amp": resolved_use_amp,
         "loss": "MultipleNegativesRankingLoss",

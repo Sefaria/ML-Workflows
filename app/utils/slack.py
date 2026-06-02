@@ -255,7 +255,10 @@ def notify_training_validation_metric(
     client = client or workflow_slack_client(workflow_name)
     run_url = prefect_flow_run_url()
     epoch_label = _format_epoch(epoch)
-    text = f"{workflow_name} validation: epoch {epoch_label}/{total_epochs}"
+    progress_label = details.get("epoch_progress") if details else None
+    text = f"{workflow_name} progress: epoch {epoch_label}/{total_epochs}"
+    if progress_label:
+        text = f"{text} {progress_label}"
     metric_details = {
         "epoch": f"{epoch_label}/{total_epochs}",
         "steps": steps,
@@ -269,6 +272,24 @@ def notify_training_validation_metric(
         details=metric_details,
     )
     return _post_workflow_message(client, workflow_name, text, blocks)
+
+
+def notify_workflow_event(
+    *,
+    workflow_name: str,
+    title: str,
+    status: str,
+    details: Optional[dict[str, Any]] = None,
+    client: Optional[SlackWebhookClient] = None,
+) -> bool:
+    client = client or workflow_slack_client(workflow_name)
+    blocks = _workflow_blocks(
+        title=title,
+        status=status,
+        run_url=prefect_flow_run_url(),
+        details=details,
+    )
+    return _post_workflow_message(client, workflow_name, title, blocks)
 
 
 @dataclass
