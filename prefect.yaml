@@ -130,6 +130,30 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: probe-gpu-availability
+    tags: ["infrastructure", "debug", "gpu"]
+    description: "Probe GPU scheduling and runtime CUDA availability, then upload a JSON report to GCS"
+    entrypoint: embeddings/flows/probe_gpu_availability.py:probe_gpu_availability_flow
+    parameters:
+      dest_bucket: development-research
+      dest_blob: gpu_availability_probe.json
+      matrix_size: 512
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+    schedules: []
+
   - name: test-slack-webhook
     tags: ["infrastructure", "debug", "slack", "temporary"]
     description: "Temporarily post a test message to the configured Slack webhook"
