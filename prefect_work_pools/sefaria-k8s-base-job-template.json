@@ -1,0 +1,330 @@
+{
+  "variables": {
+    "type": "object",
+    "description": "Kubernetes work pool variables for ML workflow jobs.",
+    "properties": {
+      "env": {
+        "type": "object",
+        "title": "Environment Variables",
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Name",
+        "default": null
+      },
+      "image": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Image",
+        "default": null
+      },
+      "labels": {
+        "type": "object",
+        "title": "Labels",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "command": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Command",
+        "default": null
+      },
+      "namespace": {
+        "type": "string",
+        "title": "Namespace",
+        "default": "default"
+      },
+      "annotations": {
+        "type": "object",
+        "title": "Annotations",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "cpu_limit": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "CPU Limit",
+        "default": null
+      },
+      "cpu_request": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "CPU Request",
+        "default": null
+      },
+      "memory_limit": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Memory Limit",
+        "default": null
+      },
+      "memory_request": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Memory Request",
+        "default": null
+      },
+      "gpu_limit": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "GPU Limit",
+        "default": null,
+        "description": "The nvidia.com/gpu resource limit for the Kubernetes job container."
+      },
+      "tolerations": {
+        "type": "array",
+        "title": "Tolerations",
+        "default": [],
+        "items": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "backoff_limit": {
+        "type": "integer",
+        "title": "Backoff Limit",
+        "default": 0,
+        "minimum": 0
+      },
+      "stream_output": {
+        "type": "boolean",
+        "title": "Stream Output",
+        "default": true
+      },
+      "cluster_config": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/KubernetesClusterConfig"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "finished_job_ttl": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Finished Job TTL",
+        "default": null
+      },
+      "image_pull_policy": {
+        "enum": [
+          "IfNotPresent",
+          "Always",
+          "Never"
+        ],
+        "type": "string",
+        "title": "Image Pull Policy",
+        "default": "IfNotPresent"
+      },
+      "service_account_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Service Account Name",
+        "default": null
+      },
+      "job_watch_timeout_seconds": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Job Watch Timeout Seconds",
+        "default": null
+      },
+      "pod_watch_timeout_seconds": {
+        "type": "integer",
+        "title": "Pod Watch Timeout Seconds",
+        "default": 60
+      }
+    },
+    "definitions": {
+      "KubernetesClusterConfig": {
+        "type": "object",
+        "title": "KubernetesClusterConfig",
+        "required": [
+          "config",
+          "context_name"
+        ],
+        "properties": {
+          "config": {
+            "type": "object",
+            "title": "Config",
+            "additionalProperties": true
+          },
+          "context_name": {
+            "type": "string",
+            "title": "Context Name"
+          }
+        },
+        "secret_fields": [],
+        "block_type_slug": "kubernetes-cluster-config",
+        "block_schema_references": {}
+      }
+    }
+  },
+  "job_configuration": {
+    "env": "{{ env }}",
+    "name": "{{ name }}",
+    "labels": "{{ labels }}",
+    "command": "{{ command }}",
+    "namespace": "{{ namespace }}",
+    "annotations": "{{ annotations }}",
+    "job_manifest": {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "labels": "{{ labels }}",
+        "namespace": "{{ namespace }}",
+        "annotations": "{{ annotations }}",
+        "generateName": "{{ name }}-"
+      },
+      "spec": {
+        "backoffLimit": "{{ backoff_limit }}",
+        "ttlSecondsAfterFinished": "{{ finished_job_ttl }}",
+        "template": {
+          "spec": {
+            "volumes": [
+              {
+                "name": "embeddings-cache",
+                "persistentVolumeClaim": {
+                  "claimName": "embeddings-pvc"
+                }
+              }
+            ],
+            "containers": [
+              {
+                "env": "{{ env }}",
+                "args": "{{ command }}",
+                "name": "prefect-job",
+                "image": "{{ image }}",
+                "envFrom": [
+                  {
+                    "secretRef": {
+                      "name": "gemini-api-key"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "anthropic-api-key"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "slack-webhook-url"
+                    }
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "{{ cpu_limit }}",
+                    "memory": "{{ memory_limit }}",
+                    "nvidia.com/gpu": "{{ gpu_limit }}"
+                  },
+                  "requests": {
+                    "cpu": "{{ cpu_request }}",
+                    "memory": "{{ memory_request }}"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "embeddings-cache",
+                    "mountPath": "/cache"
+                  }
+                ],
+                "imagePullPolicy": "{{ image_pull_policy }}"
+              }
+            ],
+            "completions": 1,
+            "parallelism": 1,
+            "restartPolicy": "Never",
+            "serviceAccountName": "{{ service_account_name }}",
+            "tolerations": "{{ tolerations }}"
+          }
+        }
+      }
+    },
+    "stream_output": "{{ stream_output }}",
+    "cluster_config": "{{ cluster_config }}",
+    "job_watch_timeout_seconds": "{{ job_watch_timeout_seconds }}",
+    "pod_watch_timeout_seconds": "{{ pod_watch_timeout_seconds }}"
+  }
+}

@@ -149,9 +149,7 @@ deployments:
           - key: nvidia.com/gpu
             operator: Exists
             effect: NoSchedule
-        resources:
-          limits:
-            nvidia.com/gpu: "1"
+        gpu_limit: "1"
     schedules: []
 
   - name: test-slack-webhook
@@ -226,7 +224,5 @@ deployments:
           - key: nvidia.com/gpu
             operator: Exists
             effect: NoSchedule
-        resources:
-          limits:
-            nvidia.com/gpu: "1"
+        gpu_limit: "1"
     schedules: []
