@@ -50,8 +50,22 @@ class SlackWebhookClient:
 
 SENSITIVE_DETAIL_PARTS = ("api_key", "apikey", "key", "password", "secret", "token", "webhook")
 MAX_DETAIL_VALUE_LENGTH = 200
-MAX_SLACK_FIELD_LENGTH = 1900
-MAX_SLACK_FIELDS_PER_BLOCK = 10
+MAX_SLACK_DETAIL_LENGTH = 120
+MAX_SLACK_DETAILS = 12
+WORKFLOW_START_DETAIL_KEYS = {
+    "chunk-documents": ("source_blob", "dest_blob", "section_limit", "max_workers"),
+    "generate-query-dataset": ("source_blob", "dest_prefix", "document_limit", "max_workers", "model"),
+    "train-embeddings": (
+        "source_prefix",
+        "model_prefix",
+        "epochs",
+        "batch_size",
+        "learning_rate",
+        "validation_fraction",
+    ),
+    "visualize-chunk-samples": ("source_blob", "dest_blob", "sample_count"),
+    "visualize-query-dataset": ("source_prefix", "dest_blob", "sample_count"),
+}
 TWEMOJI_BASE_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72"
 WORKFLOW_SLACK_ICON_URLS = {
     "chunk-documents": f"{TWEMOJI_BASE_URL}/2702.png",
@@ -139,7 +153,9 @@ def safe_detail_value(key: str, value: Any) -> Optional[Any]:
     normalized_key = key.lower()
     if any(part in normalized_key for part in SENSITIVE_DETAIL_PARTS):
         return "[redacted]"
-    if value is None or isinstance(value, (bool, int, float)):
+    if value is None:
+        return None
+    if isinstance(value, (bool, int, float)):
         return value
     if isinstance(value, str):
         if len(value) <= MAX_DETAIL_VALUE_LENGTH:
@@ -163,6 +179,15 @@ def workflow_icon_url(workflow_name: str) -> Optional[str]:
 
 def _workflow_env_key(workflow_name: str) -> str:
     return "".join(char if char.isalnum() else "_" for char in workflow_name.upper())
+
+
+def _select_workflow_start_details(workflow_name: str, details: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
+    if not details:
+        return details
+    keys = WORKFLOW_START_DETAIL_KEYS.get(workflow_name)
+    if not keys:
+        return details
+    return {key: details[key] for key in keys if key in details and not _skip_slack_detail(details[key])}
 
 
 def _post_workflow_message(
@@ -190,7 +215,7 @@ def notify_workflow_started(
         title=text,
         status="started",
         run_url=run_url,
-        details=details,
+        details=_select_workflow_start_details(workflow_name, details),
     )
     return _post_workflow_message(client, workflow_name, text, blocks)
 
@@ -364,30 +389,37 @@ def _workflow_blocks(
         context_elements.append({"type": "mrkdwn", "text": f"<{run_url}|Open Prefect run>"})
     blocks.append({"type": "context", "elements": context_elements})
 
-    detail_fields = _detail_fields(details)
-    for start in range(0, len(detail_fields), MAX_SLACK_FIELDS_PER_BLOCK):
+    detail_text = _details_text(details)
+    if detail_text:
         blocks.append(
             {
                 "type": "section",
-                "fields": detail_fields[start : start + MAX_SLACK_FIELDS_PER_BLOCK],
+                "text": {
+                    "type": "mrkdwn",
+                    "text": detail_text,
+                },
             }
         )
 
     return blocks
 
 
-def _detail_fields(details: Optional[dict[str, Any]]) -> list[dict[str, str]]:
+def _details_text(details: Optional[dict[str, Any]]) -> str:
     if not details:
-        return []
-    fields = []
+        return ""
+
+    lines = []
     for key, value in details.items():
-        fields.append(
-            {
-                "type": "mrkdwn",
-                "text": f"*{_escape_mrkdwn(str(key))}:*\n{_format_detail_value_for_slack(value)}",
-            }
-        )
-    return fields
+        if _skip_slack_detail(value):
+            continue
+        lines.append(f"*{_escape_mrkdwn(str(key))}:* {_format_detail_value_for_slack(value)}")
+        if len(lines) >= MAX_SLACK_DETAILS:
+            break
+    return "\n".join(lines)
+
+
+def _skip_slack_detail(value: Any) -> bool:
+    return value is None or value == ""
 
 
 def _format_detail_value_for_slack(value: Any) -> str:
@@ -399,10 +431,10 @@ def _format_detail_value_for_slack(value: Any) -> str:
         return f"`{value}`"
 
     text = _escape_mrkdwn(str(value))
-    if len(text) > MAX_SLACK_FIELD_LENGTH:
-        text = f"{text[:MAX_SLACK_FIELD_LENGTH]}..."
+    if len(text) > MAX_SLACK_DETAIL_LENGTH:
+        text = f"{text[:MAX_SLACK_DETAIL_LENGTH]}..."
     if "\n" in text:
-        return text
+        return f"`{text.replace(chr(10), ' ')}`"
     return f"`{text}`"
 
 
