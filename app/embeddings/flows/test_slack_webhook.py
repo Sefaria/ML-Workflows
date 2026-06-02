@@ -2,12 +2,16 @@ from datetime import datetime, timezone
 
 from prefect import task
 
-from utils.slack import SlackWebhookClient, slack_notified_flow
+from utils.slack import SlackWebhookClient, slack_notified_flow, workflow_icon_url
 
 
 @task(log_prints=True)
-def post_slack_test_message(message: str, username: str | None = None) -> dict:
-    client = SlackWebhookClient(username=username)
+def post_slack_test_message(message: str, username: str | None = None, workflow_name: str = "test-slack-webhook") -> dict:
+    icon_url = workflow_icon_url(workflow_name)
+    client = SlackWebhookClient(
+        username=username,
+        icon_url=icon_url,
+    )
     if not client.is_configured:
         raise ValueError("Missing SLACK_WEBHOOK_URL environment variable.")
 
@@ -42,7 +46,7 @@ def test_slack_webhook_flow(
         timestamp = datetime.now(timezone.utc).isoformat()
         message = f"{message}\nUTC: {timestamp}"
 
-    return post_slack_test_message(message=message, username=username)
+    return post_slack_test_message(message=message, username=username, workflow_name="test-slack-webhook")
 
 
 if __name__ == "__main__":

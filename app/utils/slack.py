@@ -16,11 +16,13 @@ class SlackWebhookClient:
         enabled: bool = True,
         timeout_seconds: int = 20,
         username: Optional[str] = None,
+        icon_url: Optional[str] = None,
     ):
         self.webhook_url = webhook_url if webhook_url is not None else os.getenv("SLACK_WEBHOOK_URL")
         self.enabled = enabled
         self.timeout_seconds = timeout_seconds
         self.username = username
+        self.icon_url = icon_url
 
     @property
     def is_configured(self) -> bool:
@@ -33,6 +35,8 @@ class SlackWebhookClient:
         payload = {"text": text}
         if self.username:
             payload["username"] = self.username
+        if self.icon_url:
+            payload["icon_url"] = self.icon_url
         payload.update(extra_payload)
 
         try:
@@ -48,6 +52,18 @@ SENSITIVE_DETAIL_PARTS = ("api_key", "apikey", "key", "password", "secret", "tok
 MAX_DETAIL_VALUE_LENGTH = 200
 MAX_SLACK_FIELD_LENGTH = 1900
 MAX_SLACK_FIELDS_PER_BLOCK = 10
+TWEMOJI_BASE_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72"
+WORKFLOW_SLACK_ICON_URLS = {
+    "chunk-documents": f"{TWEMOJI_BASE_URL}/2702.png",
+    "generate-query-dataset": f"{TWEMOJI_BASE_URL}/1f50d.png",
+    "train-embeddings": "https://i.pinimg.com/736x/fb/cc/43/fbcc43003276a217c2c80b241342f53c.jpg",
+    "visualize-chunk-samples": f"{TWEMOJI_BASE_URL}/1f4ca.png",
+    "visualize-query-dataset": f"{TWEMOJI_BASE_URL}/1f4ca.png",
+    "test-cache-volume": f"{TWEMOJI_BASE_URL}/1f5c3.png",
+    "probe-runtime": f"{TWEMOJI_BASE_URL}/1f6f0.png",
+    "test-slack-webhook": f"{TWEMOJI_BASE_URL}/1f9ea.png",
+    "create-dataset": f"{TWEMOJI_BASE_URL}/1f4da.png",
+}
 
 
 def prefect_flow_run_url() -> Optional[str]:
@@ -132,12 +148,42 @@ def safe_detail_value(key: str, value: Any) -> Optional[Any]:
     return None
 
 
+def workflow_slack_client(workflow_name: str) -> SlackWebhookClient:
+    icon_url = workflow_icon_url(workflow_name)
+    return SlackWebhookClient(
+        username="ml-workflows",
+        icon_url=icon_url,
+    )
+
+
+def workflow_icon_url(workflow_name: str) -> Optional[str]:
+    env_key = f"SLACK_ICON_URL_{_workflow_env_key(workflow_name)}"
+    return os.getenv(env_key) or WORKFLOW_SLACK_ICON_URLS.get(workflow_name)
+
+
+def _workflow_env_key(workflow_name: str) -> str:
+    return "".join(char if char.isalnum() else "_" for char in workflow_name.upper())
+
+
+def _post_workflow_message(
+    client: SlackWebhookClient,
+    workflow_name: str,
+    text: str,
+    blocks: list[dict[str, Any]],
+) -> bool:
+    icon_url = workflow_icon_url(workflow_name)
+    payload = {"blocks": blocks}
+    if icon_url:
+        payload["icon_url"] = icon_url
+    return client.post(text, **payload)
+
+
 def notify_workflow_started(
     workflow_name: str,
     details: Optional[dict[str, Any]] = None,
     client: Optional[SlackWebhookClient] = None,
 ) -> bool:
-    client = client or SlackWebhookClient(username="ml-workflows")
+    client = client or workflow_slack_client(workflow_name)
     run_url = prefect_flow_run_url()
     text = f"{workflow_name} run started"
     blocks = _workflow_blocks(
@@ -146,7 +192,7 @@ def notify_workflow_started(
         run_url=run_url,
         details=details,
     )
-    return client.post(text, blocks=blocks)
+    return _post_workflow_message(client, workflow_name, text, blocks)
 
 
 def notify_workflow_failed(
@@ -155,7 +201,7 @@ def notify_workflow_failed(
     details: Optional[dict[str, Any]] = None,
     client: Optional[SlackWebhookClient] = None,
 ) -> bool:
-    client = client or SlackWebhookClient(username="ml-workflows")
+    client = client or workflow_slack_client(workflow_name)
     run_url = prefect_flow_run_url()
     text = f"{workflow_name} run failed"
     failure_details = {
@@ -168,7 +214,7 @@ def notify_workflow_failed(
         run_url=run_url,
         details=failure_details,
     )
-    return client.post(text, blocks=blocks)
+    return _post_workflow_message(client, workflow_name, text, blocks)
 
 
 def notify_training_validation_metric(
@@ -181,7 +227,7 @@ def notify_training_validation_metric(
     details: Optional[dict[str, Any]] = None,
     client: Optional[SlackWebhookClient] = None,
 ) -> bool:
-    client = client or SlackWebhookClient(username="ml-workflows")
+    client = client or workflow_slack_client(workflow_name)
     run_url = prefect_flow_run_url()
     epoch_label = _format_epoch(epoch)
     text = f"{workflow_name} validation: epoch {epoch_label}/{total_epochs}"
@@ -197,7 +243,7 @@ def notify_training_validation_metric(
         run_url=run_url,
         details=metric_details,
     )
-    return client.post(text, blocks=blocks)
+    return _post_workflow_message(client, workflow_name, text, blocks)
 
 
 @dataclass
@@ -226,7 +272,7 @@ class SlackProgressReporter:
             run_url=run_url,
             details=start_details,
         )
-        self.client.post(text, blocks=blocks)
+        _post_workflow_message(self.client, self.workflow_name, text, blocks)
 
     def notify_progress_if_due(self, completed_units: int, details: Optional[dict[str, Any]] = None) -> None:
         if self.total_units == 0 or completed_units <= 0:
@@ -255,7 +301,7 @@ class SlackProgressReporter:
             run_url=run_url,
             details=progress_details,
         )
-        self.client.post(text, blocks=blocks)
+        _post_workflow_message(self.client, self.workflow_name, text, blocks)
 
     def notify_success(self, details: Optional[dict[str, Any]] = None) -> None:
         run_url = prefect_flow_run_url()
@@ -266,7 +312,7 @@ class SlackProgressReporter:
             run_url=run_url,
             details=details,
         )
-        self.client.post(text, blocks=blocks)
+        _post_workflow_message(self.client, self.workflow_name, text, blocks)
 
     def notify_failure(self, exc: BaseException, details: Optional[dict[str, Any]] = None) -> None:
         run_url = prefect_flow_run_url()
@@ -281,7 +327,7 @@ class SlackProgressReporter:
             run_url=run_url,
             details=failure_details,
         )
-        self.client.post(text, blocks=blocks)
+        _post_workflow_message(self.client, self.workflow_name, text, blocks)
 
 
 def _format_details(details: Optional[dict[str, Any]]) -> list[str]:
