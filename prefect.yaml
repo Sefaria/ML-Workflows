@@ -106,7 +106,7 @@ deployments:
 
   - name: evaluate-embeddings
     tags: ["embedding", "embedding-evaluation-pipeline"]
-    description: "Evaluate a trained SentenceTransformer model or Gemini embeddings against the held-out eval query dataset"
+    description: "Evaluate the latest trained BEREL SentenceTransformer model against the held-out eval query dataset"
     entrypoint: embeddings/flows/evaluate_embeddings.py:evaluate_embeddings_flow
     parameters:
       eval_dataset_bucket: development-research
@@ -131,15 +131,37 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: evaluate-embeddings-gemini
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Evaluate Gemini embeddings (gemini-embedding-001, dim=1536, dot similarity) against the held-out eval query dataset"
+    entrypoint: embeddings/flows/evaluate_embeddings.py:evaluate_embeddings_flow
+    parameters:
+      eval_dataset_bucket: development-research
+      eval_dataset_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      report_bucket: development-research
+      report_prefix: custom_embeddings/eval/embedding_evaluation_gemini
+      evaluation_backend: gemini
+      gemini_cache_path: /cache/evaluation/gemini_embedding_cache.sqlite
+      gemini_cache_enabled: true
+      gemini_max_workers: 4
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: compare-embedding-evaluations
     tags: ["embedding", "embedding-evaluation-pipeline"]
     description: "Bayesian paired comparison of two embedding evaluation reports"
     entrypoint: embeddings/flows/compare_embedding_evaluations.py:compare_embedding_evaluations_flow
     parameters:
       evaluation_a_bucket: development-research
-      evaluation_a_prefix: null
+      evaluation_a_prefix: custom_embeddings/eval/embedding_evaluation/latest
       evaluation_b_bucket: development-research
-      evaluation_b_prefix: null
+      evaluation_b_prefix: custom_embeddings/eval/embedding_evaluation_gemini/latest
       report_bucket: development-research
       report_prefix: custom_embeddings/eval/embedding_evaluation_comparisons
       metric: ndcg@10
@@ -148,8 +170,8 @@ deployments:
       seed: 613
       credible_interval_mass: 0.95
       confidence_level: 0.95
-      evaluation_a_label: null
-      evaluation_b_label: null
+      evaluation_a_label: berel
+      evaluation_b_label: gemini
     work_pool:
       name: sefaria-k8s
       job_variables:
