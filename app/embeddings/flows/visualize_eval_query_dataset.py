@@ -1,12 +1,13 @@
 import json
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 from prefect import task
 
 from embeddings.steps.query_generation.report import write_query_dataset_pdf
 from utils.gcs import download_blob, upload_blob
-from utils.slack import slack_notified_flow
+from utils.slack import SlackWebhookClient, prefect_flow_run_url, slack_notified_flow, workflow_icon_url
 
 
 def _read_jsonl(path: str) -> list[dict]:
@@ -22,6 +23,54 @@ def _read_jsonl(path: str) -> list[dict]:
 def _read_json(path: str) -> dict:
     with open(path, "r") as fin:
         return json.load(fin)
+
+
+def _escape_mrkdwn(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _gcs_uri(bucket: str, blob_path: str) -> str:
+    return f"gs://{bucket}/{blob_path}"
+
+
+def _gcs_console_url(bucket: str, blob_path: str) -> str:
+    return f"https://console.cloud.google.com/storage/browser/_details/{quote(bucket)}/{quote(blob_path, safe='/')}"
+
+
+def _notify_pdf_available(bucket: str, blob_path: str, summary: dict) -> None:
+    workflow_name = "visualize-eval-query-dataset"
+    gs_uri = _gcs_uri(bucket, blob_path)
+    console_url = _gcs_console_url(bucket, blob_path)
+    run_url = prefect_flow_run_url()
+    context_elements = [{"type": "mrkdwn", "text": "*Status:* `completed`"}]
+    if run_url:
+        context_elements.append({"type": "mrkdwn", "text": f"<{run_url}|Open Prefect run>"})
+
+    blocks = [
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"*{workflow_name} PDF available*"},
+        },
+        {"type": "context", "elements": context_elements},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"*PDF:* <{console_url}|Open PDF in GCS>\n"
+                    f"*GCS URI:* `{_escape_mrkdwn(gs_uri)}`\n"
+                    f"*Documents:* `{summary['document_count']}`\n"
+                    f"*Queries:* `{summary['query_count']}`\n"
+                    f"*Qrels:* `{summary['qrel_count']}`"
+                ),
+            },
+        },
+    ]
+    client = SlackWebhookClient(
+        username="ml-workflows",
+        icon_url=workflow_icon_url(workflow_name),
+    )
+    client.post(f"{workflow_name} PDF available: {gs_uri}", blocks=blocks)
 
 
 @task(log_prints=True)
@@ -107,7 +156,7 @@ def visualize_eval_query_dataset_flow(
         output_path = tmp.name
 
     try:
-        build_eval_query_dataset_visualization_pdf(
+        summary = build_eval_query_dataset_visualization_pdf(
             documents_path,
             queries_path,
             qrels_path,
@@ -115,6 +164,7 @@ def visualize_eval_query_dataset_flow(
             output_path,
         )
         upload_visualization_pdf(output_path, dest_bucket, dest_blob)
+        _notify_pdf_available(dest_bucket, dest_blob, summary)
     finally:
         Path(documents_path).unlink(missing_ok=True)
         Path(queries_path).unlink(missing_ok=True)
