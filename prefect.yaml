@@ -113,10 +113,10 @@ deployments:
       eval_dataset_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
       report_bucket: development-research
       report_prefix: custom_embeddings/eval/embedding_evaluation
-      model_source: latest
+      evaluation_backend: latest
       model_bucket: development-research
       latest_model_prefix: custom_embeddings/models/berel_sentence_transformer/latest
-      gcs_model_prefix: null
+      gcs_model_prefix: null  # Required only when evaluation_backend is custom.
       sentence_transformer_batch_size: 32
       normalize_sentence_transformer_embeddings: true
       gemini_cache_path: /cache/evaluation/gemini_embedding_cache.sqlite

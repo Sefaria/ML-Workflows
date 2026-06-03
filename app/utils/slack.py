@@ -86,7 +86,7 @@ WORKFLOW_START_DETAIL_KEYS = {
     "evaluate-embeddings": (
         "eval_dataset_prefix",
         "report_prefix",
-        "model_source",
+        "evaluation_backend",
         "latest_model_prefix",
         "gcs_model_prefix",
     ),

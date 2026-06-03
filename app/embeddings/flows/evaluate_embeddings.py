@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from prefect import task
 from prefect.context import MissingContextError, get_run_context
@@ -51,7 +51,7 @@ def run_embedding_evaluation(
     qrels_path: str,
     metadata_path: str,
     output_dir: str,
-    model_source: str,
+    evaluation_backend: str,
     sentence_transformer_model_path: Optional[str],
     sentence_transformer_batch_size: int,
     normalize_sentence_transformer_embeddings: bool,
@@ -59,13 +59,13 @@ def run_embedding_evaluation(
     gemini_cache_enabled: bool,
     gemini_max_workers: int,
 ) -> dict:
-    normalized_model_source = model_source.lower()
+    normalized_evaluation_backend = evaluation_backend.lower()
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-    if normalized_model_source == "gemini" and not api_key:
+    if normalized_evaluation_backend == "gemini" and not api_key:
         raise ValueError("Missing GOOGLE_API_KEY or GEMINI_API_KEY for Gemini evaluation.")
 
     config = EvaluationConfig(
-        model_source=normalized_model_source,
+        model_source=normalized_evaluation_backend,
         sentence_transformer_model_path=sentence_transformer_model_path,
         sentence_transformer_batch_size=sentence_transformer_batch_size,
         normalize_sentence_transformer_embeddings=normalize_sentence_transformer_embeddings,
@@ -85,7 +85,7 @@ def run_embedding_evaluation(
     summary = report["summary"]
     print(
         "Embedding evaluation summary: "
-        f"model_source={model_source}, "
+        f"evaluation_backend={evaluation_backend}, "
         f"backend={summary['backend']}, "
         f"queries={summary['query_count']}, "
         f"ndcg@10={summary['ndcg@10']:.6f}, "
@@ -98,7 +98,7 @@ def run_embedding_evaluation(
         title="evaluate-embeddings completed",
         status="completed",
         details={
-            "model_source": model_source,
+            "evaluation_backend": evaluation_backend,
             "backend": summary["backend"],
             "queries": summary["query_count"],
             "ndcg@10": f"{summary['ndcg@10']:.6f}",
@@ -121,17 +121,17 @@ def upload_evaluation_report(local_dir: str, bucket: str, prefix: str) -> dict:
     }
 
 
-def resolve_model_prefix(model_source: str, latest_model_prefix: str, gcs_model_prefix: Optional[str]) -> Optional[str]:
-    normalized_model_source = model_source.lower()
-    if normalized_model_source == "latest":
+def resolve_model_prefix(evaluation_backend: str, latest_model_prefix: str, gcs_model_prefix: Optional[str]) -> Optional[str]:
+    normalized_evaluation_backend = evaluation_backend.lower()
+    if normalized_evaluation_backend == "latest":
         return latest_model_prefix
-    if normalized_model_source == "gcs":
+    if normalized_evaluation_backend in {"custom", "gcs"}:
         if not gcs_model_prefix:
-            raise ValueError("gcs_model_prefix is required when model_source='gcs'.")
+            raise ValueError("gcs_model_prefix is required when evaluation_backend='custom'.")
         return gcs_model_prefix
-    if normalized_model_source == "gemini":
+    if normalized_evaluation_backend == "gemini":
         return None
-    raise ValueError("model_source must be one of: latest, gcs, gemini.")
+    raise ValueError("evaluation_backend must be one of: latest, gemini, custom.")
 
 
 @slack_notified_flow(workflow_name="evaluate-embeddings", log_prints=True)
@@ -140,7 +140,7 @@ def evaluate_embeddings_flow(
     eval_dataset_prefix: str,
     report_bucket: str,
     report_prefix: str,
-    model_source: str = "latest",
+    evaluation_backend: Literal["latest", "gemini", "custom"] = "latest",
     model_bucket: str = "development-research",
     latest_model_prefix: str = "custom_embeddings/models/berel_sentence_transformer/latest",
     gcs_model_prefix: Optional[str] = None,
@@ -158,7 +158,7 @@ def evaluate_embeddings_flow(
     downloaded_artifacts = {}
     try:
         downloaded_artifacts = download_eval_dataset_artifacts(eval_dataset_bucket, eval_dataset_prefix)
-        model_prefix = resolve_model_prefix(model_source, latest_model_prefix, gcs_model_prefix)
+        model_prefix = resolve_model_prefix(evaluation_backend, latest_model_prefix, gcs_model_prefix)
         sentence_transformer_model_path = None
         if model_prefix is not None:
             sentence_transformer_model_path = download_sentence_transformer_model(model_bucket, model_prefix, model_dir)
@@ -170,7 +170,7 @@ def evaluate_embeddings_flow(
             qrels_path=downloaded_artifacts["qrels.jsonl"],
             metadata_path=downloaded_artifacts["metadata.json"],
             output_dir=output_dir,
-            model_source=model_source,
+            evaluation_backend=evaluation_backend,
             sentence_transformer_model_path=sentence_transformer_model_path,
             sentence_transformer_batch_size=sentence_transformer_batch_size,
             normalize_sentence_transformer_embeddings=normalize_sentence_transformer_embeddings,
@@ -184,7 +184,7 @@ def evaluate_embeddings_flow(
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "eval_dataset_bucket": eval_dataset_bucket,
             "eval_dataset_prefix": eval_dataset_prefix,
-            "model_source": model_source,
+            "evaluation_backend": evaluation_backend,
             "model_bucket": model_bucket,
             "model_prefix": model_prefix,
             "report_bucket": report_bucket,
