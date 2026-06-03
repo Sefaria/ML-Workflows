@@ -9,7 +9,7 @@ pull:
 
 deployments:
   - name: chunk-documents
-    tags: ["embeddings", "chunking"]
+    tags: ["embedding", "embedding-training-pipeline"]
     description: "Chunk source sections into final embedding documents and upload the JSONL output to GCS"
     entrypoint: embeddings/flows/chunk_documents.py:chunk_documents_flow
     parameters:
@@ -30,7 +30,7 @@ deployments:
     schedules: []
 
   - name: generate-query-dataset
-    tags: ["embeddings", "query-generation"]
+    tags: ["embedding", "embedding-training-pipeline"]
     description: "Generate retrieval queries and qrels from chunked documents and upload dataset artifacts to GCS"
     entrypoint: embeddings/flows/generate_query_dataset.py:generate_query_dataset_flow
     parameters:
@@ -54,8 +54,38 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: sample-chunk-eval-query-dataset
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Sample held-out raw sections, chunk them, generate retrieval queries/qrels, and upload eval dataset artifacts to GCS"
+    entrypoint: embeddings/flows/sample_chunk_eval_query_dataset.py:sample_chunk_eval_query_dataset_flow
+    parameters:
+      source_bucket: development-research
+      source_blob: custom_embeddings/sampled_library_sections.json
+      training_dataset_bucket: development-research
+      training_dataset_prefix: custom_embeddings/sampled_library_sections_query_dataset
+      dest_bucket: development-research
+      dest_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      sample_size: 100
+      sample_seed: 613
+      chunk_max_workers: 48
+      chunk_cache_path: /cache/patot/embedding_cache.sqlite
+      model: claude-sonnet-4-6
+      query_max_workers: 4
+      query_cache_path: /cache/query_generation/eval_llm_cache.sqlite
+      flush_llm_cache: false
+      queries_per_type_per_doc: 1
+      query_types_per_doc: 2
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: visualize-chunk-samples
-    tags: ["embeddings", "chunking", "debug"]
+    tags: ["embedding", "embedding-debug-test"]
     description: "Sample chunked sections, rerun PATOT in debug mode, and upload one combined PDF visualization to GCS"
     entrypoint: embeddings/flows/visualize_chunk_samples.py:visualize_chunk_samples_flow
     parameters:
@@ -78,7 +108,7 @@ deployments:
     schedules: []
 
   - name: visualize-query-dataset
-    tags: ["embeddings", "query-generation", "debug"]
+    tags: ["embedding", "embedding-debug-test"]
     description: "Sample generated query-dataset documents and upload one combined PDF visualization to GCS"
     entrypoint: embeddings/flows/visualize_query_dataset.py:visualize_query_dataset_flow
     parameters:
@@ -98,7 +128,7 @@ deployments:
     schedules: []
 
   - name: test-cache-volume
-    tags: ["infrastructure", "debug", "storage"]
+    tags: ["embedding", "embedding-debug-test"]
     description: "Write a probe file into the mounted cache volume and upload a JSON report to GCS"
     entrypoint: embeddings/flows/test_cache_volume.py:test_cache_volume_flow
     parameters:
@@ -115,7 +145,7 @@ deployments:
     schedules: []
 
   - name: probe-runtime
-    tags: ["infrastructure", "debug"]
+    tags: ["embedding", "embedding-debug-test"]
     description: "Probe the flow-run pod runtime environment and upload a JSON report to GCS"
     entrypoint: embeddings/flows/probe_runtime.py:probe_runtime_flow
     parameters:
@@ -131,7 +161,7 @@ deployments:
     schedules: []
 
   - name: probe-gpu-availability
-    tags: ["infrastructure", "debug", "gpu"]
+    tags: ["embedding", "embedding-debug-test"]
     description: "Probe GPU scheduling and runtime CUDA availability, then upload a JSON report to GCS"
     entrypoint: embeddings/flows/probe_gpu_availability.py:probe_gpu_availability_flow
     parameters:
@@ -153,7 +183,7 @@ deployments:
     schedules: []
 
   - name: test-slack-webhook
-    tags: ["infrastructure", "debug", "slack", "temporary"]
+    tags: ["embedding", "embedding-debug-test"]
     description: "Temporarily post a test message to the configured Slack webhook"
     entrypoint: embeddings/flows/test_slack_webhook.py:test_slack_webhook_flow
     parameters:
@@ -170,7 +200,7 @@ deployments:
     schedules: []
 
   - name: create-dataset
-    tags: ["data-processing"]
+    tags: ["embedding", "embedding-training-pipeline"]
     description: "Pull raw data from GCS, chunk it, and push the dataset back to GCS"
     entrypoint: embeddings/flows/create_dataset.py:create_dataset_flow
     parameters:
@@ -187,7 +217,7 @@ deployments:
     schedules: []
 
   - name: train-embeddings
-    tags: ["ml", "training", "gpu"]
+    tags: ["embedding", "embedding-training-pipeline"]
     description: "Fine-tune a SentenceTransformers embedding model from generated query/document pairs"
     entrypoint: embeddings/flows/train_embeddings.py:train_embeddings_flow
     parameters:

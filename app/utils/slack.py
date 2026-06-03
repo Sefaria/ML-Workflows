@@ -55,6 +55,14 @@ MAX_SLACK_DETAILS = 12
 WORKFLOW_START_DETAIL_KEYS = {
     "chunk-documents": ("source_blob", "dest_blob", "section_limit", "max_workers"),
     "generate-query-dataset": ("source_blob", "dest_prefix", "document_limit", "max_workers", "model"),
+    "sample-chunk-eval-query-dataset": (
+        "source_blob",
+        "training_dataset_prefix",
+        "dest_prefix",
+        "sample_size",
+        "sample_seed",
+        "model",
+    ),
     "train-embeddings": (
         "source_prefix",
         "model_prefix",
