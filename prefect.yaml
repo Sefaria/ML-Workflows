@@ -104,6 +104,61 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: evaluate-embeddings
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Evaluate a trained SentenceTransformer model or Gemini embeddings against the held-out eval query dataset"
+    entrypoint: embeddings/flows/evaluate_embeddings.py:evaluate_embeddings_flow
+    parameters:
+      eval_dataset_bucket: development-research
+      eval_dataset_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      report_bucket: development-research
+      report_prefix: custom_embeddings/eval/embedding_evaluation
+      model_source: latest
+      model_bucket: development-research
+      latest_model_prefix: custom_embeddings/models/berel_sentence_transformer/latest
+      gcs_model_prefix: null
+      sentence_transformer_batch_size: 32
+      normalize_sentence_transformer_embeddings: true
+      gemini_cache_path: /cache/evaluation/gemini_embedding_cache.sqlite
+      gemini_cache_enabled: true
+      gemini_max_workers: 4
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
+  - name: compare-embedding-evaluations
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Bayesian paired comparison of two embedding evaluation reports"
+    entrypoint: embeddings/flows/compare_embedding_evaluations.py:compare_embedding_evaluations_flow
+    parameters:
+      evaluation_a_bucket: development-research
+      evaluation_a_prefix: null
+      evaluation_b_bucket: development-research
+      evaluation_b_prefix: null
+      report_bucket: development-research
+      report_prefix: custom_embeddings/eval/embedding_evaluation_comparisons
+      metric: ndcg@10
+      rope: 0.005
+      posterior_draws: 20000
+      seed: 613
+      credible_interval_mass: 0.95
+      confidence_level: 0.95
+      evaluation_a_label: null
+      evaluation_b_label: null
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: visualize-chunk-samples
     tags: ["embedding", "embedding-debug-test"]
     description: "Sample chunked sections, rerun PATOT in debug mode, and upload one combined PDF visualization to GCS"

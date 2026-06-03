@@ -83,16 +83,38 @@ WORKFLOW_START_DETAIL_KEYS = {
     "visualize-chunk-samples": ("source_blob", "dest_blob", "sample_count"),
     "visualize-query-dataset": ("source_prefix", "dest_blob", "sample_count"),
     "visualize-eval-query-dataset": ("source_prefix", "dest_blob"),
+    "evaluate-embeddings": (
+        "eval_dataset_prefix",
+        "report_prefix",
+        "model_source",
+        "latest_model_prefix",
+        "gcs_model_prefix",
+    ),
+    "compare-embedding-evaluations": (
+        "evaluation_a_prefix",
+        "evaluation_b_prefix",
+        "report_prefix",
+        "metric",
+        "rope",
+        "posterior_draws",
+    ),
     "probe-gpu-availability": ("dest_blob", "matrix_size"),
 }
 TWEMOJI_BASE_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72"
+EVALUATION_SLACK_ICON_URL = (
+    "https://static.vecteezy.com/system/resources/previews/056/231/941/large_2x/"
+    "cat-wearing-a-detective-hat-and-holding-a-magnifying-glass-showcases-a-curious-expression-in-a-playful-setup-photo.jpeg"
+)
 WORKFLOW_SLACK_ICON_URLS = {
     "chunk-documents": f"{TWEMOJI_BASE_URL}/2702.png",
     "generate-query-dataset": f"{TWEMOJI_BASE_URL}/1f50d.png",
     "train-embeddings": "https://i.pinimg.com/736x/fb/cc/43/fbcc43003276a217c2c80b241342f53c.jpg",
     "visualize-chunk-samples": f"{TWEMOJI_BASE_URL}/1f4ca.png",
     "visualize-query-dataset": f"{TWEMOJI_BASE_URL}/1f4ca.png",
-    "visualize-eval-query-dataset": f"{TWEMOJI_BASE_URL}/1f4ca.png",
+    "sample-chunk-eval-query-dataset": EVALUATION_SLACK_ICON_URL,
+    "visualize-eval-query-dataset": EVALUATION_SLACK_ICON_URL,
+    "evaluate-embeddings": EVALUATION_SLACK_ICON_URL,
+    "compare-embedding-evaluations": EVALUATION_SLACK_ICON_URL,
     "test-cache-volume": f"{TWEMOJI_BASE_URL}/1f5c3.png",
     "probe-runtime": f"{TWEMOJI_BASE_URL}/1f6f0.png",
     "probe-gpu-availability": "https://i.pinimg.com/736x/fb/cc/43/fbcc43003276a217c2c80b241342f53c.jpg",
