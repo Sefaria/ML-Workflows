@@ -1,5 +1,7 @@
 import random
+import re
 from pathlib import Path
+from urllib.parse import quote
 
 from embeddings.steps.patot.debug_report import (
     BODY_FONT,
@@ -23,6 +25,19 @@ _COL_TEXT = 260
 _RIGHT_MARGIN = 40
 _ROW_PADDING = 3
 _LEADING = 12
+
+
+def _sefaria_url(ref: str) -> str:
+    # "Mishnah Berakhot 1:1" → "Mishnah_Berakhot.1.1"
+    # "Genesis 1:1" → "Genesis.1.1"
+    match = re.match(r"^(.*?)\s+(\d.*)$", ref)
+    if match:
+        book = match.group(1).replace(" ", "_")
+        locator = re.sub(r"[:\s,]", ".", match.group(2))
+        url_ref = f"{book}.{locator}"
+    else:
+        url_ref = ref.replace(" ", "_")
+    return f"https://www.sefaria.org/{quote(url_ref, safe='.')}"
 
 
 def _row_bg_color(rank: int, top_k: int):
@@ -157,14 +172,24 @@ def write_retrieval_visualization_pdf(
                 pdf.drawString(_COL_MARKER, text_y, "★")
                 pdf.setFont(UI_FONT, 9)
 
-            # Ref (truncated to column width)
+            # Ref — rendered as a clickable Sefaria hyperlink
+            from reportlab.pdfbase import pdfmetrics
             ref_col_width = _COL_TEXT - _COL_REF - 8
             ref_lines = wrap_text_for_pdf(ref, BODY_FONT, 8, ref_col_width)
+            sefaria_url = _sefaria_url(ref)
             pdf.setFont(BODY_FONT, 8)
+            pdf.setFillColor(HexColor("#1a5ea8"))
             ref_y = text_y
             for ref_line in ref_lines[:2]:
                 draw_pdf_line(pdf, ref_line, _COL_REF, ref_y, ref_col_width)
+                line_w = pdfmetrics.stringWidth(ref_line, BODY_FONT, 8)
+                pdf.setStrokeColor(HexColor("#1a5ea8"))
+                pdf.setLineWidth(0.4)
+                pdf.line(_COL_REF, ref_y - 1, _COL_REF + line_w, ref_y - 1)
+                pdf.linkURL(sefaria_url, (_COL_REF, ref_y - 2, _COL_REF + line_w, ref_y + 8), relative=0)
                 ref_y -= 10
+            pdf.setFillColor(black)
+            pdf.setStrokeColor(black)
 
             # Doc text
             pdf.setFont(BODY_FONT, 10)
