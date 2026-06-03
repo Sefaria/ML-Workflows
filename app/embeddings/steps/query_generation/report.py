@@ -37,7 +37,10 @@ def write_query_dataset_pdf(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     sample_size = min(sample_count, len(documents))
-    sampled_documents = random.Random(sample_seed).sample(documents, sample_size)
+    if sample_size == len(documents):
+        sampled_documents = list(documents)
+    else:
+        sampled_documents = random.Random(sample_seed).sample(documents, sample_size)
     selected_doc_ids = [str(doc["doc_id"]) for doc in sampled_documents]
 
     pdf = canvas.Canvas(str(output_path), pagesize=A4)

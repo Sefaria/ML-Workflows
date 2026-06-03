@@ -1,0 +1,123 @@
+import json
+import tempfile
+from pathlib import Path
+
+from prefect import task
+
+from embeddings.steps.query_generation.report import write_query_dataset_pdf
+from utils.gcs import download_blob, upload_blob
+from utils.slack import slack_notified_flow
+
+
+def _read_jsonl(path: str) -> list[dict]:
+    rows = []
+    with open(path, "r") as fin:
+        for line in fin:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def _read_json(path: str) -> dict:
+    with open(path, "r") as fin:
+        return json.load(fin)
+
+
+@task(log_prints=True)
+def download_eval_dataset_artifact(bucket: str, blob_path: str) -> str:
+    print(f"Downloading gs://{bucket}/{blob_path}")
+    return download_blob(bucket, blob_path, local_dir="/tmp")
+
+
+@task(log_prints=True)
+def build_eval_query_dataset_visualization_pdf(
+    documents_path: str,
+    queries_path: str,
+    qrels_path: str,
+    metadata_path: str,
+    output_path: str,
+) -> dict:
+    documents = _read_jsonl(documents_path)
+    queries = _read_jsonl(queries_path)
+    qrels = _read_jsonl(qrels_path)
+    metadata = _read_json(metadata_path)
+
+    qrels_by_query_id = {str(qrel["query_id"]): qrel for qrel in qrels}
+    queries_by_doc_id: dict[str, list[dict]] = {}
+    for query in queries:
+        query_id = str(query["query_id"])
+        qrel = qrels_by_query_id.get(query_id)
+        if not qrel:
+            continue
+        doc_id = str(qrel["doc_id"])
+        enriched_query = dict(query)
+        enriched_query["reason"] = qrel.get("reason", "")
+        queries_by_doc_id.setdefault(doc_id, []).append(enriched_query)
+
+    selected_doc_ids = write_query_dataset_pdf(
+        Path(output_path),
+        documents,
+        queries_by_doc_id,
+        sample_count=len(documents),
+        sample_seed=0,
+    )
+    documents_with_queries = sum(1 for doc_id in selected_doc_ids if queries_by_doc_id.get(str(doc_id)))
+    sampling = metadata.get("sampling", {})
+    chunking = metadata.get("chunking", {})
+    query_generation = metadata.get("query_generation", {})
+    print(
+        "Built eval query dataset visualization PDF: "
+        f"documents={len(documents)}, "
+        f"documents_with_queries={documents_with_queries}, "
+        f"queries={len(queries)}, "
+        f"qrels={len(qrels)}, "
+        f"sampled_sections={sampling.get('sampled_sections_count')}, "
+        f"chunked_documents={chunking.get('chunked_documents_count')}, "
+        f"failures={query_generation.get('failures_count')}"
+    )
+    return {
+        "document_count": len(documents),
+        "documents_with_queries": documents_with_queries,
+        "query_count": len(queries),
+        "qrel_count": len(qrels),
+        "selected_doc_ids": selected_doc_ids,
+        "output_path": output_path,
+    }
+
+
+@task(log_prints=True)
+def upload_visualization_pdf(local_path: str, bucket: str, blob_path: str) -> None:
+    print(f"Uploading eval dataset visualization PDF to gs://{bucket}/{blob_path}")
+    upload_blob(local_path, bucket, blob_path)
+
+
+@slack_notified_flow(workflow_name="visualize-eval-query-dataset", log_prints=True)
+def visualize_eval_query_dataset_flow(
+    source_bucket: str,
+    source_prefix: str,
+    dest_bucket: str,
+    dest_blob: str,
+) -> None:
+    documents_path = download_eval_dataset_artifact(source_bucket, f"{source_prefix}/documents.jsonl")
+    queries_path = download_eval_dataset_artifact(source_bucket, f"{source_prefix}/queries.jsonl")
+    qrels_path = download_eval_dataset_artifact(source_bucket, f"{source_prefix}/qrels.jsonl")
+    metadata_path = download_eval_dataset_artifact(source_bucket, f"{source_prefix}/metadata.json")
+    with tempfile.NamedTemporaryFile(mode="wb", delete=False, suffix=".pdf", dir="/tmp") as tmp:
+        output_path = tmp.name
+
+    try:
+        build_eval_query_dataset_visualization_pdf(
+            documents_path,
+            queries_path,
+            qrels_path,
+            metadata_path,
+            output_path,
+        )
+        upload_visualization_pdf(output_path, dest_bucket, dest_blob)
+    finally:
+        Path(documents_path).unlink(missing_ok=True)
+        Path(queries_path).unlink(missing_ok=True)
+        Path(qrels_path).unlink(missing_ok=True)
+        Path(metadata_path).unlink(missing_ok=True)
+        Path(output_path).unlink(missing_ok=True)

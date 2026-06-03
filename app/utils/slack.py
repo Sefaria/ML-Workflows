@@ -73,6 +73,7 @@ WORKFLOW_START_DETAIL_KEYS = {
     ),
     "visualize-chunk-samples": ("source_blob", "dest_blob", "sample_count"),
     "visualize-query-dataset": ("source_prefix", "dest_blob", "sample_count"),
+    "visualize-eval-query-dataset": ("source_prefix", "dest_blob"),
     "probe-gpu-availability": ("dest_blob", "matrix_size"),
 }
 TWEMOJI_BASE_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72"
@@ -82,6 +83,7 @@ WORKFLOW_SLACK_ICON_URLS = {
     "train-embeddings": "https://i.pinimg.com/736x/fb/cc/43/fbcc43003276a217c2c80b241342f53c.jpg",
     "visualize-chunk-samples": f"{TWEMOJI_BASE_URL}/1f4ca.png",
     "visualize-query-dataset": f"{TWEMOJI_BASE_URL}/1f4ca.png",
+    "visualize-eval-query-dataset": f"{TWEMOJI_BASE_URL}/1f4ca.png",
     "test-cache-volume": f"{TWEMOJI_BASE_URL}/1f5c3.png",
     "probe-runtime": f"{TWEMOJI_BASE_URL}/1f6f0.png",
     "probe-gpu-availability": "https://i.pinimg.com/736x/fb/cc/43/fbcc43003276a217c2c80b241342f53c.jpg",

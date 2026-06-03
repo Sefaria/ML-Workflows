@@ -84,6 +84,24 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: visualize-eval-query-dataset
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Render the full eval query dataset artifacts into one PDF and upload it to GCS"
+    entrypoint: embeddings/flows/visualize_eval_query_dataset.py:visualize_eval_query_dataset_flow
+    parameters:
+      source_bucket: development-research
+      source_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      dest_bucket: development-research
+      dest_blob: custom_embeddings/eval/sampled_library_sections_eval_query_dataset.pdf
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: visualize-chunk-samples
     tags: ["embedding", "embedding-debug-test"]
     description: "Sample chunked sections, rerun PATOT in debug mode, and upload one combined PDF visualization to GCS"
