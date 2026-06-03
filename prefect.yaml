@@ -131,6 +131,29 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: evaluate-embeddings-base
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Evaluate the untrained base BEREL_3.0 model as a sanity-check baseline"
+    entrypoint: embeddings/flows/evaluate_embeddings.py:evaluate_embeddings_flow
+    parameters:
+      eval_dataset_bucket: development-research
+      eval_dataset_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      report_bucket: development-research
+      report_prefix: custom_embeddings/eval/embedding_evaluation_base
+      evaluation_backend: base
+      sentence_transformer_batch_size: 32
+      normalize_sentence_transformer_embeddings: true
+      base_model_repo_id: dicta-il/BEREL_3.0
+      base_model_hub_cache_dir: /cache/huggingface
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: evaluate-embeddings-gemini
     tags: ["embedding", "embedding-evaluation-pipeline"]
     description: "Evaluate Gemini embeddings (gemini-embedding-001, dim=1536, dot similarity) against the held-out eval query dataset"

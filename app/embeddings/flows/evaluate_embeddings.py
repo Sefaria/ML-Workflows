@@ -11,6 +11,7 @@ from prefect.context import MissingContextError, get_run_context
 
 from embeddings.steps.evaluation import evaluate_retrieval_dataset
 from embeddings.steps.evaluation.pipeline import EvaluationConfig
+from embeddings.steps.training import cache_huggingface_model
 from utils.gcs import download_blob, download_directory, upload_directory
 from utils.slack import notify_workflow_event, slack_notified_flow
 
@@ -42,6 +43,21 @@ def download_eval_dataset_artifacts(bucket: str, prefix: str) -> dict:
 def download_sentence_transformer_model(bucket: str, prefix: str, local_dir: str) -> str:
     print(f"Downloading SentenceTransformer model from gs://{bucket}/{prefix}")
     return download_directory(bucket, prefix, local_dir)
+
+
+@task(log_prints=True)
+def download_huggingface_base_model(model_repo_id: str, hub_cache_dir: str) -> str:
+    safe_model_name = model_repo_id.replace("/", "__")
+    target_dir = str(Path(hub_cache_dir) / "models" / safe_model_name)
+    print(f"Ensuring base HuggingFace model {model_repo_id} is available at {target_dir}")
+    cache_huggingface_model(
+        model_repo_id=model_repo_id,
+        target_dir=target_dir,
+        hub_cache_dir=str(Path(hub_cache_dir) / "hub"),
+        revision=None,
+        force_download=False,
+    )
+    return target_dir
 
 
 @task(log_prints=True)
@@ -129,9 +145,9 @@ def resolve_model_prefix(evaluation_backend: str, latest_model_prefix: str, gcs_
         if not gcs_model_prefix:
             raise ValueError("gcs_model_prefix is required when evaluation_backend='custom'.")
         return gcs_model_prefix
-    if normalized_evaluation_backend == "gemini":
+    if normalized_evaluation_backend in {"gemini", "base"}:
         return None
-    raise ValueError("evaluation_backend must be one of: latest, gemini, custom.")
+    raise ValueError("evaluation_backend must be one of: latest, gemini, custom, base.")
 
 
 @slack_notified_flow(workflow_name="evaluate-embeddings", log_prints=True)
@@ -140,7 +156,7 @@ def evaluate_embeddings_flow(
     eval_dataset_prefix: str,
     report_bucket: str,
     report_prefix: str,
-    evaluation_backend: Literal["latest", "gemini", "custom"] = "latest",
+    evaluation_backend: Literal["latest", "gemini", "custom", "base"] = "latest",
     model_bucket: str = "development-research",
     latest_model_prefix: str = "custom_embeddings/models/berel_sentence_transformer/latest",
     gcs_model_prefix: Optional[str] = None,
@@ -149,6 +165,8 @@ def evaluate_embeddings_flow(
     gemini_cache_path: str = "/cache/evaluation/gemini_embedding_cache.sqlite",
     gemini_cache_enabled: bool = True,
     gemini_max_workers: int = 4,
+    base_model_repo_id: str = "dicta-il/BEREL_3.0",
+    base_model_hub_cache_dir: str = "/cache/huggingface",
 ) -> None:
     run_id = current_flow_run_id()
     output_dir = tempfile.mkdtemp(dir="/tmp", prefix="embedding-eval-")
@@ -162,6 +180,8 @@ def evaluate_embeddings_flow(
         sentence_transformer_model_path = None
         if model_prefix is not None:
             sentence_transformer_model_path = download_sentence_transformer_model(model_bucket, model_prefix, model_dir)
+        elif evaluation_backend.lower() == "base":
+            sentence_transformer_model_path = download_huggingface_base_model(base_model_repo_id, base_model_hub_cache_dir)
 
         started_at = datetime.now(timezone.utc).isoformat()
         report = run_embedding_evaluation(
