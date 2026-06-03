@@ -114,6 +114,7 @@ deployments:
       report_bucket: development-research
       report_prefix: custom_embeddings/eval/embedding_evaluation
       evaluation_backend: latest
+      workflow_name: evaluate-embeddings
       model_bucket: development-research
       latest_model_prefix: custom_embeddings/models/berel_sentence_transformer/latest
       gcs_model_prefix: null  # Required only when evaluation_backend is custom.
@@ -145,6 +146,7 @@ deployments:
       normalize_sentence_transformer_embeddings: true
       base_model_repo_id: dicta-il/BEREL_3.0
       base_model_hub_cache_dir: /cache/huggingface
+      workflow_name: evaluate-embeddings-base
     work_pool:
       name: sefaria-k8s
       job_variables:
@@ -167,6 +169,7 @@ deployments:
       gemini_cache_path: /cache/evaluation/gemini_embedding_cache.sqlite
       gemini_cache_enabled: true
       gemini_max_workers: 4
+      workflow_name: evaluate-embeddings-gemini
     work_pool:
       name: sefaria-k8s
       job_variables:

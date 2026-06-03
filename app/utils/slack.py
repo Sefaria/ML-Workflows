@@ -157,7 +157,10 @@ def slack_notified_flow(
         @wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             details = workflow_start_details(fn, args, kwargs, detail_keys)
-            resolved_workflow_name = workflow_name or fn.__name__
+            details.pop("workflow_name", None)
+            bound = signature(fn).bind_partial(*args, **kwargs)
+            bound.apply_defaults()
+            resolved_workflow_name = bound.arguments.get("workflow_name") or workflow_name or fn.__name__
             notify_workflow_started(resolved_workflow_name, details)
             try:
                 return fn(*args, **kwargs)

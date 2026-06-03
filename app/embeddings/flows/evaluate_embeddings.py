@@ -74,6 +74,7 @@ def run_embedding_evaluation(
     gemini_cache_path: str,
     gemini_cache_enabled: bool,
     gemini_max_workers: int,
+    workflow_name: str = "evaluate-embeddings",
 ) -> dict:
     normalized_evaluation_backend = evaluation_backend.lower()
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
@@ -110,8 +111,8 @@ def run_embedding_evaluation(
         f"mrr@10={summary['mrr@10']:.6f}"
     )
     notify_workflow_event(
-        workflow_name="evaluate-embeddings",
-        title="evaluate-embeddings completed",
+        workflow_name=workflow_name,
+        title=f"{workflow_name} completed",
         status="completed",
         details={
             "evaluation_backend": evaluation_backend,
@@ -167,6 +168,7 @@ def evaluate_embeddings_flow(
     gemini_max_workers: int = 4,
     base_model_repo_id: str = "dicta-il/BEREL_3.0",
     base_model_hub_cache_dir: str = "/cache/huggingface",
+    workflow_name: str = "evaluate-embeddings",
 ) -> None:
     run_id = current_flow_run_id()
     output_dir = tempfile.mkdtemp(dir="/tmp", prefix="embedding-eval-")
@@ -197,6 +199,7 @@ def evaluate_embeddings_flow(
             gemini_cache_path=gemini_cache_path,
             gemini_cache_enabled=gemini_cache_enabled,
             gemini_max_workers=gemini_max_workers,
+            workflow_name=workflow_name,
         )
         report["workflow"] = {
             "run_id": run_id,
@@ -216,8 +219,8 @@ def evaluate_embeddings_flow(
         latest_upload = upload_evaluation_report(output_dir, report_bucket, latest_report_prefix)
         print(f"Uploaded evaluation reports to {run_upload['uri']} and {latest_upload['uri']}")
         notify_workflow_event(
-            workflow_name="evaluate-embeddings",
-            title="evaluate-embeddings reports uploaded",
+            workflow_name=workflow_name,
+            title=f"{workflow_name} reports uploaded",
             status="uploaded",
             details={
                 "run_report": run_upload["uri"],
