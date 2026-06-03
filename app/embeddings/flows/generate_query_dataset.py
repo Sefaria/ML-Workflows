@@ -63,6 +63,7 @@ def build_query_dataset(
     document_limit: Optional[int],
     queries_per_type_per_doc: int,
     query_types_per_doc: int,
+    query_type_sample_seed: int,
 ) -> None:
     documents = _read_jsonl(local_path, document_limit=document_limit)
     analytics = QueryGenerationAnalytics()
@@ -77,6 +78,7 @@ def build_query_dataset(
         llm_cache_path=cache_path,
         queries_per_type_per_doc=queries_per_type_per_doc,
         query_types_per_doc=query_types_per_doc,
+        query_type_sample_seed=query_type_sample_seed,
         runtime_analytics=analytics,
         verbose=True,
     )
@@ -95,6 +97,7 @@ def build_query_dataset(
             "Cache path": cache_path,
             "Flush cache": flush_llm_cache,
             "Document limit": document_limit,
+            "Query type seed": query_type_sample_seed,
         }
     )
     progress_log_every_jobs = 100
@@ -160,6 +163,7 @@ def build_query_dataset(
         "failures_count": len(failures),
         "query_types": list(config.query_types),
         "query_types_per_doc": config.query_types_per_doc,
+        "query_type_sample_seed": config.query_type_sample_seed,
         "queries_per_type_per_doc": config.queries_per_type_per_doc,
         "llm_max_workers": max_workers,
         "llm_max_retries": config.max_retries,
@@ -210,6 +214,7 @@ def generate_query_dataset_flow(
     document_limit: Optional[int] = None,
     queries_per_type_per_doc: int = 1,
     query_types_per_doc: int = 2,
+    query_type_sample_seed: int = 613,
 ) -> None:
     source_local_path = download_chunked_documents(source_bucket, source_blob)
     output_dir = tempfile.mkdtemp(dir="/tmp")
@@ -225,6 +230,7 @@ def generate_query_dataset_flow(
             document_limit,
             queries_per_type_per_doc,
             query_types_per_doc,
+            query_type_sample_seed,
         )
         upload_query_dataset(output_dir, dest_bucket, dest_prefix)
     finally:

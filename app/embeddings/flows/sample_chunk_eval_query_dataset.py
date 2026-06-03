@@ -192,6 +192,7 @@ def build_eval_dataset_artifacts(
     flush_llm_cache: bool,
     queries_per_type_per_doc: int,
     query_types_per_doc: int,
+    query_type_sample_seed: int,
 ) -> dict:
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -258,6 +259,7 @@ def build_eval_dataset_artifacts(
         llm_cache_path=query_cache_path,
         queries_per_type_per_doc=queries_per_type_per_doc,
         query_types_per_doc=query_types_per_doc,
+        query_type_sample_seed=query_type_sample_seed,
         runtime_analytics=query_analytics,
         verbose=True,
     )
@@ -275,6 +277,7 @@ def build_eval_dataset_artifacts(
             "Max workers": query_max_workers,
             "Cache path": query_cache_path,
             "Flush cache": flush_llm_cache,
+            "Query type seed": query_type_sample_seed,
         }
     )
 
@@ -344,6 +347,7 @@ def build_eval_dataset_artifacts(
             "failures_count": len(failures),
             "query_types": list(query_config.query_types),
             "query_types_per_doc": query_config.query_types_per_doc,
+            "query_type_sample_seed": query_config.query_type_sample_seed,
             "queries_per_type_per_doc": query_config.queries_per_type_per_doc,
             "llm_max_workers": query_max_workers,
             "llm_max_retries": query_config.max_retries,
@@ -391,6 +395,7 @@ def sample_chunk_eval_query_dataset_flow(
     flush_llm_cache: bool = False,
     queries_per_type_per_doc: int = 1,
     query_types_per_doc: int = 2,
+    query_type_sample_seed: int = 613,
 ) -> None:
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -419,6 +424,7 @@ def sample_chunk_eval_query_dataset_flow(
             flush_llm_cache,
             queries_per_type_per_doc,
             query_types_per_doc,
+            query_type_sample_seed,
         )
         metadata["source"] = {
             "source_bucket": source_bucket,

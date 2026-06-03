@@ -54,7 +54,14 @@ MAX_SLACK_DETAIL_LENGTH = 120
 MAX_SLACK_DETAILS = 12
 WORKFLOW_START_DETAIL_KEYS = {
     "chunk-documents": ("source_blob", "dest_blob", "section_limit", "max_workers"),
-    "generate-query-dataset": ("source_blob", "dest_prefix", "document_limit", "max_workers", "model"),
+    "generate-query-dataset": (
+        "source_blob",
+        "dest_prefix",
+        "document_limit",
+        "max_workers",
+        "model",
+        "query_type_sample_seed",
+    ),
     "sample-chunk-eval-query-dataset": (
         "source_blob",
         "training_dataset_prefix",
@@ -62,6 +69,7 @@ WORKFLOW_START_DETAIL_KEYS = {
         "sample_size",
         "sample_seed",
         "model",
+        "query_type_sample_seed",
     ),
     "train-embeddings": (
         "source_prefix",
@@ -70,6 +78,7 @@ WORKFLOW_START_DETAIL_KEYS = {
         "batch_size",
         "learning_rate",
         "validation_fraction",
+        "validation_seed",
     ),
     "visualize-chunk-samples": ("source_blob", "dest_blob", "sample_count"),
     "visualize-query-dataset": ("source_prefix", "dest_blob", "sample_count"),
