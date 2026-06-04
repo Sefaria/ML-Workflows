@@ -71,6 +71,8 @@ def write_retrieval_visualization_pdf(
 ) -> dict:
     if not per_query_results:
         raise ValueError("No query results to visualize.")
+    if sample_count < 1:
+        raise ValueError("sample_count must be at least 1.")
 
     try:
         from reportlab.lib.colors import Color, HexColor, black, white
