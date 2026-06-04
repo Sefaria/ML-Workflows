@@ -8,6 +8,15 @@ PRIMARY_SCORE_FUNCTION = "cosine"
 SENTENCE_TRANSFORMERS_PRIMARY_METRIC = f"{PRIMARY_SCORE_FUNCTION}_{PRIMARY_RETRIEVAL_METRIC}"
 
 
+def document_retrieval_role_counts(documents: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for document in documents:
+        metadata = document.get("metadata") or {}
+        role = str(metadata.get("retrieval_role") or "unspecified")
+        counts[role] = counts.get(role, 0) + 1
+    return counts
+
+
 class ReportingInformationRetrievalEvaluator(SentenceEvaluator):
     def __init__(
         self,
@@ -70,6 +79,7 @@ def build_ir_validation_evaluator(
         "query_count": len(validation_query_ids),
         "relevant_document_count": len(validation_doc_ids),
         "corpus_document_count": len(document_text_by_id),
+        "retrieval_role_counts": document_retrieval_role_counts(documents),
         "qrels_count": len(validation_qrels),
         "missing_documents": missing_documents,
         "missing_queries": missing_queries,

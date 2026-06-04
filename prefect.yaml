@@ -68,6 +68,8 @@ deployments:
       dest_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
       sample_size: 100
       sample_seed: 613
+      distractor_sample_size: 1000
+      distractor_sample_seed: 614
       chunk_max_workers: 48
       chunk_cache_path: /cache/patot/embedding_cache.sqlite
       model: claude-sonnet-4-6

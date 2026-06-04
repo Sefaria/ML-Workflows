@@ -65,6 +65,14 @@ def _documents_with_qrels(documents: list[dict], qrels: list[dict]) -> list[dict
     return [document for document in documents if str(document["doc_id"]) in relevant_doc_ids]
 
 
+def _with_retrieval_role(document: dict, role: str) -> dict:
+    output = dict(document)
+    metadata = dict(output.get("metadata") or {})
+    metadata["retrieval_role"] = role
+    output["metadata"] = metadata
+    return output
+
+
 def _query_generation_progress_details(snapshot: dict) -> dict:
     estimated_cost = snapshot.get("estimated_cost", {})
     return {
@@ -101,18 +109,16 @@ def download_training_documents(bucket: str, prefix: str) -> str:
     return download_blob(bucket, blob_path, local_dir="/tmp")
 
 
-@task(log_prints=True)
-def sample_heldout_sections(
+def _reservoir_sample_sections(
     source_local_path: str,
-    training_documents_local_path: str,
+    excluded_refs: set[str],
     sample_size: int,
     sample_seed: int,
+    role: str,
 ) -> dict:
     if sample_size <= 0:
         raise ValueError("sample_size must be positive.")
 
-    training_documents = _read_jsonl(training_documents_local_path)
-    excluded_refs = _training_exclusion_refs(training_documents)
     rng = random.Random(sample_seed)
 
     sampled_sections: list[dict] = []
@@ -155,26 +161,83 @@ def sample_heldout_sections(
     sampled_sections.sort(key=lambda section: _section_ref(section))
     sampled_refs = [_section_ref(section) for section in sampled_sections]
     report = {
+        "role": role,
         "strategy": "reservoir_sample_excluding_training_refs",
         "sample_size_requested": sample_size,
         "sample_seed": sample_seed,
         "sampled_sections_count": len(sampled_sections),
         "sampled_refs": sampled_refs,
         "source_sections_scanned": scanned_sections,
-        "training_documents_count": len(training_documents),
-        "excluded_training_refs_count": len(excluded_refs),
+        "excluded_refs_count": len(excluded_refs),
         "excluded_sections_count": excluded_sections,
         "eligible_sections_count": eligible_sections,
         "missing_ref_sections_count": missing_ref_sections,
         "duplicate_eligible_refs_count": duplicate_eligible_refs,
     }
     print(
-        "Held-out sampling summary: "
+        f"{role} sampling summary: "
         f"scanned={scanned_sections}, eligible={eligible_sections}, excluded={excluded_sections}, "
         f"sampled={len(sampled_sections)}"
     )
     return {
         "sections": sampled_sections,
+        "report": report,
+    }
+
+
+@task(log_prints=True)
+def sample_heldout_sections(
+    source_local_path: str,
+    training_documents_local_path: str,
+    sample_size: int,
+    sample_seed: int,
+    distractor_sample_size: int,
+    distractor_sample_seed: int,
+) -> dict:
+    if distractor_sample_size < 0:
+        raise ValueError("distractor_sample_size must be non-negative.")
+
+    training_documents = _read_jsonl(training_documents_local_path)
+    training_excluded_refs = _training_exclusion_refs(training_documents)
+    positive_payload = _reservoir_sample_sections(
+        source_local_path=source_local_path,
+        excluded_refs=training_excluded_refs,
+        sample_size=sample_size,
+        sample_seed=sample_seed,
+        role="positive",
+    )
+    positive_sections = list(positive_payload["sections"])
+    positive_refs = {_section_ref(section) for section in positive_sections if _section_ref(section)}
+    distractor_payload = {"sections": [], "report": None}
+    if distractor_sample_size > 0:
+        distractor_payload = _reservoir_sample_sections(
+            source_local_path=source_local_path,
+            excluded_refs=training_excluded_refs | positive_refs,
+            sample_size=distractor_sample_size,
+            sample_seed=distractor_sample_seed,
+            role="distractor",
+        )
+
+    distractor_sections = list(distractor_payload["sections"])
+    report = {
+        "strategy": "positive_then_distractor_reservoir_sample_excluding_training_refs",
+        "training_documents_count": len(training_documents),
+        "training_excluded_refs_count": len(training_excluded_refs),
+        "positive": positive_payload["report"],
+        "distractor": distractor_payload["report"],
+        "positive_sections_count": len(positive_sections),
+        "distractor_sections_count": len(distractor_sections),
+    }
+    print(
+        "Eval sampling summary: "
+        f"training_docs={len(training_documents)}, "
+        f"positive_sections={len(positive_sections)}, "
+        f"distractor_sections={len(distractor_sections)}"
+    )
+    return {
+        "query_sections": positive_sections,
+        "distractor_sections": distractor_sections,
+        "sections": positive_sections,
         "report": report,
     }
 
@@ -197,9 +260,13 @@ def build_eval_dataset_artifacts(
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
 
-    sampled_sections = list(sampled_payload["sections"])
+    query_sections = list(sampled_payload["query_sections"])
+    distractor_sections = list(sampled_payload.get("distractor_sections") or [])
+    sampled_sections = query_sections + distractor_sections
     sampling_report = dict(sampled_payload["report"])
     _write_jsonl(output_root / "source_sections.jsonl", sampled_sections)
+    _write_jsonl(output_root / "query_source_sections.jsonl", query_sections)
+    _write_jsonl(output_root / "distractor_source_sections.jsonl", distractor_sections)
 
     chunking_analytics = ChunkingRuntimeAnalytics()
     chunk_config = ChunkerConfig(
@@ -218,32 +285,55 @@ def build_eval_dataset_artifacts(
     chunk_reporter.notify_start(
         {
             "Sections": len(sampled_sections),
+            "Query sections": len(query_sections),
+            "Distractor sections": len(distractor_sections),
             "Max workers": chunk_max_workers,
             "Cache path": chunk_cache_path,
         }
     )
 
-    chunked_documents = []
+    positive_chunked_documents = []
     for row in iter_chunked_documents_parallel(
-        sampled_sections,
+        query_sections,
         api_key,
         chunk_config,
         chunk_max_workers,
     ):
-        chunked_documents.append(row)
+        positive_chunked_documents.append(_with_retrieval_role(row, "positive"))
         snapshot = chunking_analytics.snapshot()
         chunk_reporter.notify_progress_if_due(
             snapshot["sections_processed"],
             _chunking_progress_details(snapshot),
         )
 
-    _write_jsonl(output_root / "chunked_documents.jsonl", chunked_documents)
+    distractor_chunked_documents = []
+    if distractor_sections:
+        for row in iter_chunked_documents_parallel(
+            distractor_sections,
+            api_key,
+            chunk_config,
+            chunk_max_workers,
+        ):
+            distractor_chunked_documents.append(_with_retrieval_role(row, "distractor"))
+            snapshot = chunking_analytics.snapshot()
+            chunk_reporter.notify_progress_if_due(
+                snapshot["sections_processed"],
+                _chunking_progress_details(snapshot),
+            )
+
+    corpus_documents = positive_chunked_documents + distractor_chunked_documents
+
+    _write_jsonl(output_root / "chunked_documents.jsonl", corpus_documents)
+    _write_jsonl(output_root / "positive_chunked_documents.jsonl", positive_chunked_documents)
+    _write_jsonl(output_root / "distractor_chunked_documents.jsonl", distractor_chunked_documents)
     chunking_snapshot = chunking_analytics.snapshot()
     chunk_reporter.notify_success(
         {
             "Sections": f"{chunking_snapshot['sections_processed']}/{len(sampled_sections)}",
             **_chunking_progress_details(chunking_snapshot),
-            "Chunked docs": len(chunked_documents),
+            "Positive docs": len(positive_chunked_documents),
+            "Distractor docs": len(distractor_chunked_documents),
+            "Corpus docs": len(corpus_documents),
         }
     )
 
@@ -263,7 +353,7 @@ def build_eval_dataset_artifacts(
         runtime_analytics=query_analytics,
         verbose=True,
     )
-    total_query_jobs = len(chunked_documents) * min(query_config.query_types_per_doc, len(query_config.query_types))
+    total_query_jobs = len(positive_chunked_documents) * min(query_config.query_types_per_doc, len(query_config.query_types))
     query_reporter = SlackProgressReporter(
         workflow_name="Generate eval query dataset queries",
         total_units=total_query_jobs,
@@ -272,7 +362,9 @@ def build_eval_dataset_artifacts(
     )
     query_reporter.notify_start(
         {
-            "Documents": len(chunked_documents),
+            "Documents": len(positive_chunked_documents),
+            "Corpus documents": len(corpus_documents),
+            "Distractor documents": len(distractor_chunked_documents),
             "Model": model,
             "Max workers": query_max_workers,
             "Cache path": query_cache_path,
@@ -308,10 +400,10 @@ def build_eval_dataset_artifacts(
         last_log_time = now
 
     query_config = replace(query_config, progress_callback=report_query_progress)
-    queries, qrels, failures = generate_queries_and_qrels(chunked_documents, query_config)
-    documents_with_qrels = _documents_with_qrels(chunked_documents, qrels)
+    queries, qrels, failures = generate_queries_and_qrels(positive_chunked_documents, query_config)
+    documents_with_qrels = _documents_with_qrels(corpus_documents, qrels)
 
-    _write_jsonl(output_root / "documents.jsonl", chunked_documents)
+    _write_jsonl(output_root / "documents.jsonl", corpus_documents)
     _write_jsonl(output_root / "documents_with_qrels.jsonl", documents_with_qrels)
     _write_jsonl(output_root / "queries.jsonl", queries)
     _write_jsonl(output_root / "qrels.jsonl", qrels)
@@ -320,8 +412,9 @@ def build_eval_dataset_artifacts(
     query_snapshot = query_analytics.snapshot()
     query_reporter.notify_success(
         {
-            "Corpus documents": len(chunked_documents),
+            "Corpus documents": len(corpus_documents),
             "Documents with qrels": len(documents_with_qrels),
+            "Distractor documents": len(distractor_chunked_documents),
             **_query_generation_progress_details(query_snapshot),
         }
     )
@@ -332,10 +425,14 @@ def build_eval_dataset_artifacts(
         "sampling": sampling_report,
         "chunking": {
             "input_sections_count": len(sampled_sections),
-            "chunked_documents_count": len(chunked_documents),
-            "corpus_documents_count": len(chunked_documents),
+            "query_sections_count": len(query_sections),
+            "distractor_sections_count": len(distractor_sections),
+            "chunked_documents_count": len(corpus_documents),
+            "positive_documents_count": len(positive_chunked_documents),
+            "distractor_documents_count": len(distractor_chunked_documents),
+            "corpus_documents_count": len(corpus_documents),
             "documents_with_qrels_count": len(documents_with_qrels),
-            "implicit_negative_documents_count": len(chunked_documents) - len(documents_with_qrels),
+            "implicit_negative_documents_count": len(corpus_documents) - len(documents_with_qrels),
             "chunk_max_workers": chunk_max_workers,
             "chunk_cache_path": chunk_cache_path,
             "runtime_analytics": chunking_snapshot,
@@ -362,7 +459,11 @@ def build_eval_dataset_artifacts(
     print(
         "Eval query dataset summary: "
         f"source_sections={len(sampled_sections)}, "
-        f"chunked_documents={len(chunked_documents)}, "
+        f"query_sections={len(query_sections)}, "
+        f"distractor_sections={len(distractor_sections)}, "
+        f"corpus_documents={len(corpus_documents)}, "
+        f"positive_documents={len(positive_chunked_documents)}, "
+        f"distractor_documents={len(distractor_chunked_documents)}, "
         f"documents_with_qrels={len(documents_with_qrels)}, "
         f"queries={len(queries)}, "
         f"qrels={len(qrels)}, "
@@ -387,6 +488,8 @@ def sample_chunk_eval_query_dataset_flow(
     dest_prefix: str,
     sample_size: int = 100,
     sample_seed: int = 613,
+    distractor_sample_size: int = 1000,
+    distractor_sample_seed: int = 614,
     chunk_max_workers: int = 48,
     chunk_cache_path: str = "/cache/patot/embedding_cache.sqlite",
     model: str = "claude-sonnet-4-6",
@@ -411,6 +514,8 @@ def sample_chunk_eval_query_dataset_flow(
             training_documents_local_path,
             sample_size,
             sample_seed,
+            distractor_sample_size,
+            distractor_sample_seed,
         )
         metadata = build_eval_dataset_artifacts(
             sampled_payload,
@@ -433,6 +538,10 @@ def sample_chunk_eval_query_dataset_flow(
             "training_dataset_prefix": training_dataset_prefix,
             "dest_bucket": dest_bucket,
             "dest_prefix": dest_prefix,
+            "sample_size": sample_size,
+            "sample_seed": sample_seed,
+            "distractor_sample_size": distractor_sample_size,
+            "distractor_sample_seed": distractor_sample_seed,
         }
         Path(output_dir, "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2))
         upload_eval_dataset(output_dir, dest_bucket, dest_prefix)

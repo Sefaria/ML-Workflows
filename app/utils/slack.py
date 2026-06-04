@@ -68,6 +68,8 @@ WORKFLOW_START_DETAIL_KEYS = {
         "dest_prefix",
         "sample_size",
         "sample_seed",
+        "distractor_sample_size",
+        "distractor_sample_seed",
         "model",
         "query_type_sample_seed",
     ),

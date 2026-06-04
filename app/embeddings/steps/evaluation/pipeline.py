@@ -191,6 +191,15 @@ def build_relevance_map(queries: list[dict], qrels: list[dict], documents: list[
     }
 
 
+def document_retrieval_role_counts(documents: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for document in documents:
+        metadata = document.get("metadata") or {}
+        role = str(metadata.get("retrieval_role") or "unspecified")
+        counts[role] = counts.get(role, 0) + 1
+    return counts
+
+
 def encode_with_sentence_transformer(documents: list[dict], queries: list[dict], config: EvaluationConfig) -> tuple[list[str], np.ndarray, dict[str, np.ndarray], dict]:
     if not config.sentence_transformer_model_path:
         raise ValueError("sentence_transformer_model_path is required for SentenceTransformer evaluation.")
@@ -306,6 +315,7 @@ def evaluate_retrieval_dataset(
     qrels = read_jsonl(qrels_path)
     metadata = read_json(metadata_path) if metadata_path else {}
     relevant_doc_ids_by_query, relevance_report = build_relevance_map(queries, qrels, documents)
+    retrieval_role_counts = document_retrieval_role_counts(documents)
     judged_queries = [query for query in queries if relevant_doc_ids_by_query.get(str(query["query_id"]))]
     if not judged_queries:
         raise ValueError("No judged queries found for evaluation.")
@@ -388,6 +398,7 @@ def evaluate_retrieval_dataset(
             "documents_count": len(documents),
             "queries_count": len(queries),
             "qrels_count": len(qrels),
+            "retrieval_role_counts": retrieval_role_counts,
             "metadata": metadata,
             **relevance_report,
         },
