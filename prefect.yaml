@@ -222,7 +222,38 @@ deployments:
       dest_blob: custom_embeddings/eval/embedding_retrieval_visualization/latest.pdf
       sample_count: 20
       sample_seed: 0
+      selection_strategy: random
+      worst_metric: ndcg@10
+      worst_pool_size: null
+      include_positive_documents: false
       workflow_name: visualize-embedding-retrieval
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
+  - name: visualize-worst-embedding-retrieval
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Visualize sampled worst-performing retrieval queries with expected positives and top retrieved documents"
+    entrypoint: embeddings/flows/visualize_embedding_retrieval.py:visualize_embedding_retrieval_flow
+    parameters:
+      eval_dataset_bucket: development-research
+      eval_dataset_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      eval_report_bucket: development-research
+      eval_report_prefix: custom_embeddings/eval/embedding_evaluation/latest
+      dest_bucket: development-research
+      dest_blob: custom_embeddings/eval/embedding_retrieval_visualization/worst_latest.pdf
+      sample_count: 50
+      sample_seed: 0
+      selection_strategy: worst
+      worst_metric: ndcg@10
+      worst_pool_size: 150
+      include_positive_documents: true
+      workflow_name: visualize-worst-embedding-retrieval
     work_pool:
       name: sefaria-k8s
       job_variables:

@@ -59,6 +59,14 @@ def _notify_pdf_available(bucket: str, blob_path: str, summary: dict, workflow_n
             },
         },
     ]
+    selection_detail = f"*Selection:* `{_escape_mrkdwn(summary.get('selection_strategy', 'random'))}`"
+    if summary.get("selection_metric"):
+        selection_detail = (
+            f"{selection_detail}\n"
+            f"*Metric:* `{_escape_mrkdwn(str(summary['selection_metric']))}`\n"
+            f"*Selection pool:* `{summary.get('selection_pool_size')}`"
+        )
+    blocks[2]["text"]["text"] = f"{blocks[2]['text']['text']}\n{selection_detail}"
     client = SlackWebhookClient(
         username="ml-workflows",
         icon_url=workflow_icon_url(workflow_name),
@@ -79,6 +87,10 @@ def build_retrieval_visualization_pdf(
     output_path: str,
     sample_count: int,
     sample_seed: int,
+    selection_strategy: str,
+    worst_metric: str,
+    worst_pool_size: int | None,
+    include_positive_documents: bool,
 ) -> dict:
     documents = _read_jsonl(documents_path)
     per_query_results = _read_jsonl(per_query_results_path)
@@ -86,7 +98,8 @@ def build_retrieval_visualization_pdf(
     documents_by_id = {str(doc["doc_id"]): doc for doc in documents}
     print(
         f"Building retrieval visualization PDF: "
-        f"documents={len(documents)}, queries={len(per_query_results)}, sample_count={sample_count}"
+        f"documents={len(documents)}, queries={len(per_query_results)}, sample_count={sample_count}, "
+        f"selection_strategy={selection_strategy}, worst_metric={worst_metric}, worst_pool_size={worst_pool_size}"
     )
     summary = write_retrieval_visualization_pdf(
         output_path=Path(output_path),
@@ -94,10 +107,17 @@ def build_retrieval_visualization_pdf(
         documents_by_id=documents_by_id,
         sample_count=sample_count,
         sample_seed=sample_seed,
+        selection_strategy=selection_strategy,
+        worst_metric=worst_metric,
+        worst_pool_size=worst_pool_size,
+        include_positive_documents=include_positive_documents,
     )
     print(
         f"Built retrieval visualization PDF: "
-        f"sampled={summary['sampled_query_count']}/{summary['total_query_count']} queries"
+        f"sampled={summary['sampled_query_count']}/{summary['total_query_count']} queries, "
+        f"selection_strategy={summary['selection_strategy']}, "
+        f"selection_metric={summary.get('selection_metric')}, "
+        f"selection_pool_size={summary['selection_pool_size']}"
     )
     return summary
 
@@ -118,6 +138,10 @@ def visualize_embedding_retrieval_flow(
     dest_blob: str,
     sample_count: int = 20,
     sample_seed: int = 0,
+    selection_strategy: str = "random",
+    worst_metric: str = "ndcg@10",
+    worst_pool_size: int | None = None,
+    include_positive_documents: bool = False,
     workflow_name: str = "visualize-embedding-retrieval",
 ) -> None:
     documents_path = download_artifact(eval_dataset_bucket, f"{eval_dataset_prefix.rstrip('/')}/documents.jsonl")
@@ -133,6 +157,10 @@ def visualize_embedding_retrieval_flow(
             output_path=output_path,
             sample_count=sample_count,
             sample_seed=sample_seed,
+            selection_strategy=selection_strategy,
+            worst_metric=worst_metric,
+            worst_pool_size=worst_pool_size,
+            include_positive_documents=include_positive_documents,
         )
         upload_retrieval_pdf(output_path, dest_bucket, dest_blob)
         _notify_pdf_available(dest_bucket, dest_blob, summary, workflow_name)

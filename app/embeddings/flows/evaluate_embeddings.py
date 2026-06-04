@@ -100,11 +100,19 @@ def run_embedding_evaluation(
         config=config,
     )
     summary = report["summary"]
+    dataset = report.get("dataset") or {}
+    retrieval_role_counts = dataset.get("retrieval_role_counts") or {}
+    positive_documents = retrieval_role_counts.get("positive", 0)
+    distractor_documents = retrieval_role_counts.get("distractor", 0)
+    corpus_documents = dataset.get("documents_count", 0)
     print(
         "Embedding evaluation summary: "
         f"evaluation_backend={evaluation_backend}, "
         f"backend={summary['backend']}, "
         f"queries={summary['query_count']}, "
+        f"corpus_documents={corpus_documents}, "
+        f"positive_documents={positive_documents}, "
+        f"distractor_documents={distractor_documents}, "
         f"ndcg@10={summary['ndcg@10']:.6f}, "
         f"recall@10={summary['recall@10']:.6f}, "
         f"recall@50={summary['recall@50']:.6f}, "
@@ -118,6 +126,9 @@ def run_embedding_evaluation(
             "evaluation_backend": evaluation_backend,
             "backend": summary["backend"],
             "queries": summary["query_count"],
+            "corpus_documents": corpus_documents,
+            "positive_documents": positive_documents,
+            "distractor_documents": distractor_documents,
             "ndcg@10": f"{summary['ndcg@10']:.6f}",
             "recall@10": f"{summary['recall@10']:.6f}",
             "recall@50": f"{summary['recall@50']:.6f}",
