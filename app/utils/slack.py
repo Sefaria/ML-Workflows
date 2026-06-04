@@ -95,13 +95,11 @@ WORKFLOW_START_DETAIL_KEYS = {
     "evaluate-embeddings-base": (
         "eval_dataset_prefix",
         "report_prefix",
-        "evaluation_backend",
         "base_model_repo_id",
     ),
     "evaluate-embeddings-gemini": (
         "eval_dataset_prefix",
         "report_prefix",
-        "evaluation_backend",
         "gemini_cache_path",
         "gemini_max_workers",
     ),

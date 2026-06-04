@@ -162,13 +162,13 @@ def resolve_model_prefix(evaluation_backend: str, latest_model_prefix: str, gcs_
     raise ValueError("evaluation_backend must be one of: latest, gemini, custom, base.")
 
 
-@slack_notified_flow(workflow_name="evaluate-embeddings", log_prints=True)
-def evaluate_embeddings_flow(
+def _evaluate_embeddings_impl(
+    *,
     eval_dataset_bucket: str,
     eval_dataset_prefix: str,
     report_bucket: str,
     report_prefix: str,
-    evaluation_backend: Literal["latest", "gemini", "custom", "base"] = "latest",
+    evaluation_backend: Literal["latest", "gemini", "custom", "base"],
     model_bucket: str = "development-research",
     latest_model_prefix: str = "custom_embeddings/models/berel_sentence_transformer/latest",
     gcs_model_prefix: Optional[str] = None,
@@ -243,3 +243,82 @@ def evaluate_embeddings_flow(
             Path(local_path).unlink(missing_ok=True)
         shutil.rmtree(output_dir, ignore_errors=True)
         shutil.rmtree(model_dir, ignore_errors=True)
+
+
+@slack_notified_flow(workflow_name="evaluate-embeddings", log_prints=True)
+def evaluate_embeddings_flow(
+    eval_dataset_bucket: str,
+    eval_dataset_prefix: str,
+    report_bucket: str,
+    report_prefix: str,
+    evaluation_backend: Literal["latest", "custom"] = "latest",
+    model_bucket: str = "development-research",
+    latest_model_prefix: str = "custom_embeddings/models/berel_sentence_transformer/latest",
+    gcs_model_prefix: Optional[str] = None,
+    sentence_transformer_batch_size: int = 32,
+    normalize_sentence_transformer_embeddings: bool = True,
+    workflow_name: str = "evaluate-embeddings",
+) -> None:
+    _evaluate_embeddings_impl(
+        eval_dataset_bucket=eval_dataset_bucket,
+        eval_dataset_prefix=eval_dataset_prefix,
+        report_bucket=report_bucket,
+        report_prefix=report_prefix,
+        evaluation_backend=evaluation_backend,
+        model_bucket=model_bucket,
+        latest_model_prefix=latest_model_prefix,
+        gcs_model_prefix=gcs_model_prefix,
+        sentence_transformer_batch_size=sentence_transformer_batch_size,
+        normalize_sentence_transformer_embeddings=normalize_sentence_transformer_embeddings,
+        workflow_name=workflow_name,
+    )
+
+
+@slack_notified_flow(workflow_name="evaluate-embeddings-base", log_prints=True)
+def evaluate_base_embeddings_flow(
+    eval_dataset_bucket: str,
+    eval_dataset_prefix: str,
+    report_bucket: str,
+    report_prefix: str,
+    sentence_transformer_batch_size: int = 32,
+    normalize_sentence_transformer_embeddings: bool = True,
+    base_model_repo_id: str = "dicta-il/BEREL_3.0",
+    base_model_hub_cache_dir: str = "/cache/huggingface",
+    workflow_name: str = "evaluate-embeddings-base",
+) -> None:
+    _evaluate_embeddings_impl(
+        eval_dataset_bucket=eval_dataset_bucket,
+        eval_dataset_prefix=eval_dataset_prefix,
+        report_bucket=report_bucket,
+        report_prefix=report_prefix,
+        evaluation_backend="base",
+        sentence_transformer_batch_size=sentence_transformer_batch_size,
+        normalize_sentence_transformer_embeddings=normalize_sentence_transformer_embeddings,
+        base_model_repo_id=base_model_repo_id,
+        base_model_hub_cache_dir=base_model_hub_cache_dir,
+        workflow_name=workflow_name,
+    )
+
+
+@slack_notified_flow(workflow_name="evaluate-embeddings-gemini", log_prints=True)
+def evaluate_gemini_embeddings_flow(
+    eval_dataset_bucket: str,
+    eval_dataset_prefix: str,
+    report_bucket: str,
+    report_prefix: str,
+    gemini_cache_path: str = "/cache/evaluation/gemini_embedding_cache.sqlite",
+    gemini_cache_enabled: bool = True,
+    gemini_max_workers: int = 4,
+    workflow_name: str = "evaluate-embeddings-gemini",
+) -> None:
+    _evaluate_embeddings_impl(
+        eval_dataset_bucket=eval_dataset_bucket,
+        eval_dataset_prefix=eval_dataset_prefix,
+        report_bucket=report_bucket,
+        report_prefix=report_prefix,
+        evaluation_backend="gemini",
+        gemini_cache_path=gemini_cache_path,
+        gemini_cache_enabled=gemini_cache_enabled,
+        gemini_max_workers=gemini_max_workers,
+        workflow_name=workflow_name,
+    )
