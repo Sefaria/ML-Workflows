@@ -1,4 +1,5 @@
 import math
+import os
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,6 +37,17 @@ _TOKENIZER_ALLOW_PATTERNS = (
     "tokenizer_config.json",
     "vocab.txt",
 )
+_TOKENIZER_REQUIRED_FILES = ("config.json", "tokenizer_config.json")
+_TOKENIZER_VOCAB_FILES = ("tokenizer.json", "vocab.txt")
+
+
+def _has_local_tokenizer_files(path: Path) -> bool:
+    return (
+        path.exists()
+        and path.is_dir()
+        and all((path / filename).exists() for filename in _TOKENIZER_REQUIRED_FILES)
+        and any((path / filename).exists() for filename in _TOKENIZER_VOCAB_FILES)
+    )
 
 
 class BaseEncoder(BaseModel):
@@ -295,6 +307,17 @@ class PatotChunker:
         if configured.exists():
             return str(configured)
 
+        local_candidates = [
+            self.config.tokenizer_local_dir,
+            os.getenv("PATOT_TOKENIZER_DIR"),
+        ]
+        for candidate in local_candidates:
+            if not candidate:
+                continue
+            candidate_path = Path(candidate)
+            if _has_local_tokenizer_files(candidate_path):
+                return str(candidate_path)
+
         return self._download_tokenizer_files(self.config.tokenizer_model)
 
     def _download_tokenizer_files(self, tokenizer_model: str) -> str:
@@ -305,6 +328,7 @@ class PatotChunker:
             repo_id=tokenizer_model,
             local_dir=str(local_dir),
             allow_patterns=list(_TOKENIZER_ALLOW_PATTERNS),
+            token=os.getenv("HF_TOKEN") or None,
         )
 
     def _normalize_for_tokenizer(self, text: str) -> str:

@@ -22,6 +22,7 @@ class ChunkerConfig:
     max_split_tokens: int = 500
     split_tokens_tolerance: int = 10
     tokenizer_model: str = "dicta-il/BEREL_3.0"
+    tokenizer_local_dir: Optional[str] = "/cache/huggingface/models/dicta-il__BEREL_3.0"
     strip_hebrew_niqqud: bool = True
     extract_html_footnotes_to_segments: bool = True
     stanza_model_dir: str = "/Users/yon/stanza_resources"
