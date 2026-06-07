@@ -176,6 +176,37 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: evaluate-embeddings-llm-relevance
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Evaluate embedding top-K retrieval with Claude binary relevance judgments over the held-out eval corpus"
+    entrypoint: embeddings/flows/evaluate_embeddings_llm_relevance.py:evaluate_embeddings_llm_relevance_flow
+    parameters:
+      eval_dataset_bucket: development-research
+      eval_dataset_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      report_bucket: development-research
+      report_prefix: custom_embeddings/eval/embedding_llm_relevance_evaluation
+      evaluation_backend: latest
+      model_bucket: development-research
+      latest_model_prefix: custom_embeddings/models/berel_sentence_transformer/latest
+      gcs_model_prefix: null
+      sentence_transformer_batch_size: 32
+      normalize_sentence_transformer_embeddings: true
+      top_k: 10
+      judge_model: claude-sonnet-4-6
+      judge_max_workers: 4
+      judge_cache_path: /cache/evaluation/llm_relevance_cache.sqlite
+      judge_cache_enabled: true
+      flush_judge_cache: false
+      workflow_name: evaluate-embeddings-llm-relevance
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
   - name: compare-embedding-evaluations
     tags: ["embedding", "embedding-evaluation-pipeline"]
     description: "Bayesian paired comparison of two embedding evaluation reports"

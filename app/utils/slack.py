@@ -103,6 +103,15 @@ WORKFLOW_START_DETAIL_KEYS = {
         "gemini_cache_path",
         "gemini_max_workers",
     ),
+    "evaluate-embeddings-llm-relevance": (
+        "eval_dataset_prefix",
+        "report_prefix",
+        "evaluation_backend",
+        "top_k",
+        "judge_model",
+        "judge_max_workers",
+        "judge_cache_path",
+    ),
     "compare-embedding-evaluations": (
         "evaluation_a_prefix",
         "evaluation_b_prefix",
@@ -149,6 +158,7 @@ WORKFLOW_SLACK_ICON_URLS = {
     "evaluate-embeddings": EVALUATION_SLACK_ICON_URL,
     "evaluate-embeddings-base": EVALUATION_SLACK_ICON_URL,
     "evaluate-embeddings-gemini": EVALUATION_SLACK_ICON_URL,
+    "evaluate-embeddings-llm-relevance": EVALUATION_SLACK_ICON_URL,
     "compare-embedding-evaluations": EVALUATION_SLACK_ICON_URL,
     "visualize-embedding-retrieval": EVALUATION_SLACK_ICON_URL,
     "visualize-worst-embedding-retrieval": EVALUATION_SLACK_ICON_URL,

@@ -34,6 +34,7 @@ class EvaluationConfig:
     gemini_cache_enabled: bool = True
     gemini_cache_path: str = "/cache/evaluation/gemini_embedding_cache.sqlite"
     gemini_max_workers: int = 4
+    top_k_results: int = 10
 
 
 def read_jsonl(path: str) -> list[dict]:
@@ -350,14 +351,14 @@ def evaluate_retrieval_dataset(
                 "query_type": query.get("type"),
                 "query_lang": query.get("lang"),
                 "positive_doc_ids": sorted(relevant_doc_ids),
-                "top_10": [
+                f"top_{config.top_k_results}": [
                     {
                         "doc_id": doc_id,
                         "rank": rank,
                         "score": score,
                         "is_relevant": doc_id in relevant_doc_ids,
                     }
-                    for rank, (doc_id, score) in enumerate(ranked[:10], start=1)
+                    for rank, (doc_id, score) in enumerate(ranked[: config.top_k_results], start=1)
                 ],
                 "metrics": metrics,
             }
