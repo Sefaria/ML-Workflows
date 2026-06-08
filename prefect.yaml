@@ -129,6 +129,8 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        memory_request: 8Gi
+        memory_limit: 12Gi
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
@@ -157,6 +159,8 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        memory_request: 8Gi
+        memory_limit: 12Gi
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
@@ -184,6 +188,8 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        memory_request: 8Gi
+        memory_limit: 12Gi
     schedules: []
 
   - name: evaluate-embeddings-llm-relevance
@@ -215,11 +221,44 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        memory_request: 8Gi
+        memory_limit: 12Gi
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
             effect: NoSchedule
         gpu_limit: "1"
+    schedules: []
+
+  - name: evaluate-embeddings-llm-relevance-gemini
+    tags: ["embedding", "embedding-evaluation-pipeline"]
+    description: "Evaluate Gemini top-K retrieval with Claude binary relevance judgments over the held-out eval corpus"
+    entrypoint: embeddings/flows/evaluate_embeddings_llm_relevance.py:evaluate_embeddings_llm_relevance_flow
+    parameters:
+      eval_dataset_bucket: development-research
+      eval_dataset_prefix: custom_embeddings/eval/sampled_library_sections_eval_query_dataset
+      report_bucket: development-research
+      report_prefix: custom_embeddings/eval/embedding_llm_relevance_evaluation_gemini
+      evaluation_backend: gemini
+      top_k: 10
+      gemini_cache_path: /cache/evaluation/gemini_embedding_cache.sqlite
+      gemini_cache_enabled: true
+      gemini_max_workers: 4
+      judge_model: claude-sonnet-4-6
+      judge_max_workers: 4
+      judge_cache_path: /cache/evaluation/llm_relevance_cache.sqlite
+      judge_cache_enabled: true
+      flush_judge_cache: false
+      workflow_name: evaluate-embeddings-llm-relevance-gemini
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        memory_request: 8Gi
+        memory_limit: 12Gi
     schedules: []
 
   - name: compare-embedding-evaluations
