@@ -129,6 +129,11 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        gpu_limit: "1"
     schedules: []
 
   - name: evaluate-embeddings-base
@@ -152,6 +157,11 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        gpu_limit: "1"
     schedules: []
 
   - name: evaluate-embeddings-gemini
@@ -205,6 +215,11 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        gpu_limit: "1"
     schedules: []
 
   - name: compare-embedding-evaluations

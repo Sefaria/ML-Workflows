@@ -27,6 +27,10 @@ from embeddings.steps.query_generation.cache import flush_cache
 from utils.slack import SlackProgressReporter, notify_workflow_event, slack_notified_flow
 
 
+def _count_jsonl_rows(path: str) -> int:
+    return sum(1 for line in Path(path).open("r") if line.strip())
+
+
 def llm_relevance_progress_details(snapshot: dict) -> dict:
     estimated_cost = snapshot.get("estimated_cost", {})
     cache = snapshot.get("cache", {})
@@ -56,11 +60,65 @@ def run_retrieval_ranking(
     gemini_cache_enabled: bool,
     gemini_max_workers: int,
     top_k: int,
+    workflow_name: str,
 ) -> dict:
     normalized_evaluation_backend = evaluation_backend.lower()
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if normalized_evaluation_backend == "gemini" and not api_key:
         raise ValueError("Missing GOOGLE_API_KEY or GEMINI_API_KEY for Gemini retrieval ranking.")
+
+    document_count = _count_jsonl_rows(documents_path)
+    query_count = _count_jsonl_rows(queries_path)
+    total_units = document_count + query_count + query_count
+    stage_offsets = {
+        "embedding documents": 0,
+        "embedding queries": document_count,
+        "ranking queries": document_count + query_count,
+    }
+    next_log_fraction_by_stage: dict[str, float] = {}
+    reporter = SlackProgressReporter(
+        workflow_name=workflow_name,
+        total_units=total_units,
+        unit_label="retrieval units",
+        notify_every_fraction=0.05,
+    )
+    reporter.notify_start(
+        {
+            "Backend": evaluation_backend,
+            "Documents": document_count,
+            "Queries": query_count,
+            "Top K": top_k,
+            "Batch size": sentence_transformer_batch_size,
+        }
+    )
+
+    def progress_callback(stage: str, completed: int, total: int, details: dict) -> None:
+        stage_offset = stage_offsets.get(stage, 0)
+        overall_completed = min(total_units, stage_offset + completed)
+        reporter.notify_progress_if_due(
+            overall_completed,
+            {
+                "Stage": stage,
+                "Stage progress": f"{completed}/{total}",
+                **details,
+            },
+        )
+
+        if total <= 0:
+            return
+        fraction = completed / total
+        next_log_fraction = next_log_fraction_by_stage.get(stage, 0.0)
+        if completed == total or fraction + 1e-12 >= next_log_fraction:
+            print(
+                "Retrieval ranking progress: "
+                f"stage={stage}, "
+                f"stage_progress={completed}/{total}, "
+                f"overall_progress={overall_completed}/{total_units}, "
+                f"details={json.dumps(details, ensure_ascii=False, sort_keys=True)}"
+            )
+            while next_log_fraction <= fraction + 1e-12:
+                next_log_fraction += 0.05
+            next_log_fraction_by_stage[stage] = next_log_fraction
 
     report = evaluate_retrieval_dataset(
         documents_path=documents_path,
@@ -78,6 +136,7 @@ def run_retrieval_ranking(
             gemini_cache_path=gemini_cache_path,
             gemini_max_workers=gemini_max_workers,
             top_k_results=top_k,
+            progress_callback=progress_callback,
         ),
     )
     summary = report["summary"]
@@ -91,6 +150,16 @@ def run_retrieval_ranking(
         f"positive_documents={role_counts.get('positive', 0)}, "
         f"distractor_documents={role_counts.get('distractor', 0)}, "
         f"top_k={top_k}"
+    )
+    reporter.notify_success(
+        {
+            "Backend": summary["backend"],
+            "Queries": summary["query_count"],
+            "Documents": dataset.get("documents_count", 0),
+            "Positive documents": role_counts.get("positive", 0),
+            "Distractor documents": role_counts.get("distractor", 0),
+            "Top K": top_k,
+        }
     )
     return report
 
@@ -120,7 +189,7 @@ def run_llm_relevance_judging(
         workflow_name=workflow_name,
         total_units=total_jobs,
         unit_label="judgments",
-        notify_every_fraction=0.1,
+        notify_every_fraction=0.05,
     )
     reporter.notify_start(
         {
@@ -134,10 +203,17 @@ def run_llm_relevance_judging(
     )
 
     def progress_callback(completed_jobs: int, _total_jobs: int, snapshot: dict) -> None:
-        reporter.notify_progress_if_due(completed_jobs, llm_relevance_progress_details(snapshot))
+        reporter.notify_progress_if_due(
+            completed_jobs,
+            {
+                "Stage": "Claude judging",
+                **llm_relevance_progress_details(snapshot),
+            },
+        )
         if completed_jobs % max(1, total_jobs // 20) == 0 or completed_jobs == total_jobs:
             print(
                 "LLM relevance progress: "
+                "stage=Claude judging, "
                 f"judgments={completed_jobs}/{total_jobs}, "
                 f"relevant={snapshot.get('relevant_judgments', 0)}, "
                 f"cache_hits={snapshot.get('cache', {}).get('hits', 0)}, "
@@ -234,6 +310,7 @@ def evaluate_embeddings_llm_relevance_flow(
             gemini_cache_enabled=gemini_cache_enabled,
             gemini_max_workers=gemini_max_workers,
             top_k=top_k,
+            workflow_name=workflow_name,
         )
         dataset = retrieval_report.get("dataset") or {}
         role_counts = dataset.get("retrieval_role_counts") or {}

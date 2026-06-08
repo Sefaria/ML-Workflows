@@ -6,7 +6,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -35,6 +35,16 @@ class EvaluationConfig:
     gemini_cache_path: str = "/cache/evaluation/gemini_embedding_cache.sqlite"
     gemini_max_workers: int = 4
     top_k_results: int = 10
+    progress_callback: Callable[[str, int, int, dict[str, Any]], None] | None = None
+
+
+def report_progress(config: EvaluationConfig, stage: str, completed: int, total: int, details: Optional[dict[str, Any]] = None) -> None:
+    if config.progress_callback is None:
+        return
+    try:
+        config.progress_callback(stage, completed, total, details or {})
+    except Exception as exc:
+        print(f"Evaluation progress callback failed: {type(exc).__name__}: {exc}")
 
 
 def read_jsonl(path: str) -> list[dict]:
@@ -201,27 +211,111 @@ def document_retrieval_role_counts(documents: list[dict]) -> dict[str, int]:
     return counts
 
 
+def select_sentence_transformer_device() -> dict[str, Any]:
+    try:
+        import torch
+    except ImportError:
+        return {
+            "selected_device": "cpu",
+            "cuda_available": False,
+            "device_count": 0,
+            "cuda_version": None,
+            "torch_available": False,
+            "torch_version": None,
+            "gpu": None,
+        }
+
+    cuda_available = torch.cuda.is_available()
+    device_count = torch.cuda.device_count() if cuda_available else 0
+    return {
+        "selected_device": "cuda" if cuda_available else "cpu",
+        "cuda_available": cuda_available,
+        "device_count": device_count,
+        "cuda_version": torch.version.cuda,
+        "torch_available": True,
+        "torch_version": torch.__version__,
+        "gpu": torch.cuda.get_device_name(0) if cuda_available and device_count else None,
+    }
+
+
+def encode_sentence_transformer_batches(
+    model: SentenceTransformer,
+    texts: list[str],
+    *,
+    batch_size: int,
+    normalize_embeddings: bool,
+    stage: str,
+    config: EvaluationConfig,
+    device_report: dict[str, Any],
+) -> np.ndarray:
+    encoded_batches = []
+    total = len(texts)
+    if total == 0:
+        return np.empty((0, 0))
+    if config.progress_callback is None:
+        return model.encode(
+            texts,
+            batch_size=batch_size,
+            convert_to_numpy=True,
+            normalize_embeddings=normalize_embeddings,
+            show_progress_bar=True,
+        )
+    progress_details = {
+        "batch_size": batch_size,
+        "selected_device": device_report["selected_device"],
+        "cuda_available": device_report["cuda_available"],
+        "gpu": device_report["gpu"],
+    }
+    report_progress(config, stage, 0, total, progress_details)
+    for start in range(0, total, batch_size):
+        batch_texts = texts[start : start + batch_size]
+        encoded = model.encode(
+            batch_texts,
+            batch_size=batch_size,
+            convert_to_numpy=True,
+            normalize_embeddings=normalize_embeddings,
+            show_progress_bar=False,
+        )
+        encoded_batches.append(encoded)
+        completed = min(start + len(batch_texts), total)
+        report_progress(config, stage, completed, total, progress_details)
+    return np.vstack(encoded_batches)
+
+
 def encode_with_sentence_transformer(documents: list[dict], queries: list[dict], config: EvaluationConfig) -> tuple[list[str], np.ndarray, dict[str, np.ndarray], dict]:
     if not config.sentence_transformer_model_path:
         raise ValueError("sentence_transformer_model_path is required for SentenceTransformer evaluation.")
-    model = SentenceTransformer(config.sentence_transformer_model_path)
+    device_report = select_sentence_transformer_device()
+    print(
+        "SentenceTransformer evaluation device: "
+        f"selected_device={device_report['selected_device']}, "
+        f"cuda_available={device_report['cuda_available']}, "
+        f"device_count={device_report['device_count']}, "
+        f"cuda_version={device_report['cuda_version']}, "
+        f"gpu={device_report['gpu']}"
+    )
+    model = SentenceTransformer(config.sentence_transformer_model_path, device=device_report["selected_device"])
     doc_ids = [str(document["doc_id"]) for document in documents]
     doc_texts = [str(document["text"]) for document in documents]
     query_texts = [str(query["text"]) for query in queries]
     query_ids = [str(query["query_id"]) for query in queries]
-    document_matrix = model.encode(
+    document_matrix = encode_sentence_transformer_batches(
+        model,
         doc_texts,
         batch_size=config.sentence_transformer_batch_size,
-        convert_to_numpy=True,
         normalize_embeddings=config.normalize_sentence_transformer_embeddings,
-        show_progress_bar=True,
+        stage="embedding documents",
+        config=config,
+        device_report=device_report,
     )
-    query_matrix = model.encode(
+    query_matrix = encode_sentence_transformer_batches(
+        model,
         query_texts,
         batch_size=config.sentence_transformer_batch_size,
-        convert_to_numpy=True,
         normalize_embeddings=config.normalize_sentence_transformer_embeddings,
-        show_progress_bar=True,
+        stage="embedding queries",
+        config=config,
+        device_report=device_report,
     )
     return doc_ids, document_matrix, dict(zip(query_ids, query_matrix)), {
         "backend": "sentence_transformer",
@@ -229,10 +323,11 @@ def encode_with_sentence_transformer(documents: list[dict], queries: list[dict],
         "batch_size": config.sentence_transformer_batch_size,
         "normalize_embeddings": config.normalize_sentence_transformer_embeddings,
         "similarity_metric": "cosine",
+        **device_report,
     }
 
 
-def _embed_gemini_items(items: list[dict], text_key: str, id_key: str, task_type: str, config: EvaluationConfig) -> tuple[dict[str, list[float]], list[dict]]:
+def _embed_gemini_items(items: list[dict], text_key: str, id_key: str, task_type: str, stage: str, config: EvaluationConfig) -> tuple[dict[str, list[float]], list[dict]]:
     if not config.gemini_api_key:
         raise ValueError("gemini_api_key is required for Gemini evaluation.")
     embedder = GeminiEmbedder(
@@ -242,6 +337,8 @@ def _embed_gemini_items(items: list[dict], text_key: str, id_key: str, task_type
     )
     vectors = {}
     failures = []
+    total = len(items)
+    report_progress(config, stage, 0, total, {"max_workers": config.gemini_max_workers})
 
     def worker(item: dict) -> tuple[str, list[float]]:
         item_id = str(item[id_key])
@@ -257,7 +354,7 @@ def _embed_gemini_items(items: list[dict], text_key: str, id_key: str, task_type
 
     with ThreadPoolExecutor(max_workers=max(1, config.gemini_max_workers)) as executor:
         futures = {executor.submit(worker, item): item for item in items}
-        for future in as_completed(futures):
+        for completed, future in enumerate(as_completed(futures), start=1):
             item = futures[future]
             try:
                 item_id, vector = future.result()
@@ -269,12 +366,22 @@ def _embed_gemini_items(items: list[dict], text_key: str, id_key: str, task_type
                         "error": f"{type(exc).__name__}: {exc}",
                     }
                 )
+            report_progress(
+                config,
+                stage,
+                completed,
+                total,
+                {
+                    "max_workers": config.gemini_max_workers,
+                    "failures": len(failures),
+                },
+            )
     return vectors, failures
 
 
 def encode_with_gemini(documents: list[dict], queries: list[dict], config: EvaluationConfig) -> tuple[list[str], np.ndarray, dict[str, np.ndarray], dict]:
-    doc_vectors_by_id, doc_failures = _embed_gemini_items(documents, "text", "doc_id", config.gemini_doc_task_type, config)
-    query_vectors_by_id, query_failures = _embed_gemini_items(queries, "text", "query_id", config.gemini_query_task_type, config)
+    doc_vectors_by_id, doc_failures = _embed_gemini_items(documents, "text", "doc_id", config.gemini_doc_task_type, "embedding documents", config)
+    query_vectors_by_id, query_failures = _embed_gemini_items(queries, "text", "query_id", config.gemini_query_task_type, "embedding queries", config)
     doc_ids = [str(document["doc_id"]) for document in documents if str(document["doc_id"]) in doc_vectors_by_id]
     if not doc_ids:
         raise ValueError("Gemini evaluation produced no document embeddings.")
@@ -330,7 +437,18 @@ def evaluate_retrieval_dataset(
 
     per_query_rows = []
     skipped_queries = []
-    for query in judged_queries:
+    report_progress(
+        config,
+        "ranking queries",
+        0,
+        len(judged_queries),
+        {
+            "documents": len(doc_ids),
+            "top_k": config.top_k_results,
+            "similarity_metric": similarity_metric,
+        },
+    )
+    for completed_queries, query in enumerate(judged_queries, start=1):
         query_id = str(query["query_id"])
         query_vector = query_vectors_by_id.get(query_id)
         if query_vector is None:
@@ -362,6 +480,17 @@ def evaluate_retrieval_dataset(
                 ],
                 "metrics": metrics,
             }
+        )
+        report_progress(
+            config,
+            "ranking queries",
+            completed_queries,
+            len(judged_queries),
+            {
+                "documents": len(doc_ids),
+                "top_k": config.top_k_results,
+                "similarity_metric": similarity_metric,
+            },
         )
 
     if not per_query_rows:
