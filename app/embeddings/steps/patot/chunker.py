@@ -144,6 +144,7 @@ class GeminiRouterEncoder(BaseEncoder):
             api_key=api_key,
             cache_enabled=config.embedding_cache_enabled,
             cache_path=config.embedding_cache_path,
+            cache_max_entries=config.embedding_cache_max_entries,
         )
         self._doc_task_type = doc_task_type
         self._config = config

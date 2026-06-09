@@ -39,6 +39,7 @@ class GeminiEmbedder:
         api_key: str,
         cache_enabled: bool = False,
         cache_path: Optional[str] = None,
+        cache_max_entries: Optional[int] = None,
         timeout_seconds: int = 60,
         max_retries: int = 5,
         initial_backoff_seconds: float = 1.0,
@@ -46,6 +47,7 @@ class GeminiEmbedder:
         self.api_key = api_key
         self.cache_enabled = cache_enabled
         self.cache_path = cache_path
+        self.cache_max_entries = cache_max_entries
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.initial_backoff_seconds = initial_backoff_seconds
@@ -136,7 +138,7 @@ class GeminiEmbedder:
             if runtime_analytics is not None:
                 runtime_analytics.record_remote_success(text)
             if self.cache_enabled and self.cache_path:
-                cache_update(text, llm_string, values, self.cache_path)
+                cache_update(text, llm_string, values, self.cache_path, self.cache_max_entries)
                 if runtime_analytics is not None:
                     runtime_analytics.record_cache_write()
             return values

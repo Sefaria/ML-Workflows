@@ -249,6 +249,7 @@ def build_eval_dataset_artifacts(
     api_key: str,
     chunk_max_workers: int,
     chunk_cache_path: str,
+    chunk_cache_max_entries: Optional[int],
     model: str,
     query_max_workers: int,
     query_cache_path: str,
@@ -273,6 +274,7 @@ def build_eval_dataset_artifacts(
         debug=False,
         embedding_cache_enabled=True,
         embedding_cache_path=chunk_cache_path,
+        embedding_cache_max_entries=chunk_cache_max_entries,
         runtime_analytics=chunking_analytics,
     )
 
@@ -492,6 +494,7 @@ def sample_chunk_eval_query_dataset_flow(
     distractor_sample_seed: int = 614,
     chunk_max_workers: int = 48,
     chunk_cache_path: str = "/cache/patot/embedding_cache.sqlite",
+    chunk_cache_max_entries: Optional[int] = None,
     model: str = "claude-sonnet-4-6",
     query_max_workers: int = 4,
     query_cache_path: str = "/cache/query_generation/eval_llm_cache.sqlite",
@@ -523,6 +526,7 @@ def sample_chunk_eval_query_dataset_flow(
             api_key,
             chunk_max_workers,
             chunk_cache_path,
+            chunk_cache_max_entries,
             model,
             query_max_workers,
             query_cache_path,

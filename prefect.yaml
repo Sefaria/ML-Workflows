@@ -19,6 +19,7 @@ deployments:
       dest_blob: custom_embeddings/sampled_library_sections_chunked_documents.jsonl
       max_workers: 48
       cache_path: /cache/patot/embedding_cache.sqlite
+      cache_max_entries: 100000
       section_limit: null
     work_pool:
       name: sefaria-k8s

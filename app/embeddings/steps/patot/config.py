@@ -29,5 +29,6 @@ class ChunkerConfig:
     enforce_hard_max_in_pass3: bool = True
     embedding_cache_enabled: bool = True
     embedding_cache_path: str = "/cache/patot/embedding_cache.sqlite"
+    embedding_cache_max_entries: Optional[int] = None
     runtime_analytics: Optional["ChunkingRuntimeAnalytics"] = None
     debug: bool = True

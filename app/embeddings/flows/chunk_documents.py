@@ -65,6 +65,7 @@ def chunk_documents(
     api_key: str,
     max_workers: int,
     cache_path: str,
+    cache_max_entries: Optional[int],
     section_limit: Optional[int],
     total_sections: int,
 ) -> dict:
@@ -73,6 +74,7 @@ def chunk_documents(
         debug=False,
         embedding_cache_enabled=True,
         embedding_cache_path=cache_path,
+        embedding_cache_max_entries=cache_max_entries,
         runtime_analytics=analytics,
     )
     count = 0
@@ -90,6 +92,7 @@ def chunk_documents(
             "Input path": local_path,
             "Max workers": max_workers,
             "Cache path": cache_path,
+            "Cache max entries": cache_max_entries or "unbounded",
         }
     )
     with open(output_path, "w") as fout:
@@ -171,6 +174,7 @@ def chunk_documents_flow(
     dest_blob: str,
     max_workers: int = 48,
     cache_path: str = "/cache/patot/embedding_cache.sqlite",
+    cache_max_entries: Optional[int] = 100_000,
     section_limit: Optional[int] = None,
 ) -> None:
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
@@ -193,6 +197,7 @@ def chunk_documents_flow(
             api_key,
             max_workers,
             cache_path,
+            cache_max_entries,
             section_limit,
             total_sections,
         )
@@ -210,6 +215,7 @@ def chunk_documents_flow(
             "dest_bucket": dest_bucket,
             "dest_blob": dest_blob,
             "cache_path": cache_path,
+            "cache_max_entries": cache_max_entries,
             "max_workers": max_workers,
             "section_limit": section_limit,
             "total_sections": total_sections,
