@@ -11,7 +11,7 @@ from typing import Any, Callable, Optional
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from embeddings.steps.patot.embedding import GeminiEmbedder, l2_normalize_vector
+from patot.embedding import GeminiEmbedder, l2_normalize_vector
 
 
 K_VALUES = [1, 3, 5, 10, 20, 50]

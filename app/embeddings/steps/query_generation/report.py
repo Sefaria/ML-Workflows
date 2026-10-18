@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 
-from embeddings.steps.patot.debug_report import BODY_FONT, TITLE_FONT, draw_pdf_line, ensure_report_fonts, start_page, wrap_text_for_pdf
+from patot.debug_report import BODY_FONT, TITLE_FONT, draw_pdf_line, ensure_report_fonts, start_page, wrap_text_for_pdf
 
 
 def _doc_header_lines(doc: dict, query_count: int) -> list[str]:

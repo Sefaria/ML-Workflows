@@ -5,10 +5,10 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Optional
 
-from app.embeddings.steps.patot.config import ChunkerConfig
-from app.embeddings.steps.patot.chunker import PatotChunker
-from app.embeddings.steps.patot.debug_report import write_debug_pdf
-from app.embeddings.steps.patot.json_loader import load_segment_records_from_json_file
+from patot.config import ChunkerConfig
+from patot.chunker import PatotChunker
+from patot.debug_report import write_debug_pdf
+from patot.json_loader import load_segment_records_from_json_file
 from transformers import AutoTokenizer
 
 

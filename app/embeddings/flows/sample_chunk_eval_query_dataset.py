@@ -12,9 +12,9 @@ from typing import Optional
 import ijson
 from prefect import task
 
-from embeddings.steps.patot.analytics import ChunkingRuntimeAnalytics
-from embeddings.steps.patot.config import ChunkerConfig
-from embeddings.steps.patot.pipeline import iter_chunked_documents_parallel
+from patot.analytics import ChunkingRuntimeAnalytics
+from patot.config import ChunkerConfig
+from patot.pipeline import iter_chunked_documents_parallel
 from embeddings.steps.query_generation import QueryGenerationConfig, generate_queries_and_qrels
 from embeddings.steps.query_generation.analytics import QueryGenerationAnalytics
 from embeddings.steps.query_generation.cache import flush_cache
