@@ -7,10 +7,10 @@ from pathlib import Path
 import ijson
 from prefect import task
 
-from embeddings.steps.patot.chunker import PatotChunker
-from embeddings.steps.patot.config import ChunkerConfig
-from embeddings.steps.patot.debug_report import write_debug_pdf_bundle
-from embeddings.steps.patot.json_loader import load_segment_records_from_section
+from patot.chunker import PatotChunker
+from patot.config import ChunkerConfig
+from patot.debug_report import write_debug_pdf_bundle
+from patot.json_loader import load_segment_records_from_section
 from utils.gcs import download_blob, upload_blob
 from utils.slack import slack_notified_flow
 

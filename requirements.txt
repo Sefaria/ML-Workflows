@@ -11,11 +11,9 @@ langchain-community>=0.3.0
 langchain-core>=0.3.0
 openai>=1.30.0
 pandas>=2.0.0
+patot[chunking,pdf] @ git+https://github.com/Sefaria/patot@v0.1.0
 pydantic==2.13.4
-python-bidi>=0.4.2
 reportlab>=4.0.0
 requests>=2.31.0
-semantic-chunkers==0.0.9
-semantic-router==0.0.72
 sentence-transformers==5.1.2
 transformers==4.57.6

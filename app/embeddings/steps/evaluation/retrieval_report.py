@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from urllib.parse import quote
 
-from embeddings.steps.patot.debug_report import (
+from patot.debug_report import (
     BODY_FONT,
     TITLE_FONT,
     UI_FONT,

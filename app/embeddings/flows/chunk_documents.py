@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Optional
 
 import ijson
-from embeddings.steps.patot.analytics import ChunkingRuntimeAnalytics
+from patot.analytics import ChunkingRuntimeAnalytics
 from prefect import task
 
-from embeddings.steps.patot.config import ChunkerConfig
-from embeddings.steps.patot.pipeline import iter_chunked_documents_parallel
+from patot.config import ChunkerConfig
+from patot.pipeline import iter_chunked_documents_parallel
 from utils.gcs import download_blob, upload_blob
 from utils.slack import SlackProgressReporter, SlackWebhookClient, slack_notified_flow
 
