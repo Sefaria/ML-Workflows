@@ -142,6 +142,15 @@
           "additionalProperties": true
         }
       },
+      "node_selector": {
+        "type": "object",
+        "title": "Node Selector",
+        "default": {},
+        "description": "Node labels the pod must match, for example to pin a job to A100 spot nodes.",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
       "backoff_limit": {
         "type": "integer",
         "title": "Backoff Limit",
@@ -317,6 +326,7 @@
             "parallelism": 1,
             "restartPolicy": "Never",
             "serviceAccountName": "{{ service_account_name }}",
+            "nodeSelector": "{{ node_selector }}",
             "tolerations": "{{ tolerations }}"
           }
         }

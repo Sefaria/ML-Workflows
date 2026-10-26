@@ -50,6 +50,16 @@ jobs:
             us-east1-docker.pkg.dev/${{ secrets.DEV_GKE_PROJECT }}/containers/mlworkflows:latest
             us-east1-docker.pkg.dev/${{ secrets.DEV_GKE_PROJECT }}/containers/mlworkflows:sha-${{ steps.short_sha.outputs.sha }}
 
+      - name: Build and push GPU training image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          file: Dockerfile.gpu-train
+          tags: |
+            us-east1-docker.pkg.dev/${{ secrets.DEV_GKE_PROJECT }}/containers/mlworkflows-gpu-train:latest
+            us-east1-docker.pkg.dev/${{ secrets.DEV_GKE_PROJECT }}/containers/mlworkflows-gpu-train:sha-${{ steps.short_sha.outputs.sha }}
+
   deploy:
     needs: build
     uses: ./.github/workflows/deploy-flows.yaml

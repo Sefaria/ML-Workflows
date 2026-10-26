@@ -516,3 +516,141 @@ deployments:
             effect: NoSchedule
         gpu_limit: "1"
     schedules: []
+
+  - name: prepare-mlm-corpus
+    tags: ["encoder-pretraining"]
+    description: "Tokenize and pack the English training corpus into fixed-length ModernBERT MLM windows and upload the shards to GCS"
+    entrypoint: encoder_pretraining/flows/prepare_mlm_corpus.py:prepare_mlm_corpus_flow
+    parameters:
+      source_bucket: sefaria-ml-models
+      source_blob: english-training-data/2026-10-26-v4/english_training_data.jsonl.gz
+      dest_bucket: sefaria-ml-models
+      dest_prefix: modernbert/corpus/2026-10-26-v4
+      model_repo_id: answerdotai/ModernBERT-base
+      revision: null
+      cache_root: /cache/huggingface
+      max_seq_length: 1024
+      shard_sequences: 100000
+      document_limit: null  # Set a small number for a smoke run.
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        memory_request: 8Gi
+        memory_limit: 16Gi
+    schedules: []
+
+  # run_name is required and is supplied by pretrain-supervisor so restarts reuse the same checkpoints.
+  - name: pretrain-modernbert
+    tags: ["encoder-pretraining"]
+    description: "Continue masked-language-model pretraining of ModernBERT on a spot A100, checkpointing to GCS and resuming after preemption"
+    entrypoint: encoder_pretraining/flows/pretrain_modernbert.py:pretrain_modernbert_flow
+    parameters:
+      corpus_bucket: sefaria-ml-models
+      corpus_prefix: modernbert/corpus/2026-10-26-v4
+      model_bucket: sefaria-ml-models
+      model_prefix: modernbert/runs
+      model_repo_id: answerdotai/ModernBERT-base
+      revision: null
+      cache_root: /cache/huggingface
+      force_download: false
+      mlm_probability: 0.3
+      learning_rate: 0.0001
+      weight_decay: 0.01
+      warmup_ratio: 0.05
+      lr_scheduler_type: linear
+      epochs: 3
+      max_tokens: null  # Cap total training tokens, for example 30000000 for a learning-rate sweep run.
+      global_batch_sequences: 512
+      per_device_batch_size: 32
+      eval_steps: 250
+      eval_max_sequences: 2000
+      checkpoint_minutes: 10
+      attn_implementation: auto
+      reference_compile: false
+      seed: 0
+      dataloader_num_workers: 0
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "8"
+        memory_request: 48Gi
+        memory_limit: 64Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
+
+  - name: pretrain-supervisor
+    tags: ["encoder-pretraining"]
+    description: "Run pretrain-modernbert and restart it after spot evictions, moving to on-demand A100s after repeated crashes"
+    entrypoint: encoder_pretraining/flows/pretrain_supervisor.py:pretrain_supervisor_flow
+    parameters:
+      deployment_name: pretrain-modernbert-flow/pretrain-modernbert
+      run_name: null  # Defaults to this flow run's id. Set a name to resume an earlier run.
+      gpu_parameters: {}  # Overrides for pretrain-modernbert, for example {"learning_rate": 0.0003, "max_tokens": 30000000}.
+      max_attempts: 6
+      spot_attempts: 4
+      allow_on_demand: true
+      retry_delay_seconds: 120
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+    schedules: []
+
+  # model_prefix is required: pass the run's final model, for example modernbert/runs/<run_name>/final.
+  - name: evaluate-mlm
+    tags: ["encoder-pretraining"]
+    description: "Compare masked-token loss and accuracy of the pretrained model against base ModernBERT, per source"
+    entrypoint: encoder_pretraining/flows/evaluate_mlm.py:evaluate_mlm_flow
+    parameters:
+      corpus_bucket: sefaria-ml-models
+      corpus_prefix: modernbert/corpus/2026-10-26-v4
+      model_bucket: sefaria-ml-models
+      report_bucket: sefaria-ml-models
+      report_blob: modernbert/eval/mlm_evaluation.json
+      base_model_repo_id: answerdotai/ModernBERT-base
+      revision: null
+      cache_root: /cache/huggingface
+      mlm_probability: 0.3
+      eval_max_sequences: 5000
+      batch_size: 16
+      seed: 0
+      attn_implementation: auto
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "4"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []

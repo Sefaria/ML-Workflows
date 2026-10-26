@@ -68,3 +68,32 @@ def delete_prefix(bucket_name: str, gcs_prefix: str) -> int:
         blob.delete()
         deleted_count += 1
     return deleted_count
+
+
+def list_blob_names(bucket_name: str, gcs_prefix: str) -> list[str]:
+    """List blob names under a GCS prefix."""
+    client = storage.Client()
+    normalized_prefix = gcs_prefix.rstrip("/") + "/"
+    return [blob.name for blob in client.list_blobs(client.bucket(bucket_name), prefix=normalized_prefix)]
+
+
+def blob_exists(bucket_name: str, blob_path: str) -> bool:
+    """Return whether a single GCS blob exists."""
+    return storage.Client().bucket(bucket_name).blob(blob_path).exists()
+
+
+def read_blob_text(bucket_name: str, blob_path: str) -> str:
+    """Read a GCS blob as UTF-8 text."""
+    return storage.Client().bucket(bucket_name).blob(blob_path).download_as_text()
+
+
+def write_blob_text(bucket_name: str, blob_path: str, text: str) -> None:
+    """Write UTF-8 text to a GCS blob."""
+    storage.Client().bucket(bucket_name).blob(blob_path).upload_from_string(text, content_type="application/json")
+
+
+def download_blob_to_path(bucket_name: str, blob_path: str, local_path: str) -> str:
+    """Download a GCS blob to an exact local path. Returns the local path."""
+    Path(local_path).parent.mkdir(parents=True, exist_ok=True)
+    storage.Client().bucket(bucket_name).blob(blob_path).download_to_filename(local_path)
+    return local_path

@@ -141,6 +141,20 @@ WORKFLOW_START_DETAIL_KEYS = {
         "worst_pool_size",
     ),
     "probe-gpu-availability": ("dest_blob", "matrix_size"),
+    "prepare-mlm-corpus": ("source_blob", "dest_prefix", "model_repo_id", "max_seq_length", "document_limit"),
+    "pretrain-modernbert": (
+        "run_name",
+        "corpus_prefix",
+        "model_prefix",
+        "model_repo_id",
+        "epochs",
+        "max_tokens",
+        "learning_rate",
+        "global_batch_sequences",
+        "attn_implementation",
+    ),
+    "pretrain-supervisor": ("deployment_name", "run_name", "max_attempts", "spot_attempts", "allow_on_demand"),
+    "evaluate-mlm": ("corpus_prefix", "model_prefix", "report_blob", "base_model_repo_id", "eval_max_sequences"),
 }
 TWEMOJI_BASE_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72"
 EVALUATION_SLACK_ICON_URL = (
@@ -167,6 +181,10 @@ WORKFLOW_SLACK_ICON_URLS = {
     "probe-gpu-availability": "https://i.pinimg.com/736x/fb/cc/43/fbcc43003276a217c2c80b241342f53c.jpg",
     "test-slack-webhook": f"{TWEMOJI_BASE_URL}/1f9ea.png",
     "create-dataset": f"{TWEMOJI_BASE_URL}/1f4da.png",
+    "prepare-mlm-corpus": f"{TWEMOJI_BASE_URL}/1f9f1.png",
+    "pretrain-modernbert": f"{TWEMOJI_BASE_URL}/1f3cb.png",
+    "pretrain-supervisor": f"{TWEMOJI_BASE_URL}/1f501.png",
+    "evaluate-mlm": EVALUATION_SLACK_ICON_URL,
 }
 
 
