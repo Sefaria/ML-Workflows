@@ -596,7 +596,7 @@ deployments:
 
   - name: pretrain-supervisor
     tags: ["encoder-pretraining"]
-    description: "Run pretrain-modernbert and restart it after spot evictions, moving to on-demand A100s after repeated crashes"
+    description: "Run pretrain-modernbert and restart it after spot evictions; can move to on-demand A100s after repeated crashes when allow_on_demand is enabled"
     entrypoint: encoder_pretraining/flows/pretrain_supervisor.py:pretrain_supervisor_flow
     parameters:
       deployment_name: pretrain-modernbert-flow/pretrain-modernbert
@@ -604,7 +604,7 @@ deployments:
       gpu_parameters: {}  # Overrides for pretrain-modernbert, for example {"learning_rate": 0.0003, "max_tokens": 30000000}.
       max_attempts: 6
       spot_attempts: 4
-      allow_on_demand: true
+      allow_on_demand: false  # Needs NVIDIA_A100_GPUS quota and an a100-ondemand pool; both are 0/absent in development-205018.
       retry_delay_seconds: 120
     work_pool:
       name: sefaria-k8s

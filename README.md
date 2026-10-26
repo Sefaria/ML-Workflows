@@ -17,7 +17,7 @@ Continues masked-language-model pretraining of ModernBERT on Sefaria's English c
 |---|---|---|
 | `prepare-mlm-corpus` | CPU | Tokenizes the training JSONL, packs it into 1024-token windows, writes `.npy` shards and a `manifest.json` to GCS, and reports how badly the tokenizer fragments inline Hebrew |
 | `pretrain-modernbert` | A100 | Trains with the Hugging Face `Trainer`, saves a checkpoint to GCS every 10 minutes, resumes from the newest checkpoint on start, and writes the final model and a report |
-| `pretrain-supervisor` | CPU | Calls `pretrain-modernbert` and starts it again when the run ends `Crashed` (spot eviction or unschedulable pod), moving to on-demand A100s after repeated crashes |
+| `pretrain-supervisor` | CPU | Calls `pretrain-modernbert` and starts it again when the run ends `Crashed` (spot eviction or unschedulable pod); optionally moves to on-demand A100s after repeated crashes |
 | `evaluate-mlm` | A100 | Compares masked-token loss and accuracy of the pretrained model with base ModernBERT, per source, and prints fill-mask samples |
 
 Start a run from the Prefect UI by running `pretrain-supervisor`. Use `gpu_parameters` to override training settings, for example `{"learning_rate": 0.0003, "max_tokens": 30000000}` for a learning-rate sweep run. Re-running with the same `run_name` resumes from that run's checkpoints, and a finished run is skipped.
@@ -68,20 +68,28 @@ The Prefect worker runs in the `ml-infra` namespace. Flow jobs are also created 
 
 ### A100 spot node pool for ModernBERT pretraining
 
-`pretrain-modernbert` and `evaluate-mlm` select nodes with the labels `cloud.google.com/gke-accelerator: nvidia-tesla-a100` and `cloud.google.com/gke-provisioning: spot` (the supervisor switches to `standard` for on-demand). The existing `gpu-containernodepool` has P100s, so the selector keeps jobs off it. Create the pools once (A100 40GB is only offered in `us-east1-b`):
+The ML cluster is `cluster-1` (`us-east1-b`) in the `development-205018` project. `pretrain-modernbert` and `evaluate-mlm` select nodes with the labels `cloud.google.com/gke-accelerator: nvidia-tesla-a100` and `cloud.google.com/gke-provisioning: spot`. The existing `gpu-containernodepool` has P100s, so the selector keeps jobs off it. Create the pool once (A100 40GB is only offered in `us-east1-b`):
 
 ```bash
 gcloud container node-pools create a100-spot \
-  --cluster cluster-1 --zone us-east1-b \
+  --project development-205018 --cluster cluster-1 --zone us-east1-b \
   --machine-type a2-highgpu-1g --spot \
   --accelerator type=nvidia-tesla-a100,count=1,gpu-driver-version=latest \
   --enable-autoscaling --min-nodes 0 --max-nodes 1 \
   --disk-size 200 --disk-type pd-ssd
-
-# Same again with the name a100-ondemand and no --spot, for the supervisor's fallback.
 ```
 
-The work pool's base job template is not deployed by CI. After changing `prefect_work_pools/sefaria-k8s-base-job-template.json` (this branch adds a `node_selector` variable), update the `sefaria-k8s` pool with it before deploying. The `ml-workflows-runner` service account also needs read and write access to `sefaria-ml-models`.
+Quota in `development-205018` / `us-east1`: `PREEMPTIBLE_NVIDIA_A100_GPUS` is 1 (one spot A100 at a time, so no parallel sweep runs) and `NVIDIA_A100_GPUS` (on-demand) is 0. The supervisor's on-demand fallback is therefore off (`allow_on_demand: false`). To enable it, request on-demand A100 quota, create an `a100-ondemand` pool the same way without `--spot`, and set `allow_on_demand: true`.
+
+The work pool's base job template is not deployed by CI. After changing `prefect_work_pools/sefaria-k8s-base-job-template.json` (this change adds a `node_selector` variable), update the `sefaria-k8s` pool with it before deploying.
+
+The `ml-workflows-runner` Kubernetes service account maps to `ml-workflows-sa@development-205018.iam.gserviceaccount.com`. That account needs read and write access to the `sefaria-ml-models` bucket, which it does not have by default:
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://sefaria-ml-models \
+  --member serviceAccount:ml-workflows-sa@development-205018.iam.gserviceaccount.com \
+  --role roles/storage.objectAdmin
+```
 
 ## Docker image
 

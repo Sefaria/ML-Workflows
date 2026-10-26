@@ -31,14 +31,14 @@ def pretrain_supervisor_flow(
     gpu_parameters: Optional[dict] = None,
     max_attempts: int = 6,
     spot_attempts: int = 4,
-    allow_on_demand: bool = True,
+    allow_on_demand: bool = False,
     retry_delay_seconds: int = 120,
 ) -> str:
     """Run the GPU pretraining deployment and start it again after infrastructure crashes.
 
     A spot eviction or an unschedulable pod ends the GPU flow run as Crashed. The
     GPU flow resumes from its newest GCS checkpoint, so each retry continues the
-    same run. After spot_attempts crashes the retries move to on-demand A100s.
+    same run. With allow_on_demand, retries after spot_attempts crashes move to on-demand A100s.
     A flow that ends Failed (a code error) is not retried.
     """
     run_name = run_name or str(flow_run.id)
