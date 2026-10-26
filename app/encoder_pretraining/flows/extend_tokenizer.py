@@ -26,6 +26,7 @@ from utils.slack import notify_workflow_event, slack_notified_flow
 
 WORKFLOW_NAME = "extend-tokenizer"
 ENGLISH_CHECK_DOCUMENTS = 600
+ENGLISH_CHECK_CHARACTERS = 6000
 
 
 @task(log_prints=True)
@@ -59,8 +60,10 @@ def check_english_unchanged(documents_path: str, base_tokenizer, extended_tokeni
     """Both tokenizers must produce identical ids for English text, or the base model's knowledge does not carry over."""
     texts = []
     for document in iter_documents(documents_path):
-        if document["split"] == "train" and not any("֐" <= ch <= "׿" for ch in document["text"][:4000]):
-            texts.append(document["text"][:6000])
+        # Screen the exact text that gets tokenized: Hebrew anywhere in it legitimately changes the ids.
+        sample = document["text"][:ENGLISH_CHECK_CHARACTERS]
+        if document["split"] == "train" and not any("\u0590" <= ch <= "\u05FF" for ch in sample):
+            texts.append(sample)
         if len(texts) >= ENGLISH_CHECK_DOCUMENTS:
             break
     base_ids = base_tokenizer(texts, add_special_tokens=False)["input_ids"]
