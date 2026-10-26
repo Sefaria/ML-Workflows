@@ -539,6 +539,8 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        volumes: []  # Skip the shared ReadWriteOnce embeddings-pvc so these jobs can run on other nodes.
+        volume_mounts: []
         memory_request: 8Gi
         memory_limit: 16Gi
     schedules: []
@@ -580,6 +582,8 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        volumes: []  # Skip the shared ReadWriteOnce embeddings-pvc so these jobs can run on other nodes.
+        volume_mounts: []
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
@@ -613,6 +617,8 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        volumes: []  # Skip the shared ReadWriteOnce embeddings-pvc so these jobs can run on other nodes.
+        volume_mounts: []
     schedules: []
 
   # model_prefix is required: pass the run's final model, for example modernbert/runs/<run_name>/final.
@@ -641,6 +647,8 @@ deployments:
         image_pull_policy: Always
         namespace: ml-infra
         service_account_name: ml-workflows-runner
+        volumes: []  # Skip the shared ReadWriteOnce embeddings-pvc so these jobs can run on other nodes.
+        volume_mounts: []
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists

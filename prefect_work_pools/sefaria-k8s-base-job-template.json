@@ -223,6 +223,38 @@
         "type": "integer",
         "title": "Pod Watch Timeout Seconds",
         "default": 60
+      },
+      "volumes": {
+        "type": "array",
+        "title": "Volumes",
+        "default": [
+          {
+            "name": "embeddings-cache",
+            "persistentVolumeClaim": {
+              "claimName": "embeddings-pvc"
+            }
+          }
+        ],
+        "description": "Pod volumes. Defaults to the shared embeddings-pvc, a ReadWriteOnce disk that only one node can hold at a time, so jobs that run alongside others (or on a different node) should set this to [].",
+        "items": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "volume_mounts": {
+        "type": "array",
+        "title": "Volume Mounts",
+        "default": [
+          {
+            "name": "embeddings-cache",
+            "mountPath": "/cache"
+          }
+        ],
+        "description": "Container volume mounts. Must match the volumes variable.",
+        "items": {
+          "type": "object",
+          "additionalProperties": true
+        }
       }
     },
     "definitions": {
@@ -271,14 +303,7 @@
         "ttlSecondsAfterFinished": "{{ finished_job_ttl }}",
         "template": {
           "spec": {
-            "volumes": [
-              {
-                "name": "embeddings-cache",
-                "persistentVolumeClaim": {
-                  "claimName": "embeddings-pvc"
-                }
-              }
-            ],
+            "volumes": "{{ volumes }}",
             "containers": [
               {
                 "env": "{{ env }}",
@@ -313,12 +338,7 @@
                     "memory": "{{ memory_request }}"
                   }
                 },
-                "volumeMounts": [
-                  {
-                    "name": "embeddings-cache",
-                    "mountPath": "/cache"
-                  }
-                ],
+                "volumeMounts": "{{ volume_mounts }}",
                 "imagePullPolicy": "{{ image_pull_policy }}"
               }
             ],
