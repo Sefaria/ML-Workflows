@@ -12,6 +12,8 @@ langchain-core>=0.3.0
 openai>=1.30.0
 pandas>=2.0.0
 patot[chunking,pdf] @ git+https://github.com/Sefaria/patot@v0.1.0
+# pyarrow 24+ requires NumPy 2; the pytorch conda base images ship NumPy 1.26.
+pyarrow<24
 pydantic==2.13.4
 reportlab>=4.0.0
 requests>=2.31.0
