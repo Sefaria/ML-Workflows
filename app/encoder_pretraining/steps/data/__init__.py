@@ -6,11 +6,13 @@ from .corpus import (
     pack_token_windows,
     prepare_corpus,
 )
+from .decontaminate import NgramDecontaminator
 from .dataset import MaskingCollator, PackedTokenDataset, load_eval_windows
 from .masking import mask_input_ids
 
 __all__ = [
     "MaskingCollator",
+    "NgramDecontaminator",
     "PackedShardWriter",
     "PackedTokenDataset",
     "WindowPacker",

@@ -155,6 +155,8 @@ WORKFLOW_START_DETAIL_KEYS = {
     ),
     "pretrain-supervisor": ("deployment_name", "run_name", "max_attempts", "spot_attempts", "allow_on_demand"),
     "evaluate-mlm": ("corpus_prefix", "model_prefix", "report_blob", "base_model_repo_id", "eval_max_sequences"),
+    "extend-tokenizer": ("source_blob", "dest_prefix", "model_repo_id", "num_new_tokens"),
+    "evaluate-ner-probe": ("report_blob", "dataset_repo", "folds", "epochs", "learning_rate"),
 }
 TWEMOJI_BASE_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72"
 EVALUATION_SLACK_ICON_URL = (
@@ -185,6 +187,8 @@ WORKFLOW_SLACK_ICON_URLS = {
     "pretrain-modernbert": f"{TWEMOJI_BASE_URL}/1f3cb.png",
     "pretrain-supervisor": f"{TWEMOJI_BASE_URL}/1f501.png",
     "evaluate-mlm": EVALUATION_SLACK_ICON_URL,
+    "extend-tokenizer": f"{TWEMOJI_BASE_URL}/1f524.png",
+    "evaluate-ner-probe": EVALUATION_SLACK_ICON_URL,
 }
 
 

@@ -143,9 +143,17 @@ def evaluate_mlm_flow(
             seed=seed,
             attn_implementation=attn_implementation,
         )
-        base_result = evaluate_model(label="base", model_path=base_model_dir, **shared)
         trained_result = evaluate_model(label="trained", model_path=trained_dir, **shared)
-        comparison = compare_models(base_result, trained_result)
+        # The eval windows are tokenized with the trained model's tokenizer. If its vocabulary was
+        # extended, the base model cannot read them, and per-token loss would not be comparable anyway.
+        extended_vocab = len(AutoTokenizer.from_pretrained(trained_dir)) != len(AutoTokenizer.from_pretrained(base_model_dir))
+        if extended_vocab:
+            print("Trained model has an extended vocabulary; skipping the base model comparison.")
+            base_result = None
+            comparison = None
+        else:
+            base_result = evaluate_model(label="base", model_path=base_model_dir, **shared)
+            comparison = compare_models(base_result, trained_result)
 
         report = {
             "status": "success",
@@ -160,18 +168,23 @@ def evaluate_mlm_flow(
             "trained": trained_result,
         }
         write_blob_text(report_bucket, report_blob, json.dumps(report, ensure_ascii=False, indent=2))
-        overall = comparison["overall"]
+        details = {"report_uri": f"gs://{report_bucket}/{report_blob}"}
+        if comparison:
+            overall = comparison["overall"]
+            details.update(
+                base_loss=round(overall["base_loss"], 4),
+                trained_loss=round(overall["trained_loss"], 4),
+                base_masked_accuracy=round(overall["base_masked_accuracy"], 4),
+                trained_masked_accuracy=round(overall["trained_masked_accuracy"], 4),
+            )
+        else:
+            overall = trained_result["overall"]
+            details.update(trained_loss=round(overall["loss"], 4), trained_masked_accuracy=round(overall["masked_accuracy"], 4))
         notify_workflow_event(
             workflow_name=WORKFLOW_NAME,
             title=f"{WORKFLOW_NAME} completed",
             status="completed",
-            details={
-                "report_uri": f"gs://{report_bucket}/{report_blob}",
-                "base_loss": round(overall["base_loss"], 4),
-                "trained_loss": round(overall["trained_loss"], 4),
-                "base_masked_accuracy": round(overall["base_masked_accuracy"], 4),
-                "trained_masked_accuracy": round(overall["trained_masked_accuracy"], 4),
-            },
+            details=details,
         )
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)

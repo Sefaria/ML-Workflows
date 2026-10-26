@@ -11,14 +11,16 @@ Pulls a raw data file from GCS, normalizes/chunks it, and writes the resulting d
 Pulls the normalized dataset from GCS and fine-tunes a sentence embedding model. Runs on a GPU node.
 
 ### ModernBERT pretraining (`encoder-pretraining` tag)
-Continues masked-language-model pretraining of ModernBERT on Sefaria's English corpus so the result can be fine-tuned for NER and other tasks. Four flows, run in this order:
+Continues masked-language-model pretraining of ModernBERT on Sefaria's English corpus so the result can be fine-tuned for NER and other tasks. Run in this order (`extend-tokenizer` is optional):
 
 | Flow | Runs on | What it does |
 |---|---|---|
-| `prepare-mlm-corpus` | CPU | Tokenizes the training JSONL, packs it into 1024-token windows, writes `.npy` shards and a `manifest.json` to GCS, and reports how badly the tokenizer fragments inline Hebrew |
+| `extend-tokenizer` | CPU | Adds Hebrew tokens to ModernBERT's tokenizer: vowel marks are stripped by the normalizer, and BPE merges are learned on the training split and prepended, so English tokenization is unchanged. Refuses to publish if special-token ids move or English tokenization changes. Writes `new_token_init.json` so new embeddings start as the mean of their old subtokens |
+| `prepare-mlm-corpus` | CPU | Tokenizes the training JSONL (with the base or an extended tokenizer), drops documents that share a 10-word span with the NER gold set, packs 1024-token windows, writes `.npy` shards and a `manifest.json` to GCS, and reports how badly the tokenizer fragments inline Hebrew |
 | `pretrain-modernbert` | A100 | Trains with the Hugging Face `Trainer`, saves a checkpoint to GCS every 10 minutes, resumes from the newest checkpoint on start, and writes the final model and a report |
 | `pretrain-supervisor` | CPU | Calls `pretrain-modernbert` and starts it again when the run ends `Crashed` (spot eviction or unschedulable pod); optionally moves to on-demand A100s after repeated crashes |
-| `evaluate-mlm` | A100 | Compares masked-token loss and accuracy of the pretrained model with base ModernBERT, per source, and prints fill-mask samples |
+| `evaluate-mlm` | A100 | Compares masked-token loss and accuracy of the pretrained model with base ModernBERT, per source, and prints fill-mask samples (base comparison is skipped when the vocabulary was extended) |
+| `evaluate-ner-probe` | A100 | Fine-tunes each model on the `Sefaria/en_linker_gold_dataset` Person/Citation set with identical cross-validation splits and compares word-level span F1 against the first (baseline) model |
 
 Start a run from the Prefect UI by running `pretrain-supervisor`. Use `gpu_parameters` to override training settings, for example `{"learning_rate": 0.0003, "max_tokens": 30000000}` for a learning-rate sweep run. Re-running with the same `run_name` resumes from that run's checkpoints, and a finished run is skipped.
 

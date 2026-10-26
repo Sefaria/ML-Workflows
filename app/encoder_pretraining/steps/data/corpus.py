@@ -112,11 +112,13 @@ def prepare_corpus(
     shard_sequences: int,
     document_limit: Optional[int] = None,
     progress_callback: Optional[Callable[[int], None]] = None,
+    skip_document: Optional[Callable[[dict], bool]] = None,
 ) -> dict:
     """Tokenize and pack the corpus.
 
     Train documents are packed together across sources. Eval documents are
-    packed per source so the eval loss can be reported per source.
+    packed per source so the eval loss can be reported per source. Documents for
+    which skip_document returns True are left out and counted per split and source.
     """
     cls_token_id = tokenizer.cls_token_id
     sep_token_id = tokenizer.sep_token_id
@@ -133,8 +135,20 @@ def prepare_corpus(
             packers[group] = WindowPacker(seq_len, cls_token_id, sep_token_id)
         return packers[group]
 
+    skipped: dict[str, int] = defaultdict(int)
     documents_seen = 0
     for batch in _batched(iter_documents(documents_path, document_limit), TOKENIZE_BATCH_DOCUMENTS):
+        documents_seen += len(batch)
+        if skip_document is not None:
+            kept = []
+            for document in batch:
+                if skip_document(document):
+                    skipped[f"{document['split']}:{document['source']}"] += 1
+                else:
+                    kept.append(document)
+            batch = kept
+            if not batch:
+                continue
         encoded = tokenizer([doc["text"] for doc in batch], add_special_tokens=False)["input_ids"]
         for document, ids in zip(batch, encoded):
             split = document["split"]
@@ -147,7 +161,6 @@ def prepare_corpus(
                 entry["words"] += int(document.get("words") or 0)
                 entry["tokens"] += len(ids)
                 entry["stored_tokens"] += int(document.get("tokens") or 0)
-        documents_seen += len(batch)
         if progress_callback is not None:
             progress_callback(documents_seen)
 
@@ -155,6 +168,7 @@ def prepare_corpus(
     return {
         "seq_len": seq_len,
         "documents_seen": documents_seen,
+        "skipped_documents": dict(skipped),
         "groups": shard_reports,
         "stats": dict(stats),
     }

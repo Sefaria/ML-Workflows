@@ -532,6 +532,11 @@ deployments:
       max_seq_length: 1024
       shard_sequences: 100000
       document_limit: null  # Set a small number for a smoke run.
+      tokenizer_bucket: null  # Defaults to dest_bucket.
+      tokenizer_prefix: null  # Set to the output of extend-tokenizer to use the extended vocabulary.
+      decontaminate_dataset_repo: Sefaria/en_linker_gold_dataset  # Drops corpus documents that share a 10-word span with these examples.
+      decontaminate_filename: en_linker_gold_dataset.json
+      decontaminate_ngram: 10
     work_pool:
       name: sefaria-k8s
       job_variables:
@@ -575,6 +580,8 @@ deployments:
       reference_compile: false
       seed: 0
       dataloader_num_workers: 0
+      tokenizer_bucket: null  # Defaults to corpus_bucket.
+      tokenizer_prefix: null  # Must match the tokenizer the corpus was prepared with.
     work_pool:
       name: sefaria-k8s
       job_variables:
@@ -648,6 +655,76 @@ deployments:
         namespace: ml-infra
         service_account_name: ml-workflows-runner
         volumes: []  # Skip the shared ReadWriteOnce embeddings-pvc so these jobs can run on other nodes.
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "4"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
+
+  - name: extend-tokenizer
+    tags: ["encoder-pretraining"]
+    description: "Add Hebrew tokens to ModernBERT's tokenizer (vowel marks stripped, merges learned from the training corpus) and upload it to GCS"
+    entrypoint: encoder_pretraining/flows/extend_tokenizer.py:extend_tokenizer_flow
+    parameters:
+      source_bucket: sefaria-ml-models
+      source_blob: english-training-data/2026-10-26-v4/english_training_data.jsonl.gz
+      dest_bucket: sefaria-ml-models
+      dest_prefix: modernbert/tokenizer/he6k-2026-10-26-v4
+      model_repo_id: answerdotai/ModernBERT-base
+      revision: null
+      cache_root: /cache/huggingface
+      num_new_tokens: 6000  # Largest size where ~99% of new tokens occur 100+ times per epoch in this corpus.
+      num_candidate_merges: 30000
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        memory_request: 8Gi
+        memory_limit: 16Gi
+    schedules: []
+
+  # models is required, for example [{"label": "base", "hf_repo": "answerdotai/ModernBERT-base"},
+  #                                  {"label": "run", "bucket": "sefaria-ml-models", "prefix": "modernbert/runs/<run_name>/final"}].
+  # The first entry is the baseline the others are compared with.
+  - name: evaluate-ner-probe
+    tags: ["encoder-pretraining"]
+    description: "Fine-tune models on the Person/Citation gold set with identical cross-validation splits and compare span F1"
+    entrypoint: encoder_pretraining/flows/evaluate_ner_probe.py:evaluate_ner_probe_flow
+    parameters:
+      report_bucket: sefaria-ml-models
+      report_blob: modernbert/eval/ner_probe.json
+      dataset_repo: Sefaria/en_linker_gold_dataset
+      dataset_filename: en_linker_gold_dataset.json
+      cache_root: /cache/huggingface
+      folds: 5
+      seeds: [0, 1]
+      epochs: 8
+      learning_rate: 0.00005
+      batch_size: 16
+      max_length: 512
+      attn_implementation: auto
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
         volume_mounts: []
         tolerations:
           - key: nvidia.com/gpu
