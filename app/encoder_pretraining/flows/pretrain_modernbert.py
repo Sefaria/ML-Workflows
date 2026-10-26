@@ -105,7 +105,7 @@ def pretrain_modernbert_flow(
     epochs: float = 3.0,
     max_tokens: Optional[int] = None,
     global_batch_sequences: int = 512,
-    per_device_batch_size: int = 32,
+    per_device_batch_size: int = 16,
     eval_steps: int = 250,
     eval_max_sequences: int = 2000,
     checkpoint_minutes: float = 10.0,

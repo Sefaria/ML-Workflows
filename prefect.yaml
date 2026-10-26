@@ -567,7 +567,7 @@ deployments:
       epochs: 3
       max_tokens: null  # Cap total training tokens, for example 30000000 for a learning-rate sweep run.
       global_batch_sequences: 512
-      per_device_batch_size: 32
+      per_device_batch_size: 16  # 32 runs out of memory on a 40GB A100 (the MLM logits alone are about 6GB in fp32).
       eval_steps: 250
       eval_max_sequences: 2000
       checkpoint_minutes: 10
