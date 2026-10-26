@@ -7,8 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# gcc and libc6-dev: flash-attn's Triton rotary kernel compiles a small C stub at first use.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends fonts-dejavu-core git \
+    && apt-get install -y --no-install-recommends fonts-dejavu-core git gcc libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
