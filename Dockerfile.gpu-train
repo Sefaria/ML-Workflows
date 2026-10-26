@@ -14,6 +14,9 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Fail the build, not the pods, if the dependency set cannot import.
+RUN python -c "from transformers import Trainer; import datasets, sentence_transformers"
+
 # Prebuilt flash-attn wheel matching torch 2.5 / CUDA 12 / Python 3.11. If it cannot be installed the
 # image still builds and the flows fall back to SDPA attention (slower); check the training report's
 # attn_implementation field. Override the wheel with --build-arg FLASH_ATTN_WHEEL=<url>.
