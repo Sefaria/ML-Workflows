@@ -1,3 +1,4 @@
+import json
 import math
 from pathlib import Path
 from typing import Optional
@@ -11,7 +12,7 @@ from ..data.dataset import read_manifest
 from ..evaluation import StaticMaskedDataset
 from .callbacks import SlackEvalCallback, ThroughputCallback
 from .checkpoints import GcsCheckpointCallback, restore_latest_checkpoint
-from .model import load_masked_lm, resolve_attention_implementation
+from .model import init_extended_embeddings, load_masked_lm, resolve_attention_implementation
 
 
 # Trainer's own step-based saving is disabled by pushing it out of reach;
@@ -65,13 +66,19 @@ def pretrain_masked_lm(
     seed: int,
     dataloader_num_workers: int,
     workflow_name: str,
+    tokenizer_path: Optional[str] = None,
 ) -> dict:
     if global_batch_sequences % per_device_batch_size:
         raise ValueError("global_batch_sequences must be divisible by per_device_batch_size.")
 
     manifest = read_manifest(corpus_dir)
     seq_len = manifest["seq_len"]
-    tokenizer = AutoTokenizer.from_pretrained(base_model_path)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path or base_model_path)
+    corpus_vocab_size = (manifest.get("tokenizer") or {}).get("vocab_size")
+    if corpus_vocab_size is not None and corpus_vocab_size != len(tokenizer):
+        raise ValueError(
+            f"Corpus was tokenized with a vocabulary of {corpus_vocab_size} but the training tokenizer has {len(tokenizer)}."
+        )
     train_dataset = PackedTokenDataset(corpus_dir, "train", manifest)
     eval_windows = load_eval_windows(corpus_dir, manifest, eval_max_sequences)
     eval_dataset = StaticMaskedDataset(
@@ -87,6 +94,12 @@ def pretrain_masked_lm(
     resolved_attention = resolve_attention_implementation(attn_implementation)
     print(f"Attention implementation: {resolved_attention}")
     model = load_masked_lm(base_model_path, resolved_attention, reference_compile)
+    added_embeddings = 0
+    if len(tokenizer) > model.get_input_embeddings().weight.shape[0]:
+        init_file = Path(tokenizer_path or base_model_path) / "new_token_init.json"
+        init_map = json.loads(init_file.read_text()) if init_file.exists() else {}
+        added_embeddings = init_extended_embeddings(model, len(tokenizer), init_map)
+        print(f"Added {added_embeddings} embedding rows for the extended vocabulary ({len(init_map)} mean-initialised)")
 
     checkpoint_dir = Path(output_dir) / "trainer"
     resume_path = restore_latest_checkpoint(checkpoint_bucket, checkpoint_prefix, str(checkpoint_dir))
@@ -147,6 +160,8 @@ def pretrain_masked_lm(
         "plan": plan,
         "attn_implementation": resolved_attention,
         "resumed_from_checkpoint": resume_path,
+        "added_embedding_rows": added_embeddings,
+        "vocab_size": len(tokenizer),
         "train_metrics": train_result.metrics,
         "final_eval": final_eval,
         "mean_tokens_per_second": throughput.mean_tokens_per_second(),

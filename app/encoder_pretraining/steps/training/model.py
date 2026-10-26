@@ -1,19 +1,6 @@
-import importlib.util
-
 import torch
+from ..attention import resolve_attention_implementation
 from transformers import AutoConfig, AutoModelForMaskedLM, AutoTokenizer
-
-
-def resolve_attention_implementation(requested: str) -> str:
-    """Pick flash attention when asked for (or "auto") and installed, otherwise SDPA."""
-    if requested not in ("auto", "flash_attention_2", "sdpa"):
-        raise ValueError(f"Unsupported attn_implementation: {requested}")
-    flash_available = importlib.util.find_spec("flash_attn") is not None
-    if requested == "flash_attention_2" and not flash_available:
-        raise RuntimeError("attn_implementation=flash_attention_2 requested but flash_attn is not installed.")
-    if requested == "sdpa" or not flash_available:
-        return "sdpa"
-    return "flash_attention_2"
 
 
 def load_masked_lm(model_path: str, attn_implementation: str, reference_compile: bool):
@@ -56,3 +43,20 @@ def require_bf16_gpu() -> dict:
         "torch_version": torch.__version__,
         "cuda_version": torch.version.cuda,
     }
+
+
+def init_extended_embeddings(model, new_vocab_size: int, init_map: dict[str, list[int]]) -> int:
+    """Grow the embedding matrix and start each new token at the mean of its old subtokens.
+
+    Returns the number of rows added. The decoder is tied to the embeddings, so the output
+    side grows with them; new decoder bias entries start at zero.
+    """
+    old_size = model.get_input_embeddings().weight.shape[0]
+    if new_vocab_size <= old_size:
+        return 0
+    model.resize_token_embeddings(new_vocab_size, mean_resizing=False)
+    embeddings = model.get_input_embeddings().weight
+    with torch.no_grad():
+        for new_id, old_ids in init_map.items():
+            embeddings[int(new_id)] = embeddings[torch.tensor(old_ids)].mean(dim=0)
+    return new_vocab_size - old_size

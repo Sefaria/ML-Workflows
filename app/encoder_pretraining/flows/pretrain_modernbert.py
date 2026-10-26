@@ -66,6 +66,12 @@ def download_corpus(bucket: str, prefix: str, local_dir: str) -> str:
 
 
 @task(log_prints=True)
+def download_tokenizer(bucket: str, prefix: str, local_dir: str) -> str:
+    print(f"Downloading extended tokenizer from gs://{bucket}/{prefix}")
+    return download_directory(bucket, prefix, local_dir)
+
+
+@task(log_prints=True)
 def train_model(**kwargs) -> dict:
     return pretrain_masked_lm(**kwargs)
 
@@ -113,6 +119,8 @@ def pretrain_modernbert_flow(
     reference_compile: bool = False,
     seed: int = 0,
     dataloader_num_workers: int = 0,
+    tokenizer_bucket: Optional[str] = None,
+    tokenizer_prefix: Optional[str] = None,
 ) -> None:
     # run_name is stable across restarts, so a restarted job finds its own checkpoints.
     run_root = f"{model_prefix.rstrip('/')}/{run_name}"
@@ -134,6 +142,9 @@ def pretrain_modernbert_flow(
         cache_report = cache_base_model(model_repo_id, base_model_dir, hub_cache_dir, revision, force_download)
         validation_report = validate_base_model(base_model_dir)
         download_corpus(corpus_bucket, corpus_prefix, corpus_dir)
+        tokenizer_path = None
+        if tokenizer_prefix:
+            tokenizer_path = download_tokenizer(tokenizer_bucket or corpus_bucket, tokenizer_prefix, str(Path(work_dir) / "tokenizer"))
         training_report = train_model(
             corpus_dir=corpus_dir,
             base_model_path=base_model_dir,
@@ -157,6 +168,7 @@ def pretrain_modernbert_flow(
             seed=seed,
             dataloader_num_workers=dataloader_num_workers,
             workflow_name=WORKFLOW_NAME,
+            tokenizer_path=tokenizer_path,
         )
         model_upload = upload_final_model(training_report["final_model_dir"], model_bucket, final_prefix)
         report = {
@@ -167,6 +179,7 @@ def pretrain_modernbert_flow(
             "corpus_uri": f"gs://{corpus_bucket}/{corpus_prefix}",
             "model_repo_id": model_repo_id,
             "revision": revision,
+            "tokenizer_prefix": tokenizer_prefix,
             "accelerator": accelerator_report,
             "cache": cache_report,
             "validation": validation_report,
