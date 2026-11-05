@@ -40,19 +40,18 @@ class ThroughputCallback(TrainerCallback):
 
 
 class SlackEvalCallback(TrainerCallback):
-    def __init__(self, workflow_name: str, total_epochs: float, base_model: str):
+    def __init__(self, workflow_name: str, total_epochs: float, base_model: str, metric_keys: tuple[str, ...] = ("eval_loss",)):
         self.workflow_name = workflow_name
         self.total_epochs = total_epochs
         self.base_model = base_model
+        self.metric_keys = metric_keys
 
     def on_evaluate(self, args, state, control, metrics=None, **kwargs):
         if not metrics:
             return
         epoch = float(state.epoch or 0.0)
         percent = round((epoch - int(epoch)) * 100)
-        compact = {
-            "eval_loss": f"{metrics['eval_loss']:.4f}" if "eval_loss" in metrics else None,
-        }
+        compact = {name: f"{metrics[name]:.4f}" if name in metrics else None for name in self.metric_keys}
         notify_training_validation_metric(
             workflow_name=self.workflow_name,
             epoch=epoch,

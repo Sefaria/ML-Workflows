@@ -35,6 +35,24 @@ modernbert/runs/<run_name>/training_report.json
 
 The model is trained on web pages and library texts with mixed licenses and is for internal use only.
 
+### Roshei tevot expansion (`roshei-tevot` tag)
+
+Trains BEREL to pick the expansion of a roshei tevot abbreviation in context. The main model is siamese (context and expansion embedded separately, expansions precomputed); a cross-encoder trained on the same data measures how much accuracy that design gives up. Data is `Sefaria/berel-roshei-tevot` (private), which also holds `lexicon/surface_index.jsonl` (abbreviation to expansions, with library frequency) and `metadata/hebrew_titles.json` (English to Hebrew titles and categories, from the Sefaria table of contents). The lexicon, letter checker and spelling folds come from the `expand_roshei_tevot` experiment in `Sefaria/translation-engine`; the code is vendored in `app/roshei_tevot/steps/vendor/` (pinned commit in each file header; re-sync rather than edit).
+
+| Flow | Runs on | What it does |
+|---|---|---|
+| `train-roshei-tevot` | A100 | `architecture: siamese` or `cross`. Hugging Face `Trainer` with GCS checkpoints every 10 minutes and resume on start, like `pretrain-modernbert`; run it through `pretrain-supervisor` with `deployment_name: train-roshei-tevot-flow/train-roshei-tevot` to restart after spot evictions. Logs validation top-1 at every evaluation |
+| `build-expansion-index` | A100 | Embeds all ~57k lexicon expansions with a trained siamese model and writes `embeddings.npy` (fp16, under 100 MB) and `lexicon.json` to GCS. Load with `ExpansionIndex.load` and keep it in RAM |
+| `evaluate-roshei-tevot` | A100 | Ranks each row's candidates on `val`, `test_seen_keys` and `test_unseen_keys` for each model, sweeps the frequency prior, picks it on val, and checks the success criterion. `gap_to_first` compares every model with the first one listed |
+
+**Candidates.** For a token, the lexicon's expansions for the token as written and for each prefix-stripped reading, minus those whose letters cannot spell it (`checker.token_fits`). Training mines its hard negatives from this same lookup, and rows with fewer than two candidates are left out of training and evaluation (`min_candidates`). The spelling folds (`stem_key`, `fold_b`) decide when the gold expansion and a candidate are the same, so `ורבי יוסי` matches `רבי יוסי`.
+
+**Input.** Siamese query: `[CLS] {Hebrew category} | {Hebrew title} [SEP] …before <abbr> {surface} </abbr> after… [SEP]`, pooled over the marked span. Siamese candidate: `[CLS] {expansion} [SEP]`, mean pooled. Cross-encoder: `[CLS] {expansion} [SEP] {category} | {title} [SEP] …context… [SEP]`, scored from CLS plus the marked span. Up to 100 words per side within 384 tokens, which keeps every val query whole. `<abbr>` and `</abbr>` are added tokens (BEREL has no unused slots).
+
+**Loss.** Siamese: InfoNCE over the batch pool (targets plus up to 7 mined negatives per row, deduplicated by folded spelling), plus `within_weight` times cross-entropy over each row's own candidates. Cross-encoder: cross-entropy over each row's target and up to 7 mined negatives. Rows are resampled with weight `1 / count(key)^0.5`; synthetic swapped-back rows count half; gold and LLM labels count the same.
+
+**Scoring.** `score = model score + λ · log(1 + lexicon frequency)`, with λ swept over `prior_weights` and chosen on val. Success means top-1 at least 3 points above the most-frequent-expansion baseline on `val` and `test_seen_keys`. At inference, `decide(ranked, min_score, min_margin)` abstains when the answer is weak or too close to the runner-up.
+
 ## Repository structure
 
 ```
