@@ -1,5 +1,7 @@
 import json
+import os
 import random
+from pathlib import Path
 from collections import Counter
 from typing import Optional
 
@@ -13,17 +15,37 @@ from .index import Lexicon
 from .vendor.spelling import same_expansion, stem_key
 
 DATASET_REPO = "Sefaria/berel-roshei-tevot"
+# The training pods have no Hugging Face token, so the flows read a GCS mirror of the (private) dataset by default.
+GCS_DATASET = "gs://sefaria-ml-models/roshei-tevot/data/berel-roshei-tevot"
+LOCAL_DATA_DIR = os.environ.get("ROSHEI_TEVOT_DATA_DIR", "/tmp/roshei-tevot-data")
 LEXICON_FILE = "lexicon/surface_index.jsonl"
 HEBREW_TITLES_FILE = "metadata/hebrew_titles.json"
 KEPT_FIELDS = ("id", "source", "surface", "base_expansion", "key", "before", "after", "title", "category")
 
 
+def dataset_file(repo: str, filename: str) -> str:
+    """Local path of one dataset file. `repo` is a Hugging Face dataset id or a gs://bucket/prefix mirror of the same files.
+    GCS files are downloaded once into LOCAL_DATA_DIR and reused."""
+    if not repo.startswith("gs://"):
+        return hf_hub_download(repo, filename, repo_type="dataset")
+    from utils.gcs import download_blob_to_path
+
+    bucket, _, prefix = repo[len("gs://"):].partition("/")
+    local = Path(LOCAL_DATA_DIR) / bucket / prefix / filename
+    if not local.exists():
+        local.parent.mkdir(parents=True, exist_ok=True)
+        partial = local.with_name(local.name + ".partial")
+        download_blob_to_path(bucket, f"{prefix.rstrip('/')}/{filename}", str(partial))
+        partial.rename(local)
+    return str(local)
+
+
 def load_lexicon(repo: str = DATASET_REPO) -> Lexicon:
-    return Lexicon.load(hf_hub_download(repo, LEXICON_FILE, repo_type="dataset"))
+    return Lexicon.load(dataset_file(repo, LEXICON_FILE))
 
 
 def load_hebrew_names(repo: str = DATASET_REPO) -> dict:
-    with open(hf_hub_download(repo, HEBREW_TITLES_FILE, repo_type="dataset"), encoding="utf-8") as handle:
+    with open(dataset_file(repo, HEBREW_TITLES_FILE), encoding="utf-8") as handle:
         return json.load(handle)
 
 
@@ -33,7 +55,7 @@ def load_split(split: str, repo: str = DATASET_REPO, context_words: int = 100, m
     (falling back to English for a title the table of contents does not know)."""
     names = hebrew_names if hebrew_names is not None else load_hebrew_names(repo)
     titles, categories = names["titles"], names["categories"]
-    path = hf_hub_download(repo, f"{split}.jsonl", repo_type="dataset")
+    path = dataset_file(repo, f"{split}.jsonl")
     rows = []
     with open(path, encoding="utf-8") as handle:
         for line in handle:

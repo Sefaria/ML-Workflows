@@ -4,7 +4,7 @@ from pathlib import Path
 
 from prefect import task
 
-from roshei_tevot.steps.data import DATASET_REPO, load_lexicon
+from roshei_tevot.steps.data import GCS_DATASET, load_lexicon
 from roshei_tevot.steps.index import ExpansionIndex
 from roshei_tevot.steps.model import load_for_inference
 from utils.gcs import download_directory, upload_directory
@@ -31,7 +31,7 @@ def build_and_upload(model_dir: str, dataset_repo: str, bucket: str, prefix: str
 
 
 @slack_notified_flow(workflow_name=WORKFLOW_NAME, log_prints=True)
-def build_expansion_index_flow(model_bucket: str, model_prefix: str, index_prefix: str, dataset_repo: str = DATASET_REPO) -> None:
+def build_expansion_index_flow(model_bucket: str, model_prefix: str, index_prefix: str, dataset_repo: str = GCS_DATASET) -> None:
     """Embed every lexicon expansion with a trained siamese model and publish the index (under 100 MB in fp16, meant to be held in RAM)."""
     work_dir = tempfile.mkdtemp(dir="/tmp", prefix="expansion-index-")
     try:

@@ -750,7 +750,7 @@ deployments:
       model_prefix: roshei-tevot/runs
       model_repo_id: dicta-il/BEREL
       revision: null
-      dataset_repo: Sefaria/berel-roshei-tevot
+      dataset_repo: gs://sefaria-ml-models/roshei-tevot/data/berel-roshei-tevot  # GCS mirror of Sefaria/berel-roshei-tevot; the pods have no HF token
       cache_root: /cache/huggingface
       architecture: siamese  # siamese | cross (for cross, set batch_size to about 16 rows: each row becomes up to 8 sequences)
       pooling: span  # span | cls | mean, for the siamese query tower
@@ -804,7 +804,7 @@ deployments:
     parameters:
       model_bucket: sefaria-ml-models
       index_prefix: roshei-tevot/index/latest
-      dataset_repo: Sefaria/berel-roshei-tevot
+      dataset_repo: gs://sefaria-ml-models/roshei-tevot/data/berel-roshei-tevot  # GCS mirror of Sefaria/berel-roshei-tevot; the pods have no HF token
     work_pool:
       name: sefaria-k8s
       job_variables:
@@ -837,7 +837,7 @@ deployments:
     parameters:
       report_bucket: sefaria-ml-models
       report_blob: roshei-tevot/eval/report.json
-      dataset_repo: Sefaria/berel-roshei-tevot
+      dataset_repo: gs://sefaria-ml-models/roshei-tevot/data/berel-roshei-tevot  # GCS mirror of Sefaria/berel-roshei-tevot; the pods have no HF token
       cache_root: /cache/huggingface
       splits: [val, test_seen_keys, test_unseen_keys]
       max_rows: null
