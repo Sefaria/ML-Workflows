@@ -35,6 +35,22 @@ modernbert/runs/<run_name>/training_report.json
 
 The model is trained on web pages and library texts with mixed licenses and is for internal use only.
 
+### Roshei tevot expansion (`roshei-tevot` tag)
+
+Siamese-trains BEREL so that an abbreviation marked in its context embeds near its correct expansion. Data is `Sefaria/berel-roshei-tevot` (private), including `lexicon/surface_index.jsonl`, the abbreviation-to-expansions map the index is built from. The lexicon and the letter checker come from the `expand_roshei_tevot` experiment in `Sefaria/translation-engine`; the checker is vendored in `app/roshei_tevot/steps/vendor/` (pinned commit in each file header, re-sync rather than edit).
+
+| Flow | Runs on | What it does |
+|---|---|---|
+| `train-roshei-tevot` | A100 | Contrastive training with the Hugging Face `Trainer`, GCS checkpoints every 10 minutes and resume on start, like `pretrain-modernbert`. Run it through `pretrain-supervisor` with `deployment_name: train-roshei-tevot-flow/train-roshei-tevot` to restart after spot evictions |
+| `build-expansion-index` | A100 | Embeds all ~57k lexicon expansions with a trained model and writes `embeddings.npy` (fp16, under 100 MB) and `lexicon.json` to GCS. Load with `ExpansionIndex.load` and keep it in RAM |
+| `evaluate-roshei-tevot` | A100 | Ranks candidates on `val`, `test_seen_keys` and `test_unseen_keys` for each model; list the untrained base model first for the no-fine-tuning baseline |
+
+**Input.** The query is `[CLS] {category} | {title} [SEP] …before <abbr> {surface} </abbr> after… [SEP]`: metadata is its own segment so truncation cannot reach it, the abbreviation is wrapped in two added marker tokens (BEREL has no unused slots and `⟦ ⟧` would both be `[UNK]`), and the surface keeps its attached prefix. The context is at most 100 words per side, trimmed symmetrically to 256 tokens. The query embedding is the mean over the marked span (`pooling: span`; `cls` and `mean` are ablations). A candidate is just the expansion text, mean pooled by the same encoder.
+
+**Loss.** InfoNCE over a pool made of the batch's positives plus up to 7 same-key lexicon candidates per row, deduplicated by text so an expansion shared by two rows is never a false negative. Rows are resampled with weight `1 / count(key)^0.5`, and synthetic swapped-back rows count half.
+
+**Lookup.** For a token: take the expansions the lexicon lists for it as written or for any prefix-stripped reading, drop the ones whose letters do not spell the token (`checker.token_fits`), rank the rest by cosine, and abstain with `decide(ranked, min_score, min_margin)` when the answer is weak or too close to the runner-up. Tokens with no lexicon entry get no candidates unless `scan_unknown` is set, which scans every expansion through the checker and is slow.
+
 ## Repository structure
 
 ```

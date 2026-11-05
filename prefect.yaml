@@ -739,3 +739,126 @@ deployments:
         memory_limit: 24Gi
         pod_watch_timeout_seconds: 3600
     schedules: []
+
+  # run_name is required and is supplied by pretrain-supervisor (deployment_name: train-roshei-tevot-flow/train-roshei-tevot) so restarts reuse the same checkpoints.
+  - name: train-roshei-tevot
+    tags: ["roshei-tevot"]
+    description: "Siamese-train BEREL on Sefaria/berel-roshei-tevot so a marked abbreviation in context embeds near its correct expansion; spot A100 with GCS checkpoints"
+    entrypoint: roshei_tevot/flows/train_roshei_tevot.py:train_roshei_tevot_flow
+    parameters:
+      model_bucket: sefaria-ml-models
+      model_prefix: roshei-tevot/runs
+      model_repo_id: dicta-il/BEREL
+      revision: null
+      dataset_repo: Sefaria/berel-roshei-tevot
+      cache_root: /cache/huggingface
+      pooling: span  # span | cls | mean, for the query tower
+      max_length: 256
+      context_words: 100  # The dataset stores up to 100 words either side; the 256-token budget trims the rest.
+      hard_negatives: 7
+      key_alpha: 0.5  # sampling weight is 1 / count(key)^alpha
+      synthetic_weight: 0.5
+      samples_per_epoch: 600000
+      epochs: 2
+      batch_size: 128
+      learning_rate: 0.00003
+      weight_decay: 0.01
+      warmup_ratio: 0.05
+      eval_steps: 500
+      eval_max_rows: 4000
+      checkpoint_minutes: 10
+      seed: 0
+      dataloader_num_workers: 4
+      max_train_rows: null  # Set for a smoke run, for example 20000.
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "8"
+        memory_request: 32Gi
+        memory_limit: 48Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
+
+  # model_prefix is required: pass the run's final model, for example roshei-tevot/runs/<run_name>/final.
+  - name: build-expansion-index
+    tags: ["roshei-tevot"]
+    description: "Embed every lexicon expansion with a trained model and publish the in-RAM expansion index to GCS"
+    entrypoint: roshei_tevot/flows/build_expansion_index.py:build_expansion_index_flow
+    parameters:
+      model_bucket: sefaria-ml-models
+      index_prefix: roshei-tevot/index/latest
+      dataset_repo: Sefaria/berel-roshei-tevot
+      lexicon_file: lexicon/surface_index.jsonl
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "4"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
+
+  # models is required, for example [{"label": "base", "hf_repo": "dicta-il/BEREL"}, {"label": "siamese", "bucket": "sefaria-ml-models", "prefix": "roshei-tevot/runs/<run_name>/final"}].
+  - name: evaluate-roshei-tevot
+    tags: ["roshei-tevot"]
+    description: "Rank expansion candidates on the val and held-out test splits for each model, against a frequency baseline and the untrained model"
+    entrypoint: roshei_tevot/flows/evaluate_roshei_tevot.py:evaluate_roshei_tevot_flow
+    parameters:
+      report_bucket: sefaria-ml-models
+      report_blob: roshei-tevot/eval/report.json
+      dataset_repo: Sefaria/berel-roshei-tevot
+      lexicon_file: lexicon/surface_index.jsonl
+      cache_root: /cache/huggingface
+      splits: [val, test_seen_keys, test_unseen_keys]
+      max_rows: null
+      scan_unknown: false
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "4"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
