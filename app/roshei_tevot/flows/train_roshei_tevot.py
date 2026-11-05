@@ -9,7 +9,7 @@ from prefect import task
 
 from embeddings.steps.training.model_cache import cache_huggingface_model
 from encoder_pretraining.steps.training import require_bf16_gpu
-from roshei_tevot.steps.data import DATASET_REPO
+from roshei_tevot.steps.data import GCS_DATASET
 from roshei_tevot.steps.training import run_training
 from utils.gcs import blob_exists, upload_directory, write_blob_text
 from utils.slack import notify_workflow_event, slack_notified_flow
@@ -51,7 +51,7 @@ def train_roshei_tevot_flow(
     model_prefix: str,
     model_repo_id: str = "dicta-il/BEREL",
     revision: Optional[str] = None,
-    dataset_repo: str = DATASET_REPO,
+    dataset_repo: str = GCS_DATASET,
     cache_root: str = "/cache/huggingface",
     architecture: str = "siamese",
     pooling: str = "span",

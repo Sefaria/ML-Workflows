@@ -8,7 +8,7 @@ from typing import Optional
 from prefect import task
 
 from embeddings.steps.training.model_cache import cache_huggingface_model
-from roshei_tevot.steps.data import DATASET_REPO, attach_candidates, load_hebrew_names, load_lexicon, load_split
+from roshei_tevot.steps.data import GCS_DATASET, attach_candidates, load_hebrew_names, load_lexicon, load_split
 from roshei_tevot.steps.evaluation import PRIOR_WEIGHTS, evaluate_splits
 from roshei_tevot.steps.model import load_for_inference
 from utils.gcs import download_directory, write_blob_text
@@ -67,7 +67,7 @@ def evaluate_roshei_tevot_flow(
     models: list[dict],
     report_bucket: str,
     report_blob: str,
-    dataset_repo: str = DATASET_REPO,
+    dataset_repo: str = GCS_DATASET,
     cache_root: str = "/cache/huggingface",
     splits: Optional[list[str]] = None,
     max_rows: Optional[int] = None,
