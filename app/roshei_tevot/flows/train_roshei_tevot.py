@@ -53,10 +53,13 @@ def train_roshei_tevot_flow(
     revision: Optional[str] = None,
     dataset_repo: str = DATASET_REPO,
     cache_root: str = "/cache/huggingface",
+    architecture: str = "siamese",
     pooling: str = "span",
-    max_length: int = 256,
+    within_weight: float = 1.0,
+    max_length: int = 384,
     context_words: int = 100,
     hard_negatives: int = 7,
+    min_candidates: int = 2,
     key_alpha: float = 0.5,
     synthetic_weight: float = 0.5,
     samples_per_epoch: int = 600_000,
@@ -66,7 +69,7 @@ def train_roshei_tevot_flow(
     weight_decay: float = 0.01,
     warmup_ratio: float = 0.05,
     eval_steps: int = 500,
-    eval_max_rows: int = 4000,
+    eval_max_rows: int = 5000,
     checkpoint_minutes: float = 10.0,
     seed: int = 0,
     dataloader_num_workers: int = 4,
@@ -88,8 +91,9 @@ def train_roshei_tevot_flow(
         training = train(
             base_model_path=base_dir, output_dir=str(Path(work_dir) / "output"),
             checkpoint_bucket=model_bucket, checkpoint_prefix=f"{run_root}/checkpoints", workflow_name=WORKFLOW_NAME,
-            dataset_repo=dataset_repo, pooling=pooling, max_length=max_length, context_words=context_words,
-            hard_negatives=hard_negatives, key_alpha=key_alpha, synthetic_weight=synthetic_weight,
+            dataset_repo=dataset_repo, architecture=architecture, pooling=pooling, within_weight=within_weight,
+            max_length=max_length, context_words=context_words, hard_negatives=hard_negatives, min_candidates=min_candidates,
+            key_alpha=key_alpha, synthetic_weight=synthetic_weight,
             samples_per_epoch=samples_per_epoch, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
             weight_decay=weight_decay, warmup_ratio=warmup_ratio, eval_steps=eval_steps, eval_max_rows=eval_max_rows,
             checkpoint_minutes=checkpoint_minutes, seed=seed, dataloader_num_workers=dataloader_num_workers,
@@ -100,6 +104,8 @@ def train_roshei_tevot_flow(
                   "model_repo_id": model_repo_id, "revision": revision, "accelerator": accelerator, "training": training, "model_uri": model_uri}
         write_blob_text(model_bucket, f"{run_root}/training_report.json", json.dumps(report, ensure_ascii=False, indent=2, default=str))
         notify_workflow_event(workflow_name=WORKFLOW_NAME, title=f"{WORKFLOW_NAME} completed", status="completed",
-                              details={"run_name": run_name, "model_uri": model_uri, "eval_loss": training["final_eval"].get("eval_loss")})
+                              details={"run_name": run_name, "architecture": architecture, "model_uri": model_uri,
+                                       "eval_loss": training["final_eval"].get("eval_loss"), "eval_top1": training["final_eval"].get("eval_top1"),
+                                       "eval_frequency_top1": training["final_eval"].get("eval_frequency_top1")})
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)

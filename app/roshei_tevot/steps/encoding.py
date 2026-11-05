@@ -10,8 +10,12 @@ The metadata is a separate segment so truncation never reaches it, the abbreviat
 The surface is kept as written, attached prefix included; the target is the expansion without the prefix.
 
 Candidate (the expansion tower): [CLS] {expansion} [SEP], pooled over its tokens.
+Cross-encoder: [CLS] {expansion} [SEP] {category} | {title} [SEP] ...context... [SEP], scored from CLS and the marked span.
+Category and title are Hebrew (data.load_split maps them through the Sefaria table of contents).
 """
 from dataclasses import dataclass
+
+from typing import Optional
 
 import torch
 
@@ -55,13 +59,19 @@ def encode_query(
     after: str,
     category: str,
     title: str,
-    max_length: int = 256,
+    max_length: int = 384,
     max_meta_tokens: int = 32,
-    context_words: int = 64,
+    context_words: int = 100,
+    candidate: Optional[str] = None,
+    candidate_length: int = 24,
 ) -> QueryEncoding:
-    """Build one query. The window is at most `context_words` words per side and then trimmed to the token budget."""
+    """Build one query. The window is at most `context_words` words per side and then trimmed to the token budget.
+
+    With `candidate` this is a cross-encoder input: the expansion opens the first segment, `[CLS] candidate [SEP] meta [SEP] context [SEP]`.
+    """
     open_id, close_id = marker_ids(tokenizer)
-    meta = _ids(tokenizer, metadata_text(category, title))[:max_meta_tokens]
+    lead = _ids(tokenizer, candidate)[: candidate_length - 2] + [tokenizer.sep_token_id] if candidate is not None else []
+    meta = lead + _ids(tokenizer, metadata_text(category, title))[:max_meta_tokens]
     mid = [open_id] + _ids(tokenizer, surface) + [close_id]
     before_ids = _ids(tokenizer, " ".join(before.split()[-context_words:]))
     after_ids = _ids(tokenizer, " ".join(after.split()[:context_words]))

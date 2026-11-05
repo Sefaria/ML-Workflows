@@ -743,7 +743,7 @@ deployments:
   # run_name is required and is supplied by pretrain-supervisor (deployment_name: train-roshei-tevot-flow/train-roshei-tevot) so restarts reuse the same checkpoints.
   - name: train-roshei-tevot
     tags: ["roshei-tevot"]
-    description: "Siamese-train BEREL on Sefaria/berel-roshei-tevot so a marked abbreviation in context embeds near its correct expansion; spot A100 with GCS checkpoints"
+    description: "Train BEREL on Sefaria/berel-roshei-tevot to pick a roshei tevot expansion in context (siamese, or a cross-encoder for comparison); spot A100 with GCS checkpoints"
     entrypoint: roshei_tevot/flows/train_roshei_tevot.py:train_roshei_tevot_flow
     parameters:
       model_bucket: sefaria-ml-models
@@ -752,10 +752,13 @@ deployments:
       revision: null
       dataset_repo: Sefaria/berel-roshei-tevot
       cache_root: /cache/huggingface
-      pooling: span  # span | cls | mean, for the query tower
-      max_length: 256
+      architecture: siamese  # siamese | cross (for cross, set batch_size to about 16 rows: each row becomes up to 8 sequences)
+      pooling: span  # span | cls | mean, for the siamese query tower
+      within_weight: 1.0  # weight of the loss term over each row's own candidates
+      max_length: 384  # keeps every val query whole at 100 words per side
       context_words: 100  # The dataset stores up to 100 words either side; the 256-token budget trims the rest.
       hard_negatives: 7
+      min_candidates: 2  # rows whose lexicon lookup gives fewer candidates are dropped
       key_alpha: 0.5  # sampling weight is 1 / count(key)^alpha
       synthetic_weight: 0.5
       samples_per_epoch: 600000
@@ -765,7 +768,7 @@ deployments:
       weight_decay: 0.01
       warmup_ratio: 0.05
       eval_steps: 500
-      eval_max_rows: 4000
+      eval_max_rows: 5000  # val has about 4,500 rows with two or more candidates
       checkpoint_minutes: 10
       seed: 0
       dataloader_num_workers: 4
@@ -802,7 +805,6 @@ deployments:
       model_bucket: sefaria-ml-models
       index_prefix: roshei-tevot/index/latest
       dataset_repo: Sefaria/berel-roshei-tevot
-      lexicon_file: lexicon/surface_index.jsonl
     work_pool:
       name: sefaria-k8s
       job_variables:
@@ -826,20 +828,22 @@ deployments:
         pod_watch_timeout_seconds: 3600
     schedules: []
 
-  # models is required, for example [{"label": "base", "hf_repo": "dicta-il/BEREL"}, {"label": "siamese", "bucket": "sefaria-ml-models", "prefix": "roshei-tevot/runs/<run_name>/final"}].
+  # models is required; the first is the reference for gap_to_first. For example [{"label": "siamese", "bucket": "sefaria-ml-models", "prefix": "roshei-tevot/runs/<siamese_run>/final"},
+  #   {"label": "cross", "bucket": "sefaria-ml-models", "prefix": "roshei-tevot/runs/<cross_run>/final"}, {"label": "untrained", "hf_repo": "dicta-il/BEREL"}].
   - name: evaluate-roshei-tevot
     tags: ["roshei-tevot"]
-    description: "Rank expansion candidates on the val and held-out test splits for each model, against a frequency baseline and the untrained model"
+    description: "Rank expansion candidates on val and the held-out test splits for each model, sweep the frequency prior, and check the success criterion"
     entrypoint: roshei_tevot/flows/evaluate_roshei_tevot.py:evaluate_roshei_tevot_flow
     parameters:
       report_bucket: sefaria-ml-models
       report_blob: roshei-tevot/eval/report.json
       dataset_repo: Sefaria/berel-roshei-tevot
-      lexicon_file: lexicon/surface_index.jsonl
       cache_root: /cache/huggingface
       splits: [val, test_seen_keys, test_unseen_keys]
       max_rows: null
-      scan_unknown: false
+      min_candidates: 2
+      context_words: 100
+      prior_weights: [0.0, 0.25, 0.5, 1.0, 2.0]  # score + λ * log(1 + lexicon frequency); λ is chosen on val
     work_pool:
       name: sefaria-k8s
       job_variables:
