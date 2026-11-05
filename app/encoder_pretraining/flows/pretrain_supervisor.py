@@ -20,6 +20,12 @@ A100_NODE_SELECTORS = {
 }
 
 
+def was_interrupted(state) -> bool:
+    """A spot eviction normally ends the GPU run Crashed. With DataLoader workers the SIGTERM can reach a worker first; the
+    training loop then raises "DataLoader worker ... is killed by signal: Terminated" and the run ends Failed instead."""
+    return state.is_crashed() or (state.is_failed() and "killed by signal: Terminated" in (state.message or ""))
+
+
 def capacity_for_attempt(attempt: int, spot_attempts: int, allow_on_demand: bool) -> str:
     return "spot" if attempt <= spot_attempts or not allow_on_demand else "on_demand"
 
@@ -39,7 +45,7 @@ def pretrain_supervisor_flow(
     A spot eviction or an unschedulable pod ends the GPU flow run as Crashed. The
     GPU flow resumes from its newest GCS checkpoint, so each retry continues the
     same run. With allow_on_demand, retries after spot_attempts crashes move to on-demand A100s.
-    A flow that ends Failed (a code error) is not retried.
+    A flow that ends Failed (a code error) is not retried, except when the failure is a DataLoader worker killed by the eviction's SIGTERM.
     """
     run_name = run_name or str(flow_run.id)
     parameters = {**(gpu_parameters or {}), "run_name": run_name}
@@ -56,7 +62,7 @@ def pretrain_supervisor_flow(
         state = gpu_run.state
         if state.is_completed():
             return run_name
-        if not state.is_crashed():
+        if not was_interrupted(state):
             raise RuntimeError(f"GPU run ended in state {state.name}; not retrying. Run id: {gpu_run.id}")
 
         notify_workflow_event(
