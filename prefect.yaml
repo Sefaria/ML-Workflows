@@ -843,7 +843,7 @@ deployments:
       max_rows: null
       min_candidates: 2
       context_words: 100
-      prior_weights: [0.0, 0.25, 0.5, 1.0, 2.0]  # score + λ * log(1 + lexicon frequency); λ is chosen on val
+      prior_weights: [0.0, 0.25, 0.5, 1.0, 2.0, 4.0]  # score + λ * log(1 + lexicon frequency); λ is chosen on val
     work_pool:
       name: sefaria-k8s
       job_variables:

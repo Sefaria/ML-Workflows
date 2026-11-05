@@ -16,7 +16,7 @@ from .data import encode_rows, encode_texts, score_pairs
 from .index import prior
 from .vendor.spelling import same_expansion
 
-PRIOR_WEIGHTS = (0.0, 0.25, 0.5, 1.0, 2.0)
+PRIOR_WEIGHTS = (0.0, 0.25, 0.5, 1.0, 2.0, 4.0)
 COVERAGE_LEVELS = (0.5, 0.8, 0.9)
 SUCCESS_SPLITS = ("val", "test_seen_keys")
 SUCCESS_MARGIN = 0.03
