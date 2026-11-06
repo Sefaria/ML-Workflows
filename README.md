@@ -113,7 +113,7 @@ gcloud storage buckets add-iam-policy-binding gs://sefaria-ml-models \
 
 ## Docker image
 
-A single image is used for the embedding flows, based on `pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime`. The ModernBERT GPU flows use a second image, `Dockerfile.gpu-train`, based on torch 2.5.1 with a prebuilt flash-attn wheel. Both are built and pushed to Google Artifact Registry on every merge to `main`.
+A single image is used for the embedding flows, based on `pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime`. The ModernBERT GPU flows use a second image, `Dockerfile.gpu-train`, based on torch 2.6 (the minimum transformers 4.57 needs to resume a Trainer checkpoint) with a prebuilt flash-attn wheel. Both are built and pushed to Google Artifact Registry on every merge to `main`.
 
 Image paths: `us-east1-docker.pkg.dev/<DEV_GKE_PROJECT>/containers/mlworkflows` and `.../containers/mlworkflows-gpu-train`
 
