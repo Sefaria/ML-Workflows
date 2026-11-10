@@ -223,3 +223,37 @@ def test_bootstrap_ci_brackets_the_rate():
     flagged = np.r_[np.zeros(25), np.full(25, 4.0)]
     lo, hi = bootstrap_ci(words, flagged)
     assert lo < 20.0 < hi
+
+
+def test_segment_label_scope_keeps_neighbours_as_unlabelled_context(tokenizer):
+    tokens = ["אב", "גד", "הו", "זח", "טי", "כל"]          # segment is tokens 2..4; the rest are neighbouring segments
+    row = make_row(tokens, [1, 0, 0, 1, 0, 1], [{"i1": 3, "i2": 4, "before": ["זח"], "after": ["זט"], "kind": "typo", "labelled": True}])
+    row["segment_span"] = [2, 4]
+    [all_chunk] = chunk_row(tokenizer, row, 32, "all")
+    [seg_chunk] = chunk_row(tokenizer, row, 32, "segment")
+    assert all_chunk["word_index"] == [0, 1, 2, 3, 4, 5] and all_chunk["word_in_segment"] == [False, False, True, True, False, False]
+    assert seg_chunk["word_index"] == [2, 3]
+    assert list(seg_chunk["input_ids"]) == list(all_chunk["input_ids"])     # same input, fewer labels
+    assert [int(l) for l in seg_chunk["labels"] if l != IGNORE] == [0, 1]
+    syn = dict(row, source="synthetic")
+    assert chunk_row(tokenizer, syn, 32, "segment")[0]["word_index"] == [0, 1, 2, 3, 4, 5]   # synthetic labels are all kept
+    with pytest.raises(ValueError):
+        chunk_row(tokenizer, row, 32, "nope")
+
+
+def test_corrected_moves_the_segment_end_with_fixes_inside_it():
+    row = make_row(["אב", "גדהו", "זח", "טי"], [0, 1, 0, 0],
+                   [{"i1": 1, "i2": 2, "before": ["גדהו"], "after": ["גד", "הו"], "kind": "spacing", "labelled": True}])
+    row["segment_span"] = [1, 3]
+    fixed = corrected(row)
+    assert fixed["tokens"] == ["אב", "גד", "הו", "זח", "טי"] and fixed["segment_span"] == [1, 4]
+
+
+def test_evaluation_reports_segment_words_separately():
+    from error_detection.steps.evaluation import score_and_summarise
+
+    words = [{"chunk": "a#0", "word_index": i, "label": l, "kind": "typo" if l else None, "version": "V", "score": s, "in_segment": seg}
+             for i, (l, s, seg) in enumerate([(1, 0.9, True), (0, 0.1, True), (0, 0.8, False), (1, 0.7, False)])]
+    rep = score_and_summarise(words, words)
+    assert rep["test"]["words"] == 4 and rep["segment"]["test"]["words"] == 2
+    assert rep["segment"]["test"]["pr_auc"] == pytest.approx(1.0)

@@ -895,6 +895,7 @@ deployments:
       seed: 0
       dataloader_num_workers: 4
       max_train_rows: null  # Set for a smoke run, for example 2000.
+      label_scope: all  # all | segment (neighbouring segments as context only, no labels, in real windows)
     work_pool:
       name: sefaria-k8s
       job_variables:

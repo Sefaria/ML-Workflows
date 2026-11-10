@@ -70,7 +70,8 @@ def predict_words(model, tokenizer, chunks: list[dict], device: str, batch_size:
             positions = (labels[r] != IGNORE).nonzero().flatten().tolist()
             for w, p in enumerate(positions):
                 out.append({"chunk": chunk["id"], "word_index": chunk["word_index"][w], "label": int(labels[r, p]),
-                            "kind": chunk["word_kind"][w], "version": chunk["version"], "score": float(probs[r, p])})
+                            "kind": chunk["word_kind"][w], "version": chunk["version"], "score": float(probs[r, p]),
+                            "in_segment": bool(chunk.get("word_in_segment", [True] * (w + 1))[w])})
     return out
 
 
@@ -148,4 +149,18 @@ def false_positive_sample(words: list[dict], rows_by_id: dict, threshold: float,
         i = w["word_index"]
         out.append({"id": row["id"], "ref": row["ref"], "version": row["version"], "score": round(w["score"], 4), "word": row["tokens"][i],
                     "before": " ".join(row["tokens"][max(0, i - context):i]), "after": " ".join(row["tokens"][i + 1:i + 1 + context])})
+    return out
+
+
+def score_and_summarise(words_val: list[dict], words_test: list[dict], val_scores=None, test_scores=None) -> dict:
+    """Threshold chosen on validation by best F1, then applied to test. Reported on all words and on the edited segment's words only
+    (neighbouring segments are unverified library text), each with its own validation threshold."""
+    val = summarise(words_val, scores=val_scores)
+    out = {"validation": val, "test": summarise(words_test, threshold=val["threshold"], scores=test_scores)}
+    def seg(words, scores):
+        keep = [i for i, w in enumerate(words) if w.get("in_segment", True)]
+        return [words[i] for i in keep], ([scores[i] for i in keep] if scores is not None else None)
+    (sv, ss), (st, sts) = seg(words_val, val_scores), seg(words_test, test_scores)
+    seg_val = summarise(sv, scores=ss)
+    out["segment"] = {"validation": seg_val, "test": summarise(st, threshold=seg_val["threshold"], scores=sts)}
     return out
