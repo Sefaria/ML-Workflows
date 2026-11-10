@@ -53,6 +53,29 @@ Trains BEREL to pick the expansion of a roshei tevot abbreviation in context. Th
 
 **Scoring.** `score = model score + λ · log(1 + lexicon frequency)`, with λ swept over `prior_weights` and chosen on val. Success means top-1 at least 3 points above the most-frequent-expansion baseline on `val` and `test_seen_keys`. At inference, `decide(ranked, min_score, min_margin)` abstains when the answer is weak or too close to the runner-up.
 
+### Hebrew error detection (`error-detection` tag)
+
+Fine-tunes BEREL 3.0 (`dicta-il/BEREL_3.0`; do not use `dicta-il/BEREL`, which is version 1.0) as a binary token classifier that marks the words of a Hebrew or Aramaic passage that are errors: OCR damage, typos, broken spacing, stray characters. Its flagged-word rate per version is meant to become a version-quality score. Data is `Sefaria/hebrew-text-corrections` (private): windows of text from Sefaria's edit history where an editor later fixed an error, plus synthetic windows with injected errors. It is built by the `version_quality_from_history` experiment in `Sefaria/translation-engine`, which also holds the plan (`TRAINING_PLAN.md`). The pods have no Hugging Face token, so the flows read a copy at `gs://sefaria-ml-models/error-detection/data/hebrew-text-corrections/` (re-copy after the dataset changes). The text normalization is vendored in `app/error_detection/steps/vendor/` (pinned commit in the file header).
+
+| Flow | Runs on | What it does |
+|---|---|---|
+| `train-error-detector` | A100 | Hugging Face `Trainer` with GCS checkpoints every 10 minutes and resume on start; run it through `pretrain-supervisor` with `deployment_name: train-error-detector-flow/train-error-detector`. Weighted cross-entropy (`pos_weight`) for the error class; keeps the weights with the best validation PR-AUC |
+| `evaluate-error-detector` | A100 | Word-level precision, recall, F1 and PR-AUC on the real validation and test splits (threshold chosen on validation), recall by fix kind, the lexicon and BEREL masked-LM baselines, and 100 flagged words labelled ok for a hand audit |
+
+**Input.** Each dataset token is normalized (tags and niqqud removed, maqaf split), words that normalize to nothing are dropped, and whole words are packed into chunks of at most 256 word pieces. The first piece of a word carries its label. Label 2 (word missing) is mapped to 0.
+
+**Training mix.** Real erroneous windows; their corrected copies with every word labelled ok (`paired_negatives`, weight `negative_weight`), so the model does not learn that every window has an error; synthetic windows at `synthetic_weight`. Validation uses real windows and their corrected copies only, never synthetic text.
+
+GCS layout (bucket `sefaria-ml-models`):
+
+```
+error-detection/data/hebrew-text-corrections/   # dataset mirror
+error-detection/runs/<run_name>/checkpoints/    # last two checkpoints and latest.json
+error-detection/runs/<run_name>/final/          # final model and error_detection_config.json (validation threshold), _SUCCESS last
+error-detection/runs/<run_name>/training_report.json
+error-detection/eval/report.json
+```
+
 ## Repository structure
 
 ```
