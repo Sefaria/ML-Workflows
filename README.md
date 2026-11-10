@@ -61,6 +61,7 @@ Fine-tunes BEREL 3.0 (`dicta-il/BEREL_3.0`; do not use `dicta-il/BEREL`, which i
 |---|---|---|
 | `train-error-detector` | A100 | Hugging Face `Trainer` with GCS checkpoints every 10 minutes and resume on start; run it through `pretrain-supervisor` with `deployment_name: train-error-detector-flow/train-error-detector`. Weighted cross-entropy (`pos_weight`) for the error class; keeps the weights with the best validation PR-AUC |
 | `evaluate-error-detector` | A100 | Word-level precision, recall, F1 and PR-AUC on the real validation and test splits (threshold chosen on validation), recall by fix kind, the lexicon and BEREL masked-LM baselines, and 100 flagged words labelled ok for a hand audit |
+| `score-versions` | A100 | Runs a trained model over a fixed random sample of each version's segments (`gs://sefaria-ml-models/error-detection/data/version-sample/segments.jsonl`, about 300 segments per version with 20k+ words, built by `sample_versions.py` in translation-engine, since the pods cannot reach Sefaria's database) and writes `versions.csv` and `books.csv` (flagged words per 1,000 with 95% bootstrap intervals over segments) and `examples.json` (top flagged words per version) to `output_prefix` |
 
 **Input.** Each dataset token is normalized (tags and niqqud removed, maqaf split), words that normalize to nothing are dropped, and whole words are packed into chunks of at most 256 word pieces. The first piece of a word carries its label. Label 2 (word missing) is mapped to 0.
 
@@ -74,6 +75,8 @@ error-detection/runs/<run_name>/checkpoints/    # last two checkpoints and lates
 error-detection/runs/<run_name>/final/          # final model and error_detection_config.json (validation threshold), _SUCCESS last
 error-detection/runs/<run_name>/training_report.json
 error-detection/eval/report.json
+error-detection/data/version-sample/segments.jsonl    # segment sample for score-versions
+error-detection/version-scores/<run_name>/           # versions.csv, books.csv, examples.json, meta.json
 ```
 
 ## Repository structure
