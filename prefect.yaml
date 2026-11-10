@@ -866,3 +866,92 @@ deployments:
         memory_limit: 24Gi
         pod_watch_timeout_seconds: 3600
     schedules: []
+
+  # run_name is required and is supplied by pretrain-supervisor (deployment_name: train-error-detector-flow/train-error-detector) so restarts reuse the same checkpoints.
+  - name: train-error-detector
+    tags: ["error-detection"]
+    description: "Fine-tune BEREL 3.0 as a binary token classifier for Hebrew text errors (OCR, typos, spacing) on Sefaria/hebrew-text-corrections; spot A100 with GCS checkpoints"
+    entrypoint: error_detection/flows/train_error_detector.py:train_error_detector_flow
+    parameters:
+      model_bucket: sefaria-ml-models
+      model_prefix: error-detection/runs
+      model_repo_id: dicta-il/BEREL_3.0
+      revision: null
+      dataset_repo: gs://sefaria-ml-models/error-detection/data/hebrew-text-corrections  # GCS mirror of Sefaria/hebrew-text-corrections; the pods have no HF token
+      cache_root: /cache/huggingface
+      max_length: 256  # word pieces per chunk; windows are packed on word boundaries
+      paired_negatives: true  # add each real window's corrected copy, all words labelled ok
+      negative_weight: 1.0
+      synthetic_weight: 0.5  # sweep 0, 0.5, 1.0
+      pos_weight: 5.0  # loss weight of the error class; sweep 3, 10
+      samples_per_epoch: null  # null draws as many chunks as there are
+      epochs: 3
+      batch_size: 64
+      learning_rate: 0.00003
+      weight_decay: 0.01
+      warmup_ratio: 0.05
+      eval_steps: 500
+      checkpoint_minutes: 10
+      seed: 0
+      dataloader_num_workers: 4
+      max_train_rows: null  # Set for a smoke run, for example 2000.
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "8"
+        memory_request: 32Gi
+        memory_limit: 48Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
+
+  # models is required, for example [{"label": "base", "bucket": "sefaria-ml-models", "prefix": "error-detection/runs/<run_name>/final"}].
+  - name: evaluate-error-detector
+    tags: ["error-detection"]
+    description: "Word-level error metrics on the real validation and test splits, recall by fix kind, lexicon and BEREL masked-LM baselines, and a false-positive sample for hand audit"
+    entrypoint: error_detection/flows/evaluate_error_detector.py:evaluate_error_detector_flow
+    parameters:
+      report_bucket: sefaria-ml-models
+      report_blob: error-detection/eval/report.json
+      dataset_repo: gs://sefaria-ml-models/error-detection/data/hebrew-text-corrections  # GCS mirror of Sefaria/hebrew-text-corrections; the pods have no HF token
+      cache_root: /cache/huggingface
+      max_rows: null
+      max_length: 256
+      baselines: true
+      mlm_max_rows: 600  # the masked-LM baseline runs one forward pass per word piece
+      fp_sample: 100
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "4"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
