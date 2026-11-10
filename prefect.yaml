@@ -955,3 +955,37 @@ deployments:
         memory_limit: 24Gi
         pod_watch_timeout_seconds: 3600
     schedules: []
+
+  # model_prefix and output_prefix are required, for example error-detection/runs/<run_name>/final and error-detection/version-scores/<run_name>.
+  - name: score-versions
+    tags: ["error-detection"]
+    description: "Flagged words per 1,000 for each version (and version/book) in a fixed random segment sample, with bootstrap intervals and top flagged words per version"
+    entrypoint: error_detection/flows/score_versions.py:score_versions_flow
+    parameters:
+      model_bucket: sefaria-ml-models
+      sample_repo: gs://sefaria-ml-models/error-detection/data/version-sample  # segments.jsonl from sample_versions.py in translation-engine
+      threshold: null  # null uses the model's validation threshold
+      max_segments: null
+      batch_size: 128
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "4"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []

@@ -43,7 +43,7 @@ def best_threshold(scores: np.ndarray, labels: np.ndarray) -> float:
 
 
 def token_metrics(eval_pred) -> dict:
-    """`compute_metrics` for the Trainer: PR-AUC and best F1 over labelled first pieces."""
+    """`compute_metrics` for the Trainer: PR-AUC, and F1 at the best threshold (key `f1`, so the Trainer prefixes give eval_f1 and best_f1)."""
     logits, labels = eval_pred
     logits, labels = np.asarray(logits), np.asarray(labels)
     mask = labels != IGNORE
@@ -51,7 +51,7 @@ def token_metrics(eval_pred) -> dict:
     probs = np.exp(shifted)[..., 1] / np.exp(shifted).sum(-1)
     scores, gold = probs[mask], labels[mask].astype(int)
     threshold = best_threshold(scores, gold)
-    return {"pr_auc": average_precision(scores, gold), "best_f1": prf(scores >= threshold, gold)["f1"], "threshold": threshold,
+    return {"pr_auc": average_precision(scores, gold), "f1": prf(scores >= threshold, gold)["f1"], "threshold": threshold,
             "positive_rate": float(gold.mean())}
 
 

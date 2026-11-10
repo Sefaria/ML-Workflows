@@ -101,6 +101,6 @@ def train_error_detector_flow(
         notify_workflow_event(workflow_name=WORKFLOW_NAME, title=f"{WORKFLOW_NAME} completed", status="completed",
                               details={"run_name": run_name, "model_uri": model_uri, "best_step": training["best_step"],
                                        "pr_auc": best.get("best_pr_auc", best.get("eval_pr_auc")),
-                                       "best_f1": best.get("best_best_f1", best.get("eval_best_f1"))})
+                                       "f1": best.get("best_f1", best.get("eval_f1"))})
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)

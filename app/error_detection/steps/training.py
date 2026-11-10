@@ -107,7 +107,7 @@ def run_training(
             GcsCheckpointCallback(checkpoint_bucket, checkpoint_prefix, checkpoint_minutes * 60),
             throughput,
             SlackEvalCallback(workflow_name, max_steps / steps_per_epoch, base_model_path,
-                              metric_keys=("eval_loss", "eval_pr_auc", "eval_best_f1")),
+                              metric_keys=("eval_loss", "eval_pr_auc", "eval_f1")),
         ],
     )
     result = trainer.train(resume_from_checkpoint=resume_path)

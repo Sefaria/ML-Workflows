@@ -191,3 +191,35 @@ def test_predictions_and_baselines_share_word_order(tokenizer, model_dir):
     assert report["recall_by_kind"]["typo"]["recall"] == 1.0
     sample = false_positive_sample(words, {r["id"]: r for r in rows}, threshold=0.0, n=10)
     assert all(s["word"] in row["tokens"] or s["word"] in corrected(row)["tokens"] for s in sample)
+
+
+def test_score_segments_aggregates_per_version_and_book(tmp_path, monkeypatch, model_dir):
+    from error_detection.steps import scoring
+
+    segments = [{"id": f"V{v}|Book {i}", "ref": f"Book {i}", "version": f"V{v}", "book": "Book", "license": "CC0",
+                 "tokens": ["אבג", "דה", "<br>", "וזח", "טי"]} for v in (1, 2) for i in range(5)]
+    path = tmp_path / "segments.jsonl"
+    path.write_text("\n".join(json.dumps(s, ensure_ascii=False) for s in segments) + "\n")
+    monkeypatch.setattr(scoring, "dataset_file", lambda repo, filename: str(path))
+    rows = scoring.load_segments("unused")
+    assert rows[0]["labels"] == [0] * 5 and rows[0]["source"] == "sample"
+
+    model, tok = build_model(model_dir)
+    counts, top = scoring.score_segments(model, tok, rows, "cpu", 32, threshold=0.0, block=3)
+    assert len(counts) == 10 and all(c[0] == 4 and c[1] == 4 for c in counts.values())  # "<br>" dropped; threshold 0 flags every word
+    versions = scoring.aggregate(rows, counts, ("version",))
+    assert [(r["version"], r["words"], r["flagged_per_1k"]) for r in sorted(versions, key=lambda r: r["version"])] == [("V1", 20, 1000.0), ("V2", 20, 1000.0)]
+    books = scoring.aggregate(rows, counts, ("version", "book"))
+    assert {(r["version"], r["book"]) for r in books} == {("V1", "Book"), ("V2", "Book")}
+    examples = top.rows()
+    assert {e["version"] for e in examples} == {"V1", "V2"} and all(len([e for e in examples if e["version"] == v]) == 5 for v in ("V1", "V2"))
+    assert scoring.to_csv(versions).splitlines()[0].startswith("version,segments,words,flagged")
+
+
+def test_bootstrap_ci_brackets_the_rate():
+    from error_detection.steps.scoring import bootstrap_ci
+
+    words = np.full(50, 100.0)
+    flagged = np.r_[np.zeros(25), np.full(25, 4.0)]
+    lo, hi = bootstrap_ci(words, flagged)
+    assert lo < 20.0 < hi
