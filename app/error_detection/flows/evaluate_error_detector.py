@@ -9,7 +9,7 @@ from prefect import task
 from embeddings.steps.training.model_cache import cache_huggingface_model
 from error_detection.steps.data import GCS_DATASET, build_training_rows, chunk_rows, load_rows
 from error_detection.steps.evaluation import (build_lexicon, false_positive_sample, lexicon_scores, mlm_word_scores, predict_words,
-                                              summarise)
+                                              score_and_summarise)
 from error_detection.steps.model import load_for_inference
 from utils.gcs import download_directory, write_blob_text
 from utils.slack import notify_workflow_event, slack_notified_flow
@@ -43,13 +43,6 @@ def first_windows(rows: list[dict], n: Optional[int]) -> list[dict]:
     return [row for row in rows if row["id"].removesuffix(":corrected") in keep]
 
 
-def _score_and_summarise(words_val: list[dict], words_test: list[dict], val_scores=None, test_scores=None) -> dict:
-    """Threshold chosen on validation by best F1, then applied to test."""
-    val = summarise(words_val, scores=val_scores)
-    test = summarise(words_test, threshold=val["threshold"], scores=test_scores)
-    return {"validation": val, "test": test}
-
-
 @task(log_prints=True)
 def evaluate_model(label: str, model_path: str, rows: dict, max_length: int, fp_sample: int) -> dict:
     import torch
@@ -58,12 +51,13 @@ def evaluate_model(label: str, model_path: str, rows: dict, max_length: int, fp_
     model, tokenizer, config = load_for_inference(model_path, device)
     chunks = {split: chunk_rows(tokenizer, rows[split], config.get("max_length", max_length)) for split in ("validation", "test")}
     words = {split: predict_words(model, tokenizer, chunks[split], device) for split in chunks}
-    report = _score_and_summarise(words["validation"], words["test"])
+    report = score_and_summarise(words["validation"], words["test"])
     rows_by_id = {row["id"]: row for row in rows["test"]}
     report["false_positive_sample"] = false_positive_sample(words["test"], rows_by_id, report["test"]["threshold"], fp_sample)
     report["config"] = config
+    s = report["segment"]["test"]
     print(f"{label}: test pr_auc={report['test']['pr_auc']:.3f} f1={report['test']['f1']:.3f} "
-          f"p={report['test']['precision']:.3f} r={report['test']['recall']:.3f}")
+          f"p={report['test']['precision']:.3f} r={report['test']['recall']:.3f} | segment words: pr_auc={s['pr_auc']:.3f} f1={s['f1']:.3f}")
     return report
 
 
@@ -84,10 +78,10 @@ def evaluate_baselines(rows: dict, cache_root: str, max_length: int, mlm_max_row
     chunks = {s: chunk_rows(tokenizer, first_windows(rows[s], mlm_max_rows), max_length) for s in ("validation", "test")}
     gold = {s: predict_words_labels(chunks[s]) for s in chunks}
     by_id = {s: {row["id"]: row for row in rows[s]} for s in ("validation", "test")}
-    out["lexicon"] = _score_and_summarise(gold["validation"], gold["test"],
+    out["lexicon"] = score_and_summarise(gold["validation"], gold["test"],
                                           lexicon_scores(chunks["validation"], by_id["validation"], lexicon),
                                           lexicon_scores(chunks["test"], by_id["test"], lexicon))
-    out["berel_mlm"] = _score_and_summarise(gold["validation"], gold["test"],
+    out["berel_mlm"] = score_and_summarise(gold["validation"], gold["test"],
                                             mlm_word_scores(mlm, tokenizer, chunks["validation"], device),
                                             mlm_word_scores(mlm, tokenizer, chunks["test"], device))
     out["lexicon"]["size"] = len(lexicon)
@@ -103,7 +97,8 @@ def predict_words_labels(chunks: list[dict]) -> list[dict]:
         positions = [i for i, label in enumerate(chunk["labels"]) if label != -100]
         for w, p in enumerate(positions):
             out.append({"chunk": chunk["id"], "word_index": chunk["word_index"][w], "label": int(chunk["labels"][p]),
-                        "kind": chunk["word_kind"][w], "version": chunk["version"], "score": 0.0})
+                        "kind": chunk["word_kind"][w], "version": chunk["version"], "score": 0.0,
+                        "in_segment": bool(chunk["word_in_segment"][w])})
     return out
 
 

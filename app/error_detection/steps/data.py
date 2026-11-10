@@ -66,6 +66,8 @@ def load_rows(config: str, split: str, repo: str = GCS_DATASET, max_rows: Option
                 "id": row["id"], "source": row["source"], "ref": row["ref"], "version": row["version"],
                 "tokens": row["tokens"], "labels": [1 if label == 1 else 0 for label in row["labels"]],
                 "fixes": row["fixes"], "kinds": word_kinds(row),
+                # where the edited segment sits in `tokens` (older rows without the field are all segment)
+                "segment_span": row.get("segment_span") or [0, len(row["tokens"])],
             })
             if max_rows and len(rows) >= max_rows:
                 break
@@ -76,24 +78,40 @@ def corrected(row: dict) -> dict:
     """The same window after its fixes, every token labelled 0: a negative paired with the erroneous window. Fixes are applied right to
     left so earlier indices stay valid; a fix running past the window end is clipped."""
     tokens = list(row["tokens"])
+    start, end = row.get("segment_span") or (0, len(tokens))
     for fix in sorted(row["fixes"], key=lambda f: f["i1"], reverse=True):
         i1, i2 = max(0, fix["i1"]), min(fix["i2"], len(tokens))
         if i1 > len(tokens):
             continue
         tokens[i1:i2] = fix["after"]
+        if i1 < end:                                    # fixes inside the segment move its end
+            end += len(fix["after"]) - (i2 - i1)
     return {**row, "id": f"{row['id']}:corrected", "source": "corrected", "tokens": tokens, "labels": [0] * len(tokens),
-            "kinds": [None] * len(tokens)}
+            "kinds": [None] * len(tokens), "segment_span": [start, max(start, end)]}
 
 
-def chunk_row(tokenizer, row: dict, max_length: int = 256) -> list[dict]:
+LABEL_SCOPES = ("all", "segment")
+
+
+def chunk_row(tokenizer, row: dict, max_length: int = 256, label_scope: str = "all") -> list[dict]:
     """Normalize the words, drop words that normalize to nothing, and pack whole words into chunks of at most `max_length` pieces
     (with [CLS] and [SEP]). The first piece of each word carries its label; other pieces and specials are IGNORE. Each chunk keeps the
-    original token index of every labelled position, so predictions map back to words."""
-    words, labels, kinds, index = [], [], [], []
+    original token index of every labelled position, so predictions map back to words, and whether that word is in the edited segment.
+
+    label_scope "segment": in real windows and their corrected copies, words outside the edited segment (neighbouring segments, current
+    library text whose errors nobody has fixed) stay in the input as context but carry no label. Synthetic rows keep every label, since
+    their errors are injected and known."""
+    if label_scope not in LABEL_SCOPES:
+        raise ValueError(f"label_scope must be one of {LABEL_SCOPES}")
+    start, end = row.get("segment_span") or (0, len(row["tokens"]))
+    context_only = label_scope == "segment" and row["source"] in ("real", "corrected")
+    words, labels, kinds, index, scored, in_seg = [], [], [], [], [], []
     for i, token in enumerate(row["tokens"]):
         word = normalize_word(token)
         if word:
+            seg = start <= i < end
             words.append(word); labels.append(row["labels"][i]); kinds.append(row["kinds"][i]); index.append(i)
+            in_seg.append(seg); scored.append(seg or not context_only)
     if not words:
         return []
     pieces = tokenizer(words, add_special_tokens=False)["input_ids"]
@@ -109,21 +127,22 @@ def chunk_row(tokenizer, row: dict, max_length: int = 256) -> list[dict]:
 
     out = []
     for c, chunk in enumerate(chunks):
-        input_ids, label_ids, word_index, word_kind = [tokenizer.cls_token_id], [IGNORE], [], []
+        input_ids, label_ids, word_index, word_kind, word_in_segment = [tokenizer.cls_token_id], [IGNORE], [], [], []
         for w, ids in chunk:
             input_ids += ids
-            label_ids += [labels[w]] + [IGNORE] * (len(ids) - 1)
-            word_index.append(index[w]); word_kind.append(kinds[w])
+            label_ids += [labels[w] if scored[w] else IGNORE] + [IGNORE] * (len(ids) - 1)
+            if scored[w]:
+                word_index.append(index[w]); word_kind.append(kinds[w]); word_in_segment.append(in_seg[w])
         input_ids.append(tokenizer.sep_token_id); label_ids.append(IGNORE)
         # numpy arrays: ~170k training chunks as Python int lists would cost GBs per DataLoader worker.
         out.append({"id": f"{row['id']}#{c}", "row_id": row["id"], "source": row["source"], "version": row["version"],
                     "input_ids": np.array(input_ids, dtype=np.int32), "labels": np.array(label_ids, dtype=np.int16),
-                    "word_index": word_index, "word_kind": word_kind})
+                    "word_index": word_index, "word_kind": word_kind, "word_in_segment": word_in_segment})
     return out
 
 
-def chunk_rows(tokenizer, rows: Iterable[dict], max_length: int = 256) -> list[dict]:
-    return [chunk for row in rows for chunk in chunk_row(tokenizer, row, max_length)]
+def chunk_rows(tokenizer, rows: Iterable[dict], max_length: int = 256, label_scope: str = "all") -> list[dict]:
+    return [chunk for row in rows for chunk in chunk_row(tokenizer, row, max_length, label_scope)]
 
 
 def build_training_rows(real: list[dict], synthetic: list[dict], paired_negatives: bool = True) -> list[dict]:

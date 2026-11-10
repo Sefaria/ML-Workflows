@@ -41,16 +41,17 @@ def run_training(
     seed: int,
     dataloader_num_workers: int,
     max_train_rows: Optional[int] = None,
+    label_scope: str = "all",
 ) -> dict:
     model, tokenizer = build_model(base_model_path)
 
     started = time.monotonic()
     real = load_rows("real", "train", dataset_repo, max_train_rows)
     synthetic = load_rows("synthetic", "train", dataset_repo, max_train_rows) if synthetic_weight > 0 else []
-    train_chunks = chunk_rows(tokenizer, build_training_rows(real, synthetic, paired_negatives), max_length)
+    train_chunks = chunk_rows(tokenizer, build_training_rows(real, synthetic, paired_negatives), max_length, label_scope)
     # Validation measures what the detector is for: real erroneous windows and their corrected copies, never synthetic text.
     validation = load_rows("real", "validation", dataset_repo)
-    eval_chunks = chunk_rows(tokenizer, build_training_rows(validation, [], paired_negatives=True), max_length)
+    eval_chunks = chunk_rows(tokenizer, build_training_rows(validation, [], paired_negatives=True), max_length, label_scope)
     data_report = {
         "train_chunks": dict(Counter(c["source"] for c in train_chunks)),
         "eval_chunks": dict(Counter(c["source"] for c in eval_chunks)),
@@ -119,6 +120,7 @@ def run_training(
     save_model(trainer.model, tokenizer, str(final_dir), {
         "base_model": base_model_path, "dataset_repo": dataset_repo, "max_length": max_length, "pos_weight": pos_weight,
         "synthetic_weight": synthetic_weight, "paired_negatives": paired_negatives, "negative_weight": negative_weight,
+        "label_scope": label_scope,
         "validation_threshold": best_eval.get("best_threshold", best_eval.get("eval_threshold")),
         "best_step": trainer.best_step,
     })
