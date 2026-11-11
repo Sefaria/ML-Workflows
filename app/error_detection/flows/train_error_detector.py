@@ -70,10 +70,13 @@ def train_error_detector_flow(
     dataloader_num_workers: int = 4,
     max_train_rows: Optional[int] = None,
     label_scope: str = "all",
+    n_folds: int = 0,
+    fold: int = 0,
 ) -> None:
     """Fine-tune BEREL as a binary token classifier (error / ok) on Sefaria/hebrew-text-corrections. Keeps the weights with the best
     validation PR-AUC. run_name is stable across restarts, so a restarted job finds its own checkpoints.
-    label_scope "segment" keeps neighbouring segments as context only (no labels) in real windows; see steps.data.chunk_row."""
+    label_scope "segment" keeps neighbouring segments as context only (no labels) in real windows; see steps.data.chunk_row.
+    n_folds > 0 trains without fold `fold` of the training books (see steps.data.fold_of), for scoring that fold with score-rows."""
     run_root = f"{model_prefix.rstrip('/')}/{run_name}"
     final_prefix = f"{run_root}/final"
     if blob_exists(model_bucket, f"{final_prefix}/{SUCCESS_MARKER}"):
@@ -93,7 +96,7 @@ def train_error_detector_flow(
             synthetic_weight=synthetic_weight, pos_weight=pos_weight, samples_per_epoch=samples_per_epoch, epochs=epochs,
             batch_size=batch_size, learning_rate=learning_rate, weight_decay=weight_decay, warmup_ratio=warmup_ratio,
             eval_steps=eval_steps, checkpoint_minutes=checkpoint_minutes, seed=seed, dataloader_num_workers=dataloader_num_workers,
-            max_train_rows=max_train_rows, label_scope=label_scope,
+            max_train_rows=max_train_rows, label_scope=label_scope, n_folds=n_folds, fold=fold,
         )
         model_uri = upload_final_model(training["final_model_dir"], model_bucket, final_prefix)
         report = {"status": "success", "run_name": run_name, "started_at": started_at, "finished_at": datetime.now(timezone.utc).isoformat(),
