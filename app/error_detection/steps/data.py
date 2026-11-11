@@ -2,9 +2,14 @@
 
 A dataset row is a window of whitespace tokens with per-token labels (0 ok, 1 erroneous, 2 word missing before this token) and the list of
 fixes that turned it into the corrected text. The detector is binary: label 2 is mapped to 0 (there are only a handful of omissions).
+
+A row may also carry `judged`: {token index: 1 | -1} for words nobody corrected that LLM judges looked at after a model flagged them.
+1 makes the word an error (kind "judged"); -1 (judges could not decide) leaves it out of training loss and of metrics.
 """
+import hashlib
 import json
 import os
+import re
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -25,7 +30,7 @@ FILES = {
     ("real", "test"): "real/test.jsonl",
     ("synthetic", "train"): "synthetic/train.jsonl",
 }
-FIX_KINDS = ("typo", "spacing", "ocr", "junk", "omission")
+FIX_KINDS = ("typo", "spacing", "ocr", "junk", "omission", "judged")
 IGNORE = -100
 
 
@@ -49,12 +54,41 @@ def dataset_file(repo: str, filename: str) -> str:
 def word_kinds(row: dict) -> list[Optional[str]]:
     """The fix kind of each labelled token (None for unlabelled tokens), for recall by kind."""
     kinds: list[Optional[str]] = [None] * len(row["tokens"])
+    for index, verdict in (row.get("judged") or {}).items():
+        if verdict == 1 and int(index) < len(kinds):
+            kinds[int(index)] = "judged"
     for fix in row["fixes"]:
         if fix.get("labelled"):
             for i in range(max(0, fix["i1"]), min(fix["i2"], len(kinds))):
                 if row["labels"][i] == 1:
                     kinds[i] = fix["kind"]
     return kinds
+
+
+def binary_labels(row: dict) -> list[int]:
+    """1 for corrected words and judged errors, IGNORE for undecided judged words, else 0."""
+    labels = [1 if label == 1 else 0 for label in row["labels"]]
+    for index, verdict in (row.get("judged") or {}).items():
+        i = int(index)
+        if i < len(labels) and labels[i] == 0:
+            labels[i] = 1 if verdict == 1 else IGNORE
+    return labels
+
+
+BOOK = re.compile(r"^(.*?)(?: \d+[ab]?(?:[:.]\S*)?(?:-\S+)?)?$")
+
+
+def fold_of(row: dict, n_folds: int) -> int:
+    """Cross-validation fold of a row, by (version, book) like the dataset splits, so a book's text never sits on both sides."""
+    book = BOOK.match(row["ref"]).group(1)
+    return int(hashlib.md5(f"fold|{row['version']}|{book}".encode()).hexdigest(), 16) % n_folds
+
+
+def select_fold(rows: list[dict], n_folds: int, fold: int, held_out: bool) -> list[dict]:
+    """The rows of `fold` (held_out=True) or every other fold (held_out=False). n_folds 0 keeps everything."""
+    if not n_folds:
+        return rows
+    return [row for row in rows if (fold_of(row, n_folds) == fold) == held_out]
 
 
 def load_rows(config: str, split: str, repo: str = GCS_DATASET, max_rows: Optional[int] = None) -> list[dict]:
@@ -64,7 +98,7 @@ def load_rows(config: str, split: str, repo: str = GCS_DATASET, max_rows: Option
             row = json.loads(line)
             rows.append({
                 "id": row["id"], "source": row["source"], "ref": row["ref"], "version": row["version"],
-                "tokens": row["tokens"], "labels": [1 if label == 1 else 0 for label in row["labels"]],
+                "tokens": row["tokens"], "labels": binary_labels(row), "judged": row.get("judged") or {},
                 "fixes": row["fixes"], "kinds": word_kinds(row),
                 # where the edited segment sits in `tokens` (older rows without the field are all segment)
                 "segment_span": row.get("segment_span") or [0, len(row["tokens"])],
@@ -75,19 +109,28 @@ def load_rows(config: str, split: str, repo: str = GCS_DATASET, max_rows: Option
 
 
 def corrected(row: dict) -> dict:
-    """The same window after its fixes, every token labelled 0: a negative paired with the erroneous window. Fixes are applied right to
-    left so earlier indices stay valid; a fix running past the window end is clipped."""
+    """The same window after its fixes: a negative paired with the erroneous window. Every token is labelled 0 except judged words
+    (errors nobody fixed are still there after the fixes), which keep their judged label at their shifted position. Fixes are applied right
+    to left so earlier indices stay valid; a fix running past the window end is clipped."""
     tokens = list(row["tokens"])
     start, end = row.get("segment_span") or (0, len(tokens))
+    judged = {int(i): v for i, v in (row.get("judged") or {}).items()}
     for fix in sorted(row["fixes"], key=lambda f: f["i1"], reverse=True):
         i1, i2 = max(0, fix["i1"]), min(fix["i2"], len(tokens))
         if i1 > len(tokens):
             continue
         tokens[i1:i2] = fix["after"]
+        shift = len(fix["after"]) - (i2 - i1)
         if i1 < end:                                    # fixes inside the segment move its end
-            end += len(fix["after"]) - (i2 - i1)
-    return {**row, "id": f"{row['id']}:corrected", "source": "corrected", "tokens": tokens, "labels": [0] * len(tokens),
-            "kinds": [None] * len(tokens), "segment_span": [start, max(start, end)]}
+            end += shift
+        judged = {(i + shift if i >= i2 else i): v for i, v in judged.items() if not i1 <= i < i2}
+    labels, kinds = [0] * len(tokens), [None] * len(tokens)
+    for i, v in judged.items():
+        if i < len(tokens):
+            labels[i] = 1 if v == 1 else IGNORE
+            kinds[i] = "judged" if v == 1 else None
+    return {**row, "id": f"{row['id']}:corrected", "source": "corrected", "tokens": tokens, "labels": labels,
+            "kinds": kinds, "judged": {str(i): v for i, v in judged.items()}, "segment_span": [start, max(start, end)]}
 
 
 LABEL_SCOPES = ("all", "segment")
@@ -111,7 +154,7 @@ def chunk_row(tokenizer, row: dict, max_length: int = 256, label_scope: str = "a
         if word:
             seg = start <= i < end
             words.append(word); labels.append(row["labels"][i]); kinds.append(row["kinds"][i]); index.append(i)
-            in_seg.append(seg); scored.append(seg or not context_only)
+            in_seg.append(seg); scored.append((seg or not context_only) and row["labels"][i] != IGNORE)
     if not words:
         return []
     pieces = tokenizer(words, add_special_tokens=False)["input_ids"]

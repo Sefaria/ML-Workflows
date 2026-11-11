@@ -896,6 +896,8 @@ deployments:
       dataloader_num_workers: 4
       max_train_rows: null  # Set for a smoke run, for example 2000.
       label_scope: all  # all | segment (neighbouring segments as context only, no labels, in real windows)
+      n_folds: 0  # cross-fitting: > 0 trains without training fold `fold` (by version and book), to score that fold with score-rows
+      fold: 0
     work_pool:
       name: sefaria-k8s
       job_variables:
@@ -968,6 +970,43 @@ deployments:
       threshold: null  # null uses the model's validation threshold
       max_segments: null
       batch_size: 128
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
+        image_pull_policy: Always
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        volumes: []
+        volume_mounts: []
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+        node_selector:
+          cloud.google.com/gke-accelerator: nvidia-tesla-a100
+          cloud.google.com/gke-provisioning: spot
+        gpu_limit: "1"
+        cpu_request: "4"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+        pod_watch_timeout_seconds: 3600
+    schedules: []
+
+  # model_prefix and output_blob are required, for example error-detection/runs/<run_name>/final and error-detection/judged/<name>.jsonl.
+  - name: score-rows
+    tags: ["error-detection"]
+    description: "Words of a dataset split, or of one held-out training fold, that a trained model scores above min_score (JSONL), for judging uncorrected errors"
+    entrypoint: error_detection/flows/score_rows.py:score_rows_flow
+    parameters:
+      model_bucket: sefaria-ml-models
+      dataset_repo: gs://sefaria-ml-models/error-detection/data/hebrew-text-corrections
+      config: real
+      split: test
+      n_folds: 0  # with fold: score only that held-out fold of the split (use a model trained with the same n_folds/fold)
+      fold: 0
+      min_score: 0.3
+      batch_size: 64
     work_pool:
       name: sefaria-k8s
       job_variables:

@@ -10,7 +10,7 @@ from transformers import TrainingArguments
 from encoder_pretraining.steps.training.callbacks import SlackEvalCallback, ThroughputCallback
 from encoder_pretraining.steps.training.checkpoints import GcsCheckpointCallback, restore_latest_checkpoint
 
-from .data import ResampledDataset, TokenCollator, build_training_rows, chunk_rows, load_rows, sampling_weights
+from .data import ResampledDataset, TokenCollator, build_training_rows, chunk_rows, load_rows, sampling_weights, select_fold
 from .evaluation import token_metrics
 from .model import WeightedTokenTrainer, build_model, save_model
 
@@ -42,12 +42,16 @@ def run_training(
     dataloader_num_workers: int,
     max_train_rows: Optional[int] = None,
     label_scope: str = "all",
+    n_folds: int = 0,
+    fold: int = 0,
 ) -> dict:
     model, tokenizer = build_model(base_model_path)
 
     started = time.monotonic()
     real = load_rows("real", "train", dataset_repo, max_train_rows)
     synthetic = load_rows("synthetic", "train", dataset_repo, max_train_rows) if synthetic_weight > 0 else []
+    # Cross-fitting: leave one fold of the training books out (real and synthetic), so the model can score that fold unseen.
+    real, synthetic = select_fold(real, n_folds, fold, held_out=False), select_fold(synthetic, n_folds, fold, held_out=False)
     train_chunks = chunk_rows(tokenizer, build_training_rows(real, synthetic, paired_negatives), max_length, label_scope)
     # Validation measures what the detector is for: real erroneous windows and their corrected copies, never synthetic text.
     validation = load_rows("real", "validation", dataset_repo)
@@ -120,7 +124,7 @@ def run_training(
     save_model(trainer.model, tokenizer, str(final_dir), {
         "base_model": base_model_path, "dataset_repo": dataset_repo, "max_length": max_length, "pos_weight": pos_weight,
         "synthetic_weight": synthetic_weight, "paired_negatives": paired_negatives, "negative_weight": negative_weight,
-        "label_scope": label_scope,
+        "label_scope": label_scope, "n_folds": n_folds, "fold": fold,
         "validation_threshold": best_eval.get("best_threshold", best_eval.get("eval_threshold")),
         "best_step": trainer.best_step,
     })

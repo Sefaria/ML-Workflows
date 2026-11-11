@@ -257,3 +257,43 @@ def test_evaluation_reports_segment_words_separately():
     rep = score_and_summarise(words, words)
     assert rep["test"]["words"] == 4 and rep["segment"]["test"]["words"] == 2
     assert rep["segment"]["test"]["pr_auc"] == pytest.approx(1.0)
+
+
+def judged_row():
+    # tokens: 0 A, 1 B(fixed), 2 C, 3 D(judged error), 4 E(judged undecided)
+    return {"id": "j1", "source": "real", "ref": "Book 1:1", "version": "V", "tokens": ["אב", "גד", "הו", "זח", "טי"],
+            "labels": [0, 1, 0, 0, 0], "segment_span": [0, 5], "judged": {"3": 1, "4": -1},
+            "fixes": [{"i1": 1, "i2": 2, "before": ["גד"], "after": ["ג", "ד"], "kind": "spacing", "labelled": True}]}
+
+
+def test_judged_labels_load_and_shift_into_corrected_copy(tmp_path, monkeypatch):
+    path = tmp_path / "real" / "train.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(judged_row(), ensure_ascii=False) + "\n")
+    monkeypatch.setattr(data_module, "dataset_file", lambda repo, filename: str(tmp_path / filename))
+    row = load_rows("real", "train", "gs://x/y")[0]
+    assert row["labels"] == [0, 1, 0, 1, IGNORE]
+    assert row["kinds"][3] == "judged"
+    fixed = corrected(row)
+    # the split fix adds a token, so the judged words move one to the right
+    assert fixed["tokens"] == ["אב", "ג", "ד", "הו", "זח", "טי"]
+    assert fixed["labels"] == [0, 0, 0, 0, 1, IGNORE]
+
+
+def test_undecided_judged_word_is_not_scored(tokenizer):
+    row = {**judged_row(), "labels": [0, 1, 0, 1, IGNORE], "kinds": [None, "spacing", None, "judged", None]}
+    chunk = chunk_row(tokenizer, row, max_length=64)[0]
+    assert chunk["word_index"] == [0, 1, 2, 3]
+    assert sum(1 for label in chunk["labels"] if label != IGNORE) == 4
+
+
+def test_folds_partition_rows_by_version_and_book():
+    from error_detection.steps.data import fold_of, select_fold
+    rows = [{"ref": f"Book{b} {c}:1", "version": f"V{v}"} for b in range(6) for c in range(1, 4) for v in range(3)]
+    held = [select_fold(rows, 4, k, held_out=True) for k in range(4)]
+    assert sum(len(h) for h in held) == len(rows)
+    for k in range(4):
+        assert len(select_fold(rows, 4, k, held_out=False)) + len(held[k]) == len(rows)
+    # chapters of one book in one version always share a fold
+    assert len({fold_of(r, 4) for r in rows if r["ref"].startswith("Book2 ") and r["version"] == "V1"}) == 1
+    assert select_fold(rows, 0, 0, held_out=False) == rows
