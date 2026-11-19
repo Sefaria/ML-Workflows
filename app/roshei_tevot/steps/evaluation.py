@@ -41,10 +41,15 @@ def outcomes(rows: list[dict], scores: list[list[float]], prior_weight: float) -
         ranked = [row["candidates"][i] for i in order]
         top_two = [combined[i] for i in order[:2]]
         target = row["target"]
-        hits = [i for i, text in enumerate(ranked) if target is not None and same_expansion(text, target)]
+        if row.get("units"):  # sense classes: right when the candidate is the label's class
+            hits = [rank for rank, i in enumerate(order) if row["units"][i] == row["target_unit"]]
+            frequency_correct = row["units"][0] == row["target_unit"]
+        else:
+            hits = [i for i, text in enumerate(ranked) if target is not None and same_expansion(text, target)]
+            frequency_correct = target is not None and same_expansion(row["candidates"][0], target)
         out.append({
             "rank": hits[0] if hits else None,
-            "frequency_correct": target is not None and same_expansion(row["candidates"][0], target),
+            "frequency_correct": frequency_correct,
             "confidence": top_two[0] - top_two[1] if len(top_two) > 1 else top_two[0],
         })
     return out
@@ -96,6 +101,7 @@ def evaluate_splits(model, tokenizer, split_rows: dict[str, list[dict]], device:
             "overall": summarise(items),
             "prior_sweep": sweep[split],
             "by_source": grouped(items, rows, lambda r: r["source"]),
+            "by_kind": grouped(items, rows, lambda r: r.get("kind") or "abbreviation"),
             "by_category": grouped(items, rows, lambda r: r["category"] or ""),
         }
     checks = {}

@@ -20,7 +20,13 @@ GCS_DATASET = "gs://sefaria-ml-models/roshei-tevot/data/berel-roshei-tevot"
 LOCAL_DATA_DIR = os.environ.get("ROSHEI_TEVOT_DATA_DIR", "/tmp/roshei-tevot-data")
 LEXICON_FILE = "lexicon/surface_index.jsonl"
 HEBREW_TITLES_FILE = "metadata/hebrew_titles.json"
-KEPT_FIELDS = ("id", "source", "surface", "base_expansion", "key", "before", "after", "title", "category")
+KEPT_FIELDS = ("id", "source", "kind", "surface", "base_expansion", "key", "sense", "before", "after", "title", "category")
+# Candidate fields the dataset builder writes (train-only lists, so no held-out label or count reaches them); kept apart from the
+# `candidates` that attach_candidates sets, which is what training and evaluation rank.
+DATASET_CANDIDATE_FIELDS = {"candidates": "dataset_candidates", "candidate_train_counts": "dataset_candidate_counts",
+                            "candidate_senses": "dataset_candidate_senses", "independent_candidates": "dataset_independent_candidates",
+                            "independent_candidate_senses": "dataset_independent_candidate_senses"}
+CANDIDATE_SOURCES = ("dataset", "lexicon")
 
 
 def dataset_file(repo: str, filename: str) -> str:
@@ -63,6 +69,7 @@ def load_split(split: str, repo: str = DATASET_REPO, context_words: int = 100, m
             if not raw.get("base_expansion"):
                 continue
             row = {name: raw.get(name) for name in KEPT_FIELDS}
+            row.update({ours: raw.get(theirs) or [] for theirs, ours in DATASET_CANDIDATE_FIELDS.items()})
             row["before"] = " ".join((row["before"] or "").split()[-context_words:])
             row["after"] = " ".join((row["after"] or "").split()[:context_words])
             row["title"] = titles.get(row["title"] or "", row["title"] or "")
@@ -73,15 +80,77 @@ def load_split(split: str, repo: str = DATASET_REPO, context_words: int = 100, m
     return rows
 
 
-def attach_candidates(rows: list[dict], lexicon: Lexicon, min_candidates: int = 2, training: bool = True) -> tuple[list[dict], dict]:
-    """Give each row the candidates inference would see (lexicon lookup plus letter check) and drop rows with fewer than `min_candidates`.
+def dataset_senses(row: dict) -> list[dict]:
+    """The dataset's candidates for a row grouped into sense classes: one entry per class, {"unit", "text", "freq", "members"}.
 
-    `candidates` is the lookup, most frequent first, with `freqs` alongside. `target` is the candidate that the spelling folds match to the
-    gold expansion, or None when the lexicon has no such candidate. For training, a row without a matching candidate keeps its gold text as
-    an extra candidate, so it is still a usable example; evaluation leaves it out of the candidates and counts it as unanswerable.
+    The candidates are the key's train-only list with train counts, or for an unseen key (empty list) its readings from independent sources
+    (kizur, seed, gematria, supported edition tables) at count 0. Readings in the same lexicon sense class (spelling and inflection variants,
+    איכא דאמרי / אית דאמרין) become one candidate: its text is the class's most-trained reading, its frequency the class's summed train count.
+    A reading with no sense class is a class of its own. Entries come most frequent first."""
+    if row.get("dataset_candidates"):
+        texts, counts, senses = row["dataset_candidates"], row.get("dataset_candidate_counts") or [], row.get("dataset_candidate_senses") or []
+    else:
+        texts, counts, senses = row.get("dataset_independent_candidates") or [], [], row.get("dataset_independent_candidate_senses") or []
+    groups: dict[str, dict] = {}
+    for i, text in enumerate(texts):
+        sense = senses[i] if i < len(senses) else None
+        unit = f"sense:{sense}" if sense is not None else f"text:{text}"
+        count = int(counts[i]) if i < len(counts) else 0
+        group = groups.setdefault(unit, {"unit": unit, "text": text, "freq": 0, "members": [], "best": -1})
+        if count > group["best"]:  # the list is most-trained first, so ties keep the earlier reading
+            group["text"], group["best"] = text, count
+        group["freq"] += count
+        group["members"].append(text)
+    return sorted(({k: v for k, v in g.items() if k != "best"} for g in groups.values()), key=lambda g: -g["freq"])
+
+
+def _sense_target(row: dict, groups: list[dict]) -> Optional[str]:
+    """The unit of the row's label: its sense class, or for a label with no sense class the class whose readings match it by spelling folds."""
+    if row.get("sense") is not None:
+        unit = f"sense:{row['sense']}"
+        return unit if any(g["unit"] == unit for g in groups) else None
+    return next((g["unit"] for g in groups if any(same_expansion(m, row["base_expansion"]) for m in g["members"])), None)
+
+
+def attach_candidates(rows: list[dict], lexicon: Optional[Lexicon], min_candidates: int = 2, training: bool = True,
+                      candidate_source: str = "dataset") -> tuple[list[dict], dict]:
+    """Give each row the candidates to rank and drop rows with fewer than `min_candidates`.
+
+    `candidate_source="dataset"` (default) ranks sense classes: the dataset builder's train-only candidates for the key, grouped by the
+    lexicon's sense classes (`dataset_senses`), with train counts as the frequency prior. No held-out label or count reaches a candidate list,
+    its order or the prior. Each row also gets `units` (one id per candidate) and `target_unit`; the target is the label's sense class, so a
+    variant spelling of the right sense is never a negative and any reading of that sense is right.
+    `"lexicon"` is the older lookup in `surface_index.jsonl` plus the letter check: candidates are readings, not classes, and that index counts
+    every labelled example, held-out ones included, so its scores are optimistic.
+
+    `candidates` is most frequent first, with `freqs` alongside. `target` is the candidate text of the label (None when no candidate is the
+    label). For training, a row without a matching candidate keeps its gold text as an extra candidate, so it is still a usable example;
+    evaluation leaves it out of the candidates and counts it as unanswerable.
     """
-    kept, dropped, unmatched = [], 0, 0
+    if candidate_source not in CANDIDATE_SOURCES:
+        raise ValueError(f"candidate_source must be one of {CANDIDATE_SOURCES}, not {candidate_source!r}")
+    if candidate_source == "lexicon" and lexicon is None:
+        raise ValueError("candidate_source='lexicon' needs a lexicon")
+    kept, dropped, unmatched, by_sense, dropped_right = [], 0, 0, 0, 0
     for row in rows:
+        slim = {k: v for k, v in row.items() if k not in DATASET_CANDIDATE_FIELDS.values()}
+        if candidate_source == "dataset":
+            groups = dataset_senses(row)
+            target_unit = _sense_target(row, groups)
+            if target_unit is None:
+                unmatched += 1
+                if training:
+                    target_unit = f"gold:{row['base_expansion']}"
+                    groups = groups + [{"unit": target_unit, "text": row["base_expansion"], "freq": 0, "members": [row["base_expansion"]]}]
+            if len(groups) < min_candidates:
+                dropped += 1
+                dropped_right += target_unit is not None and not target_unit.startswith("gold:")  # one class, and it is the label's: right by default
+                continue
+            by_sense += row.get("sense") is not None and target_unit is not None and target_unit.startswith("sense:")
+            target = next((g["text"] for g in groups if g["unit"] == target_unit), None)
+            kept.append({**slim, "candidates": [g["text"] for g in groups], "freqs": [g["freq"] for g in groups],
+                         "units": [g["unit"] for g in groups], "target": target, "target_unit": target_unit})
+            continue
         found = lexicon.candidates(row["surface"])
         texts = sorted(found, key=lambda t: -found[t])
         target = next((t for t in texts if same_expansion(t, row["base_expansion"])), None)
@@ -94,8 +163,10 @@ def attach_candidates(rows: list[dict], lexicon: Lexicon, min_candidates: int = 
         if len({stem_key(t) for t in texts}) < min_candidates:
             dropped += 1
             continue
-        kept.append({**row, "candidates": texts, "freqs": [found[t] for t in texts], "target": target})
-    return kept, {"rows_in": len(rows), "rows_kept": len(kept), "dropped_below_min_candidates": dropped, "gold_not_in_lexicon_lookup": unmatched}
+        kept.append({**slim, "candidates": texts, "freqs": [found[t] for t in texts], "target": target})
+    return kept, {"rows_in": len(rows), "rows_kept": len(kept), "dropped_below_min_candidates": dropped, "gold_not_in_lexicon_lookup": unmatched,
+                  "candidate_source": candidate_source, "target_is_sense_class": by_sense,
+                  "dropped_and_right_by_default": dropped_right}
 
 
 def sampling_weights(rows: list[dict], key_alpha: float = 0.5, synthetic_weight: float = 0.5) -> np.ndarray:
@@ -120,7 +191,10 @@ class ResampledDataset(Dataset):
 
 
 def _negatives(rng: random.Random, row: dict, limit: int) -> list[str]:
-    negatives = [c for c in row["candidates"] if not same_expansion(c, row["target"])]
+    """Other candidates of the row: other sense classes when the row has units, never a spelling of the target."""
+    units = row.get("units")
+    negatives = [c for i, c in enumerate(row["candidates"])
+                 if (units is None or units[i] != row["target_unit"]) and not same_expansion(c, row["target"])]
     return rng.sample(negatives, min(limit, len(negatives)))
 
 

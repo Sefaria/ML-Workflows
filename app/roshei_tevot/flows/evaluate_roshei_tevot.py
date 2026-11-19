@@ -30,11 +30,14 @@ def fetch_model(spec: dict, cache_root: str, work_dir: str) -> str:
 
 
 @task(log_prints=True)
-def prepare_rows(dataset_repo: str, splits: list[str], max_rows: Optional[int], min_candidates: int, context_words: int) -> tuple[dict, dict]:
-    lexicon, names = load_lexicon(dataset_repo), load_hebrew_names(dataset_repo)
+def prepare_rows(dataset_repo: str, splits: list[str], max_rows: Optional[int], min_candidates: int, context_words: int,
+                 candidate_source: str = "dataset") -> tuple[dict, dict]:
+    lexicon = load_lexicon(dataset_repo) if candidate_source == "lexicon" else None
+    names = load_hebrew_names(dataset_repo)
     rows, reports = {}, {}
     for split in splits:
-        rows[split], reports[split] = attach_candidates(load_split(split, dataset_repo, context_words, None, names), lexicon, min_candidates, training=False)
+        rows[split], reports[split] = attach_candidates(load_split(split, dataset_repo, context_words, None, names), lexicon, min_candidates,
+                                                        training=False, candidate_source=candidate_source)
         rows[split] = rows[split][:max_rows] if max_rows else rows[split]
         print(f"{split}: {reports[split]}")
     return rows, reports
@@ -72,18 +75,19 @@ def evaluate_roshei_tevot_flow(
     splits: Optional[list[str]] = None,
     max_rows: Optional[int] = None,
     min_candidates: int = 2,
-    context_words: int = 100,
+    context_words: int = 200,
     prior_weights: Optional[list[float]] = None,
+    candidate_source: str = "dataset",
 ) -> None:
     """Rank each row's candidates with every model. `gap_to_first` compares every model with the first in the list, so list the
     siamese model first to read the cross-encoder's advantage directly."""
     work_dir = tempfile.mkdtemp(dir="/tmp", prefix="roshei-tevot-eval-")
     try:
-        split_rows, candidate_reports = prepare_rows(dataset_repo, splits or SPLITS, max_rows, min_candidates, context_words)
+        split_rows, candidate_reports = prepare_rows(dataset_repo, splits or SPLITS, max_rows, min_candidates, context_words, candidate_source)
         results = {}
         for spec in models:
             results[spec["label"]] = evaluate_model(spec["label"], fetch_model(spec, cache_root, work_dir), split_rows, prior_weights or list(PRIOR_WEIGHTS))
-        report = {"status": "success", "evaluated_at": datetime.now(timezone.utc).isoformat(), "dataset": dataset_repo, "specs": models,
+        report = {"status": "success", "evaluated_at": datetime.now(timezone.utc).isoformat(), "dataset": dataset_repo, "candidate_source": candidate_source, "specs": models,
                   "candidates": candidate_reports, "models": results, "gap_to_first": gaps(results, models[0]["label"])}
         write_blob_text(report_bucket, report_blob, json.dumps(report, ensure_ascii=False, indent=2))
         details = {"report_uri": f"gs://{report_bucket}/{report_blob}"}

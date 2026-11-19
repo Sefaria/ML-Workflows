@@ -90,17 +90,70 @@ def test_attach_candidates_matches_folded_gold_and_drops_single_candidate_rows()
         {**row(surface='ור"י'), "base_expansion": "ורבי יוסי"},     # gold carries the prefix; the fold maps it to the lexicon spelling
         {**row(surface='חז"ל'), "base_expansion": "חכמינו זכרונם לברכה"},  # nothing in the lexicon
     ]
-    kept, report = attach_candidates(rows, LEXICON, min_candidates=2, training=False)
+    kept, report = attach_candidates(rows, LEXICON, min_candidates=2, training=False, candidate_source="lexicon")
     assert len(kept) == 1 and kept[0]["target"] == "רבי יוסי" and kept[0]["candidates"][0] == "רבי יהודה"
     assert report["dropped_below_min_candidates"] == 1
 
 
 def test_training_keeps_an_unmatched_gold_as_an_extra_candidate():
     rows = [{**row(surface='ור"י'), "base_expansion": "רבי יוסה"}]
-    train, _ = attach_candidates(rows, LEXICON, training=True)
-    evaluation, report = attach_candidates(rows, LEXICON, training=False)
+    train, _ = attach_candidates(rows, LEXICON, training=True, candidate_source="lexicon")
+    evaluation, report = attach_candidates(rows, LEXICON, training=False, candidate_source="lexicon")
     assert train[0]["target"] == "רבי יוסה" and "רבי יוסה" in train[0]["candidates"]
     assert evaluation[0]["target"] is None and report["gold_not_in_lexicon_lookup"] == 1
+
+
+def dataset_row(**fields):
+    base = {**row(), "base_expansion": "רבי יוסי", "dataset_candidates": [], "dataset_candidate_counts": [], "dataset_independent_candidates": []}
+    for name in ("target", "candidates", "freqs"):
+        base.pop(name)
+    return {**base, **fields}
+
+
+def test_dataset_candidates_use_train_counts_and_ignore_the_lexicon():
+    rows = [dataset_row(dataset_candidates=["רבי יהודה", "רבי יוסי"], dataset_candidate_counts=[3, 7])]
+    kept, report = attach_candidates(rows, None, training=False)
+    assert kept[0]["candidates"] == ["רבי יוסי", "רבי יהודה"] and kept[0]["freqs"] == [7, 3] and kept[0]["target"] == "רבי יוסי"
+    assert report["candidate_source"] == "dataset" and "dataset_candidates" not in kept[0]
+
+
+def test_unseen_keys_fall_back_to_independent_candidates_at_count_zero():
+    rows = [dataset_row(dataset_independent_candidates=["רבי יהודה", "רבי יוסי"]), dataset_row(base_expansion="ראש חודש")]
+    kept, report = attach_candidates(rows, None, training=False)
+    assert len(kept) == 1 and kept[0]["freqs"] == [0, 0] and kept[0]["target"] == "רבי יוסי"
+    assert report["dropped_below_min_candidates"] == 1
+
+
+def test_variants_of_one_sense_are_one_candidate_and_the_label_is_its_sense():
+    rows = [dataset_row(base_expansion="אית דאמרין", sense=0,
+                        dataset_candidates=["איכא דאמרי", "אמר רבי", "אית דאמרין"], dataset_candidate_counts=[9, 6, 4],
+                        dataset_candidate_senses=[0, 1, 0])]
+    kept, report = attach_candidates(rows, None, training=False)
+    row_ = kept[0]
+    assert row_["candidates"] == ["איכא דאמרי", "אמר רבי"] and row_["freqs"] == [13, 6]
+    assert row_["units"] == ["sense:0", "sense:1"] and row_["target_unit"] == "sense:0" and row_["target"] == "איכא דאמרי"
+    assert report["target_is_sense_class"] == 1
+
+
+def test_sense_scoring_counts_the_class_not_the_spelling():
+    rows, _ = attach_candidates([dataset_row(base_expansion="אית דאמרין", sense=0, dataset_candidates=["אמר רבי", "איכא דאמרי", "אית דאמרין"],
+                                             dataset_candidate_counts=[9, 6, 4], dataset_candidate_senses=[1, 0, 0])], None, training=False)
+    assert rows[0]["candidates"] == ["איכא דאמרי", "אמר רבי"]          # sense 0 sums to 10 and leads
+    assert outcomes(rows, [[0.0, 1.0]], 0.0)[0]["rank"] == 1 and outcomes(rows, [[1.0, 0.0]], 0.0)[0]["rank"] == 0
+
+
+def test_a_sense_the_candidates_lack_is_unanswerable_but_trainable():
+    rows = [dataset_row(base_expansion="ראש חודש", sense=2, dataset_candidates=["רבי יוסי", "רבי יהודה"], dataset_candidate_counts=[2, 1],
+                        dataset_candidate_senses=[0, 1])]
+    evaluation, report = attach_candidates(rows, None, training=False)
+    train, _ = attach_candidates(rows, None, training=True)
+    assert evaluation[0]["target"] is None and report["gold_not_in_lexicon_lookup"] == 1
+    assert train[0]["target"] == "ראש חודש" and train[0]["target_unit"] == "gold:ראש חודש"
+
+
+def test_lexicon_source_needs_a_lexicon():
+    with pytest.raises(ValueError):
+        attach_candidates([dataset_row()], None, candidate_source="lexicon")
 
 
 # ---- collators ----
