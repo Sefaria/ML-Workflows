@@ -761,6 +761,8 @@ deployments:
       min_candidates: 2  # rows whose lexicon lookup gives fewer candidates are dropped
       key_alpha: 0.5  # sampling weight is 1 / count(key)^alpha
       synthetic_weight: 0.5
+      sense_beta: 0.5  # rows also weighted by (share of their sense within the key)^-beta, so rare senses are seen more; 0 turns it off
+      sense_max_boost: 10.0  # cap on that boost
       samples_per_epoch: 600000
       epochs: 2
       batch_size: 128
