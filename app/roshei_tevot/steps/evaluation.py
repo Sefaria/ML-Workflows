@@ -55,6 +55,21 @@ def outcomes(rows: list[dict], scores: list[list[float]], prior_weight: float) -
     return out
 
 
+def sense_share_band(row: dict) -> str:
+    """How common the label's sense is within its key, from the candidates' train counts: `majority` (the most-trained class),
+    `common` (10% or more of the key's train rows), `rare` (under 10%), `unseen_in_train` (count 0), or `unanswerable`."""
+    if row.get("target") is None:
+        return "unanswerable"
+    units, freqs = row.get("units"), row["freqs"]
+    index = units.index(row["target_unit"]) if units else next(i for i, c in enumerate(row["candidates"]) if c == row["target"])
+    total = sum(freqs)
+    if freqs[index] == 0 or total == 0:
+        return "unseen_in_train"
+    if freqs[index] == max(freqs):
+        return "majority"
+    return "common" if freqs[index] / total >= 0.1 else "rare"
+
+
 def summarise(items: list[dict]) -> dict:
     total = len(items)
     answerable = [o for o in items if o["rank"] is not None]
@@ -102,6 +117,7 @@ def evaluate_splits(model, tokenizer, split_rows: dict[str, list[dict]], device:
             "prior_sweep": sweep[split],
             "by_source": grouped(items, rows, lambda r: r["source"]),
             "by_kind": grouped(items, rows, lambda r: r.get("kind") or "abbreviation"),
+            "by_sense_share": grouped(items, rows, sense_share_band, min_rows=1),
             "by_category": grouped(items, rows, lambda r: r["category"] or ""),
         }
     checks = {}
