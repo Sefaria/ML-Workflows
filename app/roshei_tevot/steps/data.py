@@ -169,10 +169,20 @@ def attach_candidates(rows: list[dict], lexicon: Optional[Lexicon], min_candidat
                   "dropped_and_right_by_default": dropped_right}
 
 
-def sampling_weights(rows: list[dict], key_alpha: float = 0.5, synthetic_weight: float = 0.5) -> np.ndarray:
-    """Weight 1 / count(key)^alpha so a few very frequent abbreviations do not dominate; synthetic swapped-back rows count for less."""
+def sampling_weights(rows: list[dict], key_alpha: float = 0.5, synthetic_weight: float = 0.5, sense_beta: float = 0.0,
+                     sense_max_boost: float = 10.0) -> np.ndarray:
+    """Weight 1 / count(key)^alpha so a few very frequent abbreviations do not dominate; synthetic swapped-back rows count for less.
+
+    With `sense_beta` > 0, rows are also balanced across the senses of their key: weight x (share of the row's target class among its key's
+    rows)^-beta, capped at `sense_max_boost`, so a rare sense of a common key is seen more often. A key's total weight is unchanged in
+    proportion to the others only up to that boost; the frequency prior (chosen on val at evaluation) puts the real base rates back."""
     counts = Counter(row["key"] for row in rows)
     weights = np.array([counts[row["key"]] ** -key_alpha * (synthetic_weight if row["source"] == "swapped" else 1.0) for row in rows])
+    if sense_beta > 0:
+        unit_of = [row.get("target_unit") or row.get("target") for row in rows]
+        per_sense = Counter(zip((row["key"] for row in rows), unit_of))
+        boost = np.array([min(sense_max_boost, (per_sense[(row["key"], u)] / counts[row["key"]]) ** -sense_beta) for row, u in zip(rows, unit_of)])
+        weights = weights * boost
     return weights / weights.sum()
 
 

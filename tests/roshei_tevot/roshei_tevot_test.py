@@ -151,6 +151,15 @@ def test_a_sense_the_candidates_lack_is_unanswerable_but_trainable():
     assert train[0]["target"] == "ראש חודש" and train[0]["target_unit"] == "gold:ראש חודש"
 
 
+def test_sense_balancing_raises_rare_senses_up_to_the_cap():
+    rows = [{"key": "k", "source": "gold", "target_unit": "sense:0"}] * 99 + [{"key": "k", "source": "gold", "target_unit": "sense:1"}]
+    flat = sampling_weights(rows, key_alpha=0.0, synthetic_weight=1.0)
+    balanced = sampling_weights(rows, key_alpha=0.0, synthetic_weight=1.0, sense_beta=0.5, sense_max_boost=10.0)
+    rare_share = lambda w: w[-1] / w.sum()
+    assert rare_share(flat) == pytest.approx(0.01)
+    assert rare_share(balanced) == pytest.approx(10 / (99 * (0.99 ** -0.5) + 10))   # boost 100^0.5 = 10, at the cap
+
+
 def test_lexicon_source_needs_a_lexicon():
     with pytest.raises(ValueError):
         attach_candidates([dataset_row()], None, candidate_source="lexicon")

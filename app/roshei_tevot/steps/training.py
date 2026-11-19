@@ -81,6 +81,8 @@ def run_training(
     dataloader_num_workers: int,
     max_train_rows: Optional[int] = None,
     candidate_source: str = "dataset",
+    sense_beta: float = 0.0,
+    sense_max_boost: float = 10.0,
 ) -> dict:
     model, tokenizer = build_model(base_model_path, architecture, pooling, within_weight)
     lexicon = load_lexicon(dataset_repo) if candidate_source == "lexicon" else None
@@ -95,7 +97,7 @@ def run_training(
     val_rows, ranking_rows = val_rows[:eval_max_rows], ranking_rows[:eval_max_rows]
     print(f"Candidates attached in {time.monotonic() - started:.0f}s: train {train_report}, val {val_report}, ranking {ranking_report}")
 
-    train_dataset = ResampledDataset(train_rows, samples_per_epoch, sampling_weights(train_rows, key_alpha, synthetic_weight), seed)
+    train_dataset = ResampledDataset(train_rows, samples_per_epoch, sampling_weights(train_rows, key_alpha, synthetic_weight, sense_beta, sense_max_boost), seed)
     eval_dataset = ResampledDataset(val_rows, len(val_rows))
     if architecture == "siamese":
         collator = SiameseCollator(tokenizer, max_length, context_words, hard_negatives=hard_negatives, seed=seed)
