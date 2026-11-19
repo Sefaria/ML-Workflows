@@ -80,16 +80,18 @@ def run_training(
     seed: int,
     dataloader_num_workers: int,
     max_train_rows: Optional[int] = None,
+    candidate_source: str = "dataset",
 ) -> dict:
     model, tokenizer = build_model(base_model_path, architecture, pooling, within_weight)
-    lexicon = load_lexicon(dataset_repo)
+    lexicon = load_lexicon(dataset_repo) if candidate_source == "lexicon" else None
     names = load_hebrew_names(dataset_repo)
 
     started = time.monotonic()
-    train_rows, train_report = attach_candidates(load_split("train", dataset_repo, context_words, max_train_rows, names), lexicon, min_candidates, training=True)
+    attach = lambda rows, training: attach_candidates(rows, lexicon, min_candidates, training=training, candidate_source=candidate_source)
+    train_rows, train_report = attach(load_split("train", dataset_repo, context_words, max_train_rows, names), True)
     val_all = load_split("val", dataset_repo, context_words, None, names)
-    val_rows, val_report = attach_candidates(val_all, lexicon, min_candidates, training=True)
-    ranking_rows, ranking_report = attach_candidates(val_all, lexicon, min_candidates, training=False)
+    val_rows, val_report = attach(val_all, True)
+    ranking_rows, ranking_report = attach(val_all, False)
     val_rows, ranking_rows = val_rows[:eval_max_rows], ranking_rows[:eval_max_rows]
     print(f"Candidates attached in {time.monotonic() - started:.0f}s: train {train_report}, val {val_report}, ranking {ranking_report}")
 
@@ -156,6 +158,7 @@ def run_training(
     final_dir = Path(output_dir) / "final"
     save_model(trainer.model, tokenizer, str(final_dir), {
         **encode_settings, "base_model": base_model_path, "dataset_repo": dataset_repo, "min_candidates": min_candidates,
+        "candidate_source": candidate_source,
     })
     return {
         "plan": {"steps_per_epoch": steps_per_epoch, "max_steps": max_steps, "samples_per_epoch": len(train_dataset)},
