@@ -83,8 +83,11 @@ def run_training(
     candidate_source: str = "dataset",
     sense_beta: float = 0.0,
     sense_max_boost: float = 10.0,
+    gradient_checkpointing: bool = False,
 ) -> dict:
     model, tokenizer = build_model(base_model_path, architecture, pooling, within_weight)
+    if gradient_checkpointing:  # recompute activations in the backward pass: ~30% slower, much less memory (batch 128 at 512 tokens fits a 24 GB L4)
+        model.encoder.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     lexicon = load_lexicon(dataset_repo) if candidate_source == "lexicon" else None
     names = load_hebrew_names(dataset_repo)
 

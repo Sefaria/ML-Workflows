@@ -763,6 +763,7 @@ deployments:
       synthetic_weight: 0.5
       sense_beta: 0.5  # rows also weighted by (share of their sense within the key)^-beta, so rare senses are seen more; 0 turns it off
       sense_max_boost: 10.0  # cap on that boost
+      gradient_checkpointing: false  # true to fit batch 128 at 512 tokens on a 24 GB L4 (~30% slower)
       samples_per_epoch: 600000
       epochs: 2
       batch_size: 128
