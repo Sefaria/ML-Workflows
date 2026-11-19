@@ -77,6 +77,7 @@ def train_roshei_tevot_flow(
     candidate_source: str = "dataset",
     sense_beta: float = 0.5,
     sense_max_boost: float = 10.0,
+    gradient_checkpointing: bool = False,
 ) -> None:
     # run_name is stable across restarts, so a restarted job finds its own checkpoints.
     run_root = f"{model_prefix.rstrip('/')}/{run_name}"
@@ -101,11 +102,11 @@ def train_roshei_tevot_flow(
             weight_decay=weight_decay, warmup_ratio=warmup_ratio, eval_steps=eval_steps, eval_max_rows=eval_max_rows,
             checkpoint_minutes=checkpoint_minutes, seed=seed, dataloader_num_workers=dataloader_num_workers,
             max_train_rows=max_train_rows, candidate_source=candidate_source,
-            sense_beta=sense_beta, sense_max_boost=sense_max_boost,
+            sense_beta=sense_beta, sense_max_boost=sense_max_boost, gradient_checkpointing=gradient_checkpointing,
         )
         model_uri = upload_final_model(training["final_model_dir"], model_bucket, final_prefix)
         report = {"status": "success", "run_name": run_name, "started_at": started_at, "finished_at": datetime.now(timezone.utc).isoformat(),
-                  "model_repo_id": model_repo_id, "revision": revision, "dataset_repo": dataset_repo, "synthetic_weight": synthetic_weight, "sense_beta": sense_beta, "sense_max_boost": sense_max_boost, "candidate_source": candidate_source, "accelerator": accelerator, "training": training, "model_uri": model_uri}
+                  "model_repo_id": model_repo_id, "revision": revision, "dataset_repo": dataset_repo, "synthetic_weight": synthetic_weight, "sense_beta": sense_beta, "sense_max_boost": sense_max_boost, "gradient_checkpointing": gradient_checkpointing, "candidate_source": candidate_source, "accelerator": accelerator, "training": training, "model_uri": model_uri}
         write_blob_text(model_bucket, f"{run_root}/training_report.json", json.dumps(report, ensure_ascii=False, indent=2, default=str))
         notify_workflow_event(workflow_name=WORKFLOW_NAME, title=f"{WORKFLOW_NAME} completed", status="completed",
                               details={"run_name": run_name, "architecture": architecture, "model_uri": model_uri,
