@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "app"))
 
 from roshei_tevot.steps.data import CrossCollator, ResampledDataset, SiameseCollator, attach_candidates, sampling_weights  # noqa: E402
 from roshei_tevot.steps.encoding import add_markers, encode_candidate, encode_query, marker_ids  # noqa: E402
-from roshei_tevot.steps.evaluation import evaluate_splits, outcomes, summarise  # noqa: E402
+from roshei_tevot.steps.evaluation import evaluate_splits, outcomes, sense_share_band, summarise  # noqa: E402
 from roshei_tevot.steps.index import ExpansionIndex, Lexicon, decide  # noqa: E402
 from roshei_tevot.steps.model import CrossExpander, SiameseExpander  # noqa: E402
 from roshei_tevot.steps.vendor.spelling import same_expansion, stem_key  # noqa: E402
@@ -286,3 +286,11 @@ def test_trainer_checkpoint_resumes(tokenizer, tmp_path, architecture):
     resumed.args.max_steps = 6
     resumed.train(resume_from_checkpoint=str(tmp_path / "checkpoint-4"))
     assert resumed.state.global_step == 6   # loading the checkpoint raises on any missing or mismatched weight
+
+
+def test_sense_share_bands():
+    base = {"candidates": ["a", "b", "c"], "units": ["sense:0", "sense:1", "sense:2"], "freqs": [90, 9, 0]}
+    assert sense_share_band({**base, "target": "a", "target_unit": "sense:0"}) == "majority"
+    assert sense_share_band({**base, "target": "b", "target_unit": "sense:1"}) == "rare"
+    assert sense_share_band({**base, "target": "c", "target_unit": "sense:2"}) == "unseen_in_train"
+    assert sense_share_band({**base, "target": None, "target_unit": None}) == "unanswerable"
