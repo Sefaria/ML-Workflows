@@ -44,13 +44,13 @@ def prepare_rows(dataset_repo: str, splits: list[str], max_rows: Optional[int], 
 
 
 @task(log_prints=True)
-def evaluate_model(label: str, model_path: str, split_rows: dict, prior_weights: list[float]) -> dict:
+def evaluate_model(label: str, model_path: str, split_rows: dict, prior_weights: list[float], prior_select: str = "balanced") -> dict:
     import torch
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, tokenizer, config = load_for_inference(model_path, device)
     settings = {k: config[k] for k in ("max_length", "context_words") if k in config}
-    report = evaluate_splits(model, tokenizer, split_rows, device, float(config.get("logit_scale", 1.0)), tuple(prior_weights), **settings)
+    report = evaluate_splits(model, tokenizer, split_rows, device, float(config.get("logit_scale", 1.0)), tuple(prior_weights), prior_select, **settings)
     report["architecture"] = config["architecture"]
     print(f"{label}: λ={report['prior_weight']} success={report['success']['passes']}")
     return report
@@ -78,6 +78,7 @@ def evaluate_roshei_tevot_flow(
     context_words: int = 200,
     prior_weights: Optional[list[float]] = None,
     candidate_source: str = "dataset",
+    prior_select: str = "balanced",
 ) -> None:
     """Rank each row's candidates with every model. `gap_to_first` compares every model with the first in the list, so list the
     siamese model first to read the cross-encoder's advantage directly."""
@@ -86,7 +87,7 @@ def evaluate_roshei_tevot_flow(
         split_rows, candidate_reports = prepare_rows(dataset_repo, splits or SPLITS, max_rows, min_candidates, context_words, candidate_source)
         results = {}
         for spec in models:
-            results[spec["label"]] = evaluate_model(spec["label"], fetch_model(spec, cache_root, work_dir), split_rows, prior_weights or list(PRIOR_WEIGHTS))
+            results[spec["label"]] = evaluate_model(spec["label"], fetch_model(spec, cache_root, work_dir), split_rows, prior_weights or list(PRIOR_WEIGHTS), prior_select)
         report = {"status": "success", "evaluated_at": datetime.now(timezone.utc).isoformat(), "dataset": dataset_repo, "candidate_source": candidate_source, "specs": models,
                   "candidates": candidate_reports, "models": results, "gap_to_first": gaps(results, models[0]["label"])}
         write_blob_text(report_bucket, report_blob, json.dumps(report, ensure_ascii=False, indent=2))
@@ -94,7 +95,7 @@ def evaluate_roshei_tevot_flow(
         for label, r in results.items():
             for split, s in r["splits"].items():
                 o = s["overall"]
-                details[f"{label}/{split}"] = f"top1={o.get('top1', 0):.3f} freq={o.get('frequency_top1', 0):.3f} λ={r['prior_weight']}"
+                details[f"{label}/{split}"] = f"top1={o.get('top1', 0):.3f} balanced={o.get('balanced_top1') or 0:.3f} freq={o.get('frequency_top1', 0):.3f} λ={r['prior_weight']}"
             details[f"{label}/success"] = r["success"]["passes"]
         notify_workflow_event(workflow_name=WORKFLOW_NAME, title=f"{WORKFLOW_NAME} completed", status="completed", details=details)
     finally:

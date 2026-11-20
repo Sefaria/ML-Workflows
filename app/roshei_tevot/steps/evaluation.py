@@ -8,7 +8,7 @@ Scores: siamese = logit_scale * cosine, cross = the head's logit. Both get `+ λ
 λ is chosen on `val` and reused unchanged on every other split. The frequency baseline is the lexicon's most frequent candidate.
 """
 from collections import defaultdict
-from typing import Callable
+from typing import Optional, Callable
 
 import numpy as np
 
@@ -102,18 +102,38 @@ def grouped(items: list[dict], rows: list[dict], key: Callable[[dict], str], min
     return {name: summarise(members) for name, members in sorted(groups.items()) if len(members) >= min_rows}
 
 
+BALANCED_BANDS = ("majority", "common", "rare")
+
+
+def balanced_top1(items: list[dict], rows: list[dict]) -> Optional[float]:
+    """Mean top-1 over the sense-share bands (majority, common, rare) that have answerable rows, so a rare sense counts as much as a
+    frequent one. Overall top-1 is dominated by majority senses and rewards a strong frequency prior; this does not."""
+    bands = grouped(items, rows, sense_share_band, min_rows=1)
+    values = [bands[b]["top1"] for b in BALANCED_BANDS if b in bands and "top1" in bands[b]]
+    return float(np.mean(values)) if values else None
+
+
 def evaluate_splits(model, tokenizer, split_rows: dict[str, list[dict]], device: str, logit_scale: float,
-                    prior_weights=PRIOR_WEIGHTS, **encode_settings) -> dict:
-    """Score every split once, sweep λ, pick λ on val (or the first split), and report each split at every λ plus details at the chosen λ."""
+                    prior_weights=PRIOR_WEIGHTS, prior_select: str = "balanced", **encode_settings) -> dict:
+    """Score every split once, sweep λ, pick λ on val (or the first split), and report each split at every λ plus details at the chosen λ.
+    `prior_select`: "balanced" picks the λ with the best balanced_top1 (ties go to the smaller λ); "top1" the best overall top-1."""
+    if prior_select not in ("balanced", "top1"):
+        raise ValueError(f"prior_select must be 'balanced' or 'top1', not {prior_select!r}")
     scores = {split: model_scores(model, tokenizer, rows, device, logit_scale, **encode_settings) for split, rows in split_rows.items()}
-    sweep = {split: {str(w): summarise(outcomes(split_rows[split], scores[split], w)) for w in prior_weights} for split in split_rows}
+    sweep = {}
+    for split, rows in split_rows.items():
+        sweep[split] = {}
+        for w in prior_weights:
+            items = outcomes(rows, scores[split], w)
+            sweep[split][str(w)] = {**summarise(items), "balanced_top1": balanced_top1(items, rows)}
     selection_split = "val" if "val" in split_rows else next(iter(split_rows))
-    chosen = max(prior_weights, key=lambda w: sweep[selection_split][str(w)].get("top1", 0.0))
-    report = {"prior_weight": chosen, "prior_selected_on": selection_split, "splits": {}}
+    metric = "balanced_top1" if prior_select == "balanced" else "top1"
+    chosen = max(sorted(prior_weights), key=lambda w: sweep[selection_split][str(w)].get(metric) or 0.0)
+    report = {"prior_weight": chosen, "prior_selected_on": selection_split, "prior_select": prior_select, "splits": {}}
     for split, rows in split_rows.items():
         items = outcomes(rows, scores[split], chosen)
         report["splits"][split] = {
-            "overall": summarise(items),
+            "overall": {**summarise(items), "balanced_top1": balanced_top1(items, rows)},
             "prior_sweep": sweep[split],
             "by_source": grouped(items, rows, lambda r: r["source"]),
             "by_kind": grouped(items, rows, lambda r: r.get("kind") or "abbreviation"),
