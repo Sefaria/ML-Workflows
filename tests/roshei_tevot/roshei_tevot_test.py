@@ -315,3 +315,19 @@ def test_sense_share_bands():
     assert sense_share_band({**base, "target": "b", "target_unit": "sense:1"}) == "rare"
     assert sense_share_band({**base, "target": "c", "target_unit": "sense:2"}) == "unseen_in_train"
     assert sense_share_band({**base, "target": None, "target_unit": None}) == "unanswerable"
+
+
+def test_fold_split_holds_out_the_rows_training_skips(tmp_path, monkeypatch):
+    import json
+    from roshei_tevot.steps import data
+    rows = [{"id": f"r{i}", "source": "swapped" if i % 7 == 0 else "gold", "base_expansion": "רבי יוחנן", "key": 'ר"י', "before": "a", "after": "b",
+             "title": "T", "category": "C", "vid": f"v{i % 11}", "path": [i % 3, 0]} for i in range(200)]
+    (tmp_path / "train.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows), encoding="utf-8")
+    monkeypatch.setattr(data, "dataset_file", lambda repo, name: str(tmp_path / name))
+    names = {"titles": {}, "categories": {}}
+    trained = {r["id"] for r in data.load_split("train", "x", hebrew_names=names, holdout_fold=2, n_folds=5)}
+    held = {r["id"] for r in data.load_split("train_fold:2/5", "x", hebrew_names=names)}
+    assert held and not held & trained
+    assert all(r["source"] != "swapped" for r in data.load_split("train_fold:2/5", "x", hebrew_names=names))
+    real = {r["id"] for r in rows if r["source"] != "swapped"}
+    assert held | (trained & real) == real
