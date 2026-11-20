@@ -55,10 +55,35 @@ def load_hebrew_names(repo: str = DATASET_REPO) -> dict:
         return json.load(handle)
 
 
+FOLD_SPLIT_PREFIX = "train_fold:"
+
+
+def fold_of(raw: dict, n_folds: int) -> int:
+    """Cross-validation fold of a dataset row: a hash of its text version and top-level section, so neighbouring passages (which share
+    context) fall in the same fold while the rest of the work can still be in training."""
+    import hashlib
+    group = f"{raw.get('vid')}:{(raw.get('path') or [None])[0]}"
+    return int(hashlib.md5(group.encode()).hexdigest()[:8], 16) % n_folds
+
+
+def parse_fold_split(split: str) -> Optional[tuple[int, int]]:
+    """`train_fold:I/N` -> (I, N): fold I of N of train, real examples only (for scoring held-out train rows). Else None."""
+    if not split.startswith(FOLD_SPLIT_PREFIX):
+        return None
+    index, _, n = split[len(FOLD_SPLIT_PREFIX):].partition("/")
+    return int(index), int(n)
+
+
 def load_split(split: str, repo: str = DATASET_REPO, context_words: int = 100, max_rows: Optional[int] = None,
-               hebrew_names: Optional[dict] = None) -> list[dict]:
+               hebrew_names: Optional[dict] = None, holdout_fold: Optional[int] = None, n_folds: int = 5) -> list[dict]:
     """Read one split, keep the fields training and evaluation use, trim the context, and put the title and category in Hebrew
-    (falling back to English for a title the table of contents does not know)."""
+    (falling back to English for a title the table of contents does not know).
+
+    `holdout_fold` (train only) leaves out the rows of that fold (`fold_of`), for cross-validated training. A split named
+    `train_fold:I/N` reads train and keeps only fold I's real (not swapped) rows, which a model trained with holdout_fold=I never saw."""
+    only_fold = parse_fold_split(split)
+    if only_fold:
+        split, (only_index, n_folds) = "train", only_fold
     names = hebrew_names if hebrew_names is not None else load_hebrew_names(repo)
     titles, categories = names["titles"], names["categories"]
     path = dataset_file(repo, f"{split}.jsonl")
@@ -67,6 +92,10 @@ def load_split(split: str, repo: str = DATASET_REPO, context_words: int = 100, m
         for line in handle:
             raw = json.loads(line)
             if not raw.get("base_expansion"):
+                continue
+            if only_fold and (raw.get("source") == "swapped" or fold_of(raw, n_folds) != only_index):
+                continue
+            if holdout_fold is not None and fold_of(raw, n_folds) == holdout_fold:
                 continue
             row = {name: raw.get(name) for name in KEPT_FIELDS}
             row.update({ours: raw.get(theirs) or [] for theirs, ours in DATASET_CANDIDATE_FIELDS.items()})

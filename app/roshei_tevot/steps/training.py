@@ -84,6 +84,8 @@ def run_training(
     sense_beta: float = 0.0,
     sense_max_boost: float = 10.0,
     gradient_checkpointing: bool = False,
+    holdout_fold: Optional[int] = None,
+    n_folds: int = 5,
 ) -> dict:
     model, tokenizer = build_model(base_model_path, architecture, pooling, within_weight)
     if gradient_checkpointing:  # recompute activations in the backward pass: ~30% slower, much less memory (batch 128 at 512 tokens fits a 24 GB L4)
@@ -93,7 +95,7 @@ def run_training(
 
     started = time.monotonic()
     attach = lambda rows, training: attach_candidates(rows, lexicon, min_candidates, training=training, candidate_source=candidate_source)
-    train_rows, train_report = attach(load_split("train", dataset_repo, context_words, max_train_rows, names), True)
+    train_rows, train_report = attach(load_split("train", dataset_repo, context_words, max_train_rows, names, holdout_fold, n_folds), True)
     val_all = load_split("val", dataset_repo, context_words, None, names)
     val_rows, val_report = attach(val_all, True)
     ranking_rows, ranking_report = attach(val_all, False)
@@ -162,7 +164,7 @@ def run_training(
 
     final_dir = Path(output_dir) / "final"
     save_model(trainer.model, tokenizer, str(final_dir), {
-        **encode_settings, "base_model": base_model_path, "dataset_repo": dataset_repo, "min_candidates": min_candidates,
+        **encode_settings, "base_model": base_model_path, "dataset_repo": dataset_repo, "min_candidates": min_candidates, "holdout_fold": holdout_fold, "n_folds": n_folds,
         "candidate_source": candidate_source,
     })
     return {
