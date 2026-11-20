@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "app"))
 
 from roshei_tevot.steps.data import CrossCollator, ResampledDataset, SiameseCollator, attach_candidates, sampling_weights  # noqa: E402
 from roshei_tevot.steps.encoding import add_markers, encode_candidate, encode_query, marker_ids  # noqa: E402
-from roshei_tevot.steps.evaluation import balanced_top1, evaluate_splits, outcomes, sense_share_band, summarise  # noqa: E402
+from roshei_tevot.steps.evaluation import balanced_top1, evaluate_splits, outcomes, score_records, sense_share_band, summarise  # noqa: E402
 from roshei_tevot.steps.index import ExpansionIndex, Lexicon, decide  # noqa: E402
 from roshei_tevot.steps.model import CrossExpander, SiameseExpander  # noqa: E402
 from roshei_tevot.steps.vendor.spelling import same_expansion, stem_key  # noqa: E402
@@ -254,6 +254,14 @@ def test_evaluate_splits_picks_lambda_on_val_and_checks_success(tokenizer):
     report = evaluate_splits(model, tokenizer, rows, "cpu", 20.0, (0.0, 1.0), max_length=64, context_words=10)
     assert report["prior_selected_on"] == "val" and report["prior_weight"] in (0.0, 1.0)
     assert set(report["success"]["checks"]) == {"val", "test_seen_keys"} and isinstance(report["success"]["passes"], bool)
+
+
+def test_evaluate_splits_keeps_scores_for_offline_combination(tokenizer):
+    model = SiameseExpander(tiny_encoder(tokenizer)).eval()
+    rows = {"val": TOY}
+    report = evaluate_splits(model, tokenizer, rows, "cpu", 20.0, (0.0,), keep_scores=True, max_length=64, context_words=10)
+    records = score_records(rows, {"m": report["scores"]})
+    assert len(records) == len(TOY) and all(len(r["scores"]["m"]) == len(r["candidates"]) for r in records)
 
 
 def test_index_ranks_with_prior_and_round_trips(tmp_path):

@@ -114,9 +114,10 @@ def balanced_top1(items: list[dict], rows: list[dict]) -> Optional[float]:
 
 
 def evaluate_splits(model, tokenizer, split_rows: dict[str, list[dict]], device: str, logit_scale: float,
-                    prior_weights=PRIOR_WEIGHTS, prior_select: str = "balanced", **encode_settings) -> dict:
+                    prior_weights=PRIOR_WEIGHTS, prior_select: str = "balanced", keep_scores: bool = False, **encode_settings) -> dict:
     """Score every split once, sweep λ, pick λ on val (or the first split), and report each split at every λ plus details at the chosen λ.
-    `prior_select`: "balanced" picks the λ with the best balanced_top1 (ties go to the smaller λ); "top1" the best overall top-1."""
+    `prior_select`: "balanced" picks the λ with the best balanced_top1 (ties go to the smaller λ); "top1" the best overall top-1.
+    `keep_scores` adds the raw candidate scores per split under "scores" (for combining models offline)."""
     if prior_select not in ("balanced", "top1"):
         raise ValueError(f"prior_select must be 'balanced' or 'top1', not {prior_select!r}")
     scores = {split: model_scores(model, tokenizer, rows, device, logit_scale, **encode_settings) for split, rows in split_rows.items()}
@@ -148,7 +149,21 @@ def evaluate_splits(model, tokenizer, split_rows: dict[str, list[dict]], device:
                              "passes": o["top1"] - o["frequency_top1"] >= SUCCESS_MARGIN}
     report["success"] = {"margin": SUCCESS_MARGIN, "checks": checks,
                          "passes": bool(checks) and len(checks) == len(SUCCESS_SPLITS) and all(c["passes"] for c in checks.values())}
+    if keep_scores:
+        report["scores"] = scores
     return report
+
+
+def score_records(split_rows: dict[str, list[dict]], scores_by_model: dict[str, dict[str, list[list[float]]]]) -> list[dict]:
+    """One record per row with every model's raw candidate scores, for combining models offline (rows are in the same order for every model)."""
+    out = []
+    for split, rows in split_rows.items():
+        for i, row in enumerate(rows):
+            out.append({"split": split, "id": row.get("id"), "key": row.get("key"), "source": row.get("source"), "kind": row.get("kind"),
+                        "category": row.get("category"), "band": sense_share_band(row), "candidates": row["candidates"], "units": row.get("units"),
+                        "target_unit": row.get("target_unit"), "target": row.get("target"), "freqs": row["freqs"],
+                        "scores": {label: by_split[split][i] for label, by_split in scores_by_model.items()}})
+    return out
 
 
 def quick_top1(model, tokenizer, rows: list[dict], device: str, **encode_settings) -> dict:
