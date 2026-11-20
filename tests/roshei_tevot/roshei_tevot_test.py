@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "app"))
 
 from roshei_tevot.steps.data import CrossCollator, ResampledDataset, SiameseCollator, attach_candidates, sampling_weights  # noqa: E402
 from roshei_tevot.steps.encoding import add_markers, encode_candidate, encode_query, marker_ids  # noqa: E402
-from roshei_tevot.steps.evaluation import evaluate_splits, outcomes, sense_share_band, summarise  # noqa: E402
+from roshei_tevot.steps.evaluation import balanced_top1, evaluate_splits, outcomes, sense_share_band, summarise  # noqa: E402
 from roshei_tevot.steps.index import ExpansionIndex, Lexicon, decide  # noqa: E402
 from roshei_tevot.steps.model import CrossExpander, SiameseExpander  # noqa: E402
 from roshei_tevot.steps.vendor.spelling import same_expansion, stem_key  # noqa: E402
@@ -228,6 +228,19 @@ def test_prior_reorders_close_calls():
     rows[0]["freqs"] = [1, 1000]
     scores = [[1.0, 0.9]]
     assert outcomes(rows, scores, 0.0)[0]["rank"] == 1 and outcomes(rows, scores, 1.0)[0]["rank"] == 0
+
+
+def test_balanced_top1_weights_rare_senses_like_frequent_ones():
+    majority = row(target="רבי יהודה", candidates=("רבי יהודה", "רבי יוסי"))
+    majority["freqs"] = [1000, 10]
+    rare = row(target="רבי יוסי", candidates=("רבי יהודה", "רבי יוסי"))
+    rare["freqs"] = [1000, 10]
+    rows = [majority, dict(majority), dict(majority), rare]
+    scores = [[0.5, 0.4]] * 3 + [[0.4, 0.5]]
+    # Without the prior every row is right; a strong prior keeps the majority rows and loses the rare one.
+    assert balanced_top1(outcomes(rows, scores, 0.0), rows) == 1.0
+    items = outcomes(rows, scores, 1.0)
+    assert summarise(items)["top1"] == 0.75 and balanced_top1(items, rows) == 0.5
 
 
 def test_unanswerable_rows_count_against_end_to_end_only():
