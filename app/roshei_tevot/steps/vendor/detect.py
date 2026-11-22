@@ -1,4 +1,4 @@
-# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/detect.py @ 7b4aa00; only imports were made relative. Re-sync rather than edit.
+# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/detect.py @ 9cc2466; only imports were made relative. Re-sync rather than edit.
 """Rosh-tevot detector. Recall over precision: anything that looks like an abbreviation is emitted, including
 numerals and one-letter geresh forms; classification and prefix parsing are left ambiguous on purpose.
 

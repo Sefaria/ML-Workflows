@@ -36,9 +36,10 @@ def row(surface='ר"י', target="רבי יוסי", candidates=("רבי יוסי"
             "freqs": [10 - i for i in range(len(candidates))], "key": key, "source": source, "title": "משנה", "category": "משנה"}
 
 
+# "ראש חודש" is an unattested reading that does not spell ר"י (freq below TRUSTED_FREQ), so the letter checker drops it
 LEXICON = Lexicon(
-    by_surface={'ור"י': {"רבי יוסי": 5, "ראש חודש": 99}, 'ר"י': {"רבי יהודה": 30}},
-    by_bare={'ר"י': {"רבי יוסי": 5, "רבי יהודה": 30, "ראש חודש": 99}},
+    by_surface={'ור"י': {"רבי יוסי": 5, "ראש חודש": 2}, 'ר"י': {"רבי יהודה": 30}},
+    by_bare={'ר"י': {"רבי יוסי": 5, "רבי יהודה": 30, "ראש חודש": 2}},
 )
 
 
@@ -83,6 +84,12 @@ def test_folds_keep_different_words_apart(a, b):
 def test_lookup_uses_prefix_readings_and_drops_letters_that_do_not_fit():
     found = LEXICON.candidates('ור"י')
     assert set(found) == {"רבי יוסי", "רבי יהודה"} and found["רבי יהודה"] == 30
+
+
+def test_lookup_trusts_corpus_attested_readings_the_checker_rejects():
+    # קיימ"ל spells whole words (the checker caps a word at 3 letters) but the corpus labels it 7 times; "שמש" is unattested and does not fit
+    lexicon = Lexicon(by_surface={'קיימ"ל': {"קיימא לן": 7, "שמש": 1}}, by_bare={})
+    assert set(lexicon.candidates('קיימ"ל')) == {"קיימא לן"}
 
 
 def test_attach_candidates_matches_folded_gold_and_drops_single_candidate_rows():

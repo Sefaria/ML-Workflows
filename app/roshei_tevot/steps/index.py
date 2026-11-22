@@ -19,6 +19,9 @@ from .vendor.detect import parses
 from .vendor.hebrew import clean
 
 
+TRUSTED_FREQ = 3        # a reading the corpus labels at least this often is a candidate without passing the letter checker (set to 10**9 to turn this off)
+
+
 @lru_cache(maxsize=1_000_000)
 def fits_cached(surface: str, expansion: str) -> bool:
     return token_fits(surface, expansion)
@@ -53,14 +56,15 @@ class Lexicon:
         return list(seen)
 
     def candidates(self, surface: str) -> dict[str, int]:
-        """{expansion: lexicon frequency} the lexicon lists for this token and whose letters fit it. Cached per surface."""
+        """{expansion: lexicon frequency} the lexicon lists for this token and whose letters fit it, or that the corpus attests at least TRUSTED_FREQ times (the checker
+        caps a word at 3 letters, so it rejects real abbreviations that spell whole words: קיימ"ל, יעוי"ש, פיקו"נ, תום'; 530 such readings have freq >= 3). Cached per surface."""
         surface = clean(surface)
         if surface not in self._cache:
             pool: dict[str, int] = dict(self.by_surface.get(surface, {}))
             for _prefix, bare in parses(surface):
                 for text, freq in self.by_bare.get(bare, {}).items():
                     pool[text] = max(pool.get(text, 0), freq)
-            self._cache[surface] = {text: freq for text, freq in pool.items() if fits_cached(surface, text)}
+            self._cache[surface] = {text: freq for text, freq in pool.items() if freq >= TRUSTED_FREQ or fits_cached(surface, text)}
         return self._cache[surface]
 
     def scan(self, surface: str) -> dict[str, int]:

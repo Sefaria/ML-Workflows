@@ -1,4 +1,4 @@
-# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/checker.py @ 7b4aa00; only imports were made relative. Re-sync rather than edit.
+# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/checker.py @ 9cc2466; only imports were made relative. Re-sync rather than edit.
 """Hand-written alignment checker: does this expansion fit these abbreviation letters?
 
     fits(abbr, expansion) -> (bool, alignment)
@@ -165,12 +165,17 @@ def _fits_lenient(letters, ws, trunc):
 
 
 def load_irregular(path=None):
+    """irregular.tsv (kizur pairs the rules cannot express; make_irregular.py rewrites it) and irregular_corpus.tsv (corpus readings a person judged real that the
+    prefix grammar would otherwise reject); `#` lines are comments. An explicit `path` loads only that file."""
     from pathlib import Path
-    p = Path(path) if path else Path(__file__).parent / "irregular.tsv"
+    paths = [Path(path)] if path else [Path(__file__).parent / "irregular.tsv", Path(__file__).parent / "irregular_corpus.tsv"]
     IRREGULAR.clear()
-    if p.exists():
-        for line in p.read_text().splitlines():
-            a, _, e = line.partition("\t")
-            IRREGULAR.setdefault(a, set()).add(e)
+    for p in paths:
+        if p.exists():
+            for line in p.read_text(encoding="utf-8").splitlines():
+                if line.startswith("#"):
+                    continue
+                a, _, e = line.partition("\t")
+                IRREGULAR.setdefault(a, set()).add(e)
 
 load_irregular()

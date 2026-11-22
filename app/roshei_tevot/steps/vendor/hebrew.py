@@ -1,4 +1,4 @@
-# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/hebrew.py @ 7b4aa00; only imports were made relative. Re-sync rather than edit.
+# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/hebrew.py @ 9cc2466; only imports were made relative. Re-sync rather than edit.
 """Hebrew text helpers shared by the detector, the checker and the lexicon: normalisation, gematria, final forms."""
 import html, re
 
