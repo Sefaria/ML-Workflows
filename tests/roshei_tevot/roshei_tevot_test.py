@@ -83,7 +83,7 @@ def test_folds_keep_different_words_apart(a, b):
 # ---- lexicon lookup and candidate mining ----
 def test_lookup_uses_prefix_readings_and_drops_letters_that_do_not_fit():
     found = LEXICON.candidates('ור"י')
-    assert set(found) == {"רבי יוסי", "רבי יהודה"} and found["רבי יהודה"] == 30
+    assert set(found) == {"רבי יוסי", "רבי יהודה", "מאתים ועשרה"} and found["רבי יהודה"] == 30      # ו + ר"י is also the numeral 210
 
 
 def test_lookup_trusts_corpus_attested_readings_the_checker_rejects():
@@ -131,6 +131,14 @@ def test_a_numeral_is_always_a_lexicon_candidate_for_its_own_number():
     assert number_reading('קט"ו') == "מאה וחמשה עשר"                           # 15 after hundreds is a numeral too
     for not_a_number in ("ג'", 'ור"י', 'רש"י', 'י"ה', "ע"):                  # one-letter numerals, letters out of order, words, the divine-name spelling
         assert number_reading(not_a_number) is None
+
+
+def test_a_numeral_behind_a_prefix_is_a_candidate_for_its_number():
+    lexicon = Lexicon(by_surface={}, by_bare={'י"ב': {"יש בו": 5}})
+    twelve = number_reading('י"ב')
+    assert twelve in lexicon.candidates('לי"ב')                                 # ל + 12: twelve is offered next to the abbreviation readings
+    assert twelve in lexicon.candidates('י"ב')                                  # and still for the bare numeral
+    assert twelve not in lexicon.candidates('לי"ג')                             # another numeral has another number
 
 
 @pytest.mark.parametrize("a,b", [("שלשים ושש", "שלשים וששה"), ("ארבעה עשר", "ארבע עשרה"), ("חמישים ושלושה", "חמשים ושלשה")])
