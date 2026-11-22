@@ -83,7 +83,7 @@ def test_folds_keep_different_words_apart(a, b):
 # ---- lexicon lookup and candidate mining ----
 def test_lookup_uses_prefix_readings_and_drops_letters_that_do_not_fit():
     found = LEXICON.candidates('ור"י')
-    assert set(found) == {"רבי יוסי", "רבי יהודה"} and found["רבי יהודה"] == 30
+    assert set(found) == {"רבי יוסי", "רבי יהודה", "מאתים ועשרה"} and found["רבי יהודה"] == 30      # ו + ר"י is also the numeral 210
 
 
 def test_lookup_trusts_corpus_attested_readings_the_checker_rejects():
