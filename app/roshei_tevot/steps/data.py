@@ -155,6 +155,9 @@ def attach_candidates(rows: list[dict], lexicon: Optional[Lexicon], min_candidat
     `candidates` is most frequent first, with `freqs` alongside. `target` is the candidate text of the label (None when no candidate is the
     label). For training, a row without a matching candidate keeps its gold text as an extra candidate, so it is still a usable example;
     evaluation leaves it out of the candidates and counts it as unanswerable.
+
+    A training row whose answer is a number (`kind == "number"`) is kept with one candidate: a pure numeral (תקצ"ו) has no abbreviation reading, so the number is its
+    only class, and the other rows in the batch supply the negatives. Evaluation still drops it, since one candidate is not a choice.
     """
     if candidate_source not in CANDIDATE_SOURCES:
         raise ValueError(f"candidate_source must be one of {CANDIDATE_SOURCES}, not {candidate_source!r}")
@@ -163,6 +166,7 @@ def attach_candidates(rows: list[dict], lexicon: Optional[Lexicon], min_candidat
     kept, dropped, unmatched, by_sense, dropped_right = [], 0, 0, 0, 0
     for row in rows:
         slim = {k: v for k, v in row.items() if k not in DATASET_CANDIDATE_FIELDS.values()}
+        needed = 1 if training and row.get("kind") == "number" else min_candidates
         if candidate_source == "dataset":
             groups = dataset_senses(row)
             target_unit = _sense_target(row, groups)
@@ -171,7 +175,7 @@ def attach_candidates(rows: list[dict], lexicon: Optional[Lexicon], min_candidat
                 if training:
                     target_unit = f"gold:{row['base_expansion']}"
                     groups = groups + [{"unit": target_unit, "text": row["base_expansion"], "freq": 0, "members": [row["base_expansion"]]}]
-            if len(groups) < min_candidates:
+            if len(groups) < needed:
                 dropped += 1
                 dropped_right += target_unit is not None and not target_unit.startswith("gold:")  # one class, and it is the label's: right by default
                 continue
@@ -189,7 +193,7 @@ def attach_candidates(rows: list[dict], lexicon: Optional[Lexicon], min_candidat
                 texts = texts + [row["base_expansion"]]
                 found = {**found, row["base_expansion"]: 0}
                 target = row["base_expansion"]
-        if len({stem_key(t) for t in texts}) < min_candidates:
+        if len({stem_key(t) for t in texts}) < needed:
             dropped += 1
             continue
         kept.append({**slim, "candidates": texts, "freqs": [found[t] for t in texts], "target": target})

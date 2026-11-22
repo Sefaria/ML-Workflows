@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "app"))
 from roshei_tevot.steps.data import CrossCollator, ResampledDataset, SiameseCollator, attach_candidates, sampling_weights  # noqa: E402
 from roshei_tevot.steps.encoding import add_markers, encode_candidate, encode_query, marker_ids  # noqa: E402
 from roshei_tevot.steps.evaluation import balanced_top1, evaluate_splits, outcomes, score_records, sense_share_band, summarise  # noqa: E402
-from roshei_tevot.steps.index import ExpansionIndex, Lexicon, decide  # noqa: E402
+from roshei_tevot.steps.index import ExpansionIndex, Lexicon, decide, number_reading  # noqa: E402
 from roshei_tevot.steps.model import CrossExpander, SiameseExpander  # noqa: E402
 from roshei_tevot.steps.vendor.spelling import same_expansion, stem_key  # noqa: E402
 
@@ -36,9 +36,10 @@ def row(surface='ר"י', target="רבי יוסי", candidates=("רבי יוסי"
             "freqs": [10 - i for i in range(len(candidates))], "key": key, "source": source, "title": "משנה", "category": "משנה"}
 
 
+# "ראש חודש" is an unattested reading that does not spell ר"י (freq below TRUSTED_FREQ), so the letter checker drops it
 LEXICON = Lexicon(
-    by_surface={'ור"י': {"רבי יוסי": 5, "ראש חודש": 99}, 'ר"י': {"רבי יהודה": 30}},
-    by_bare={'ר"י': {"רבי יוסי": 5, "רבי יהודה": 30, "ראש חודש": 99}},
+    by_surface={'ור"י': {"רבי יוסי": 5, "ראש חודש": 2}, 'ר"י': {"רבי יהודה": 30}},
+    by_bare={'ר"י': {"רבי יוסי": 5, "רבי יהודה": 30, "ראש חודש": 2}},
 )
 
 
@@ -85,6 +86,12 @@ def test_lookup_uses_prefix_readings_and_drops_letters_that_do_not_fit():
     assert set(found) == {"רבי יוסי", "רבי יהודה"} and found["רבי יהודה"] == 30
 
 
+def test_lookup_trusts_corpus_attested_readings_the_checker_rejects():
+    # קיימ"ל spells whole words (the checker caps a word at 3 letters) but the corpus labels it 7 times; "שמש" is unattested and does not fit
+    lexicon = Lexicon(by_surface={'קיימ"ל': {"קיימא לן": 7, "שמש": 1}}, by_bare={})
+    assert set(lexicon.candidates('קיימ"ל')) == {"קיימא לן"}
+
+
 def test_attach_candidates_matches_folded_gold_and_drops_single_candidate_rows():
     rows = [
         {**row(surface='ור"י'), "base_expansion": "ורבי יוסי"},     # gold carries the prefix; the fold maps it to the lexicon spelling
@@ -115,6 +122,36 @@ def test_dataset_candidates_use_train_counts_and_ignore_the_lexicon():
     kept, report = attach_candidates(rows, None, training=False)
     assert kept[0]["candidates"] == ["רבי יוסי", "רבי יהודה"] and kept[0]["freqs"] == [7, 3] and kept[0]["target"] == "רבי יוסי"
     assert report["candidate_source"] == "dataset" and "dataset_candidates" not in kept[0]
+
+
+def test_a_numeral_is_always_a_lexicon_candidate_for_its_own_number():
+    lexicon = Lexicon(by_surface={'י"ד': {"יורה דעה": 30}}, by_bare={})
+    assert lexicon.candidates('י"ד') == {"יורה דעה": 30, "ארבעה עשר": 0}
+    assert set(lexicon.candidates('תקצ"ו')) == {"חמש מאות ותשעים וששה"}       # a pure numeral (596): the number is its only reading
+    assert number_reading('קט"ו') == "מאה וחמשה עשר"                           # 15 after hundreds is a numeral too
+    for not_a_number in ("ג'", 'ור"י', 'רש"י', 'י"ה', "ע"):                  # one-letter numerals, letters out of order, words, the divine-name spelling
+        assert number_reading(not_a_number) is None
+
+
+@pytest.mark.parametrize("a,b", [("שלשים ושש", "שלשים וששה"), ("ארבעה עשר", "ארבע עשרה"), ("חמישים ושלושה", "חמשים ושלשה")])
+def test_number_words_with_the_same_value_are_the_same_expansion(a, b):
+    assert same_expansion(a, b)
+
+
+@pytest.mark.parametrize("a,b", [("שלשים ושש", "שלשים ושבע"), ("אחד ששמו", 'ס"א')])
+def test_number_words_with_different_value_or_not_numbers_stay_apart(a, b):
+    assert not same_expansion(a, b)
+
+
+def test_a_number_row_matches_the_number_candidate_and_trains_with_one_candidate():
+    contested = dataset_row(surface='י"ד', key='י"ד', kind="number", base_expansion="ארבע עשרה",           # gold spelling, not the canonical one
+                            dataset_candidates=["יורה דעה", "ארבעה עשר"], dataset_candidate_counts=[30, 5], dataset_candidate_senses=[0, None])
+    pure = dataset_row(surface='תקצ"ו', key='תקצ"ו', kind="number", base_expansion="חמש מאות ותשעים ושש",
+                       dataset_candidates=["חמש מאות ותשעים וששה"], dataset_candidate_counts=[3])
+    train, report = attach_candidates([contested, pure], None, training=True)
+    assert [r["target"] for r in train] == ["ארבעה עשר", "חמש מאות ותשעים וששה"] and report["dropped_below_min_candidates"] == 0
+    evaluation, report = attach_candidates([contested, pure], None, training=False)
+    assert len(evaluation) == 1 and evaluation[0]["surface"] == 'י"ד' and report["dropped_below_min_candidates"] == 1
 
 
 def test_unseen_keys_fall_back_to_independent_candidates_at_count_zero():

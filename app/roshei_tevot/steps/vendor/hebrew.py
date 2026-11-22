@@ -1,4 +1,4 @@
-# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/hebrew.py @ b8160e4f; only imports were made relative. Re-sync rather than edit.
+# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/hebrew.py @ 0af8ac5; only imports were made relative. Re-sync rather than edit.
 """Hebrew text helpers shared by the detector, the checker and the lexicon: normalisation, gematria, final forms."""
 import html, re
 
@@ -6,6 +6,16 @@ TAG = re.compile(r"<[^>]+>")
 NIKUD = re.compile("[\u0591-\u05bd\u05bf-\u05c7]")   # cantillation + nikud, but not the maqaf (U+05BE): it separates words
 FINALS = str.maketrans("ךםןףץ", "כמנפצ")
 PREFIX_LETTERS = "ובהכלמש"
+
+ORDER = {"ו": 0, "ש": 1, "ד": 1, "ב": 2, "כ": 2, "ל": 2, "מ": 2, "ה": 3}
+
+def grammatical(prefix, after):
+    """Prefix letters in the order ו, ש/ד, ב/כ/ל/מ, ה, each rank once (so כו, בל, המ, שו are not prefixes); `after` is the first letter left of the word.
+    Aramaic כ may follow ב or ל when the word goes on with ה or ד (בכהאי, לכדרבי)."""
+    if len(prefix) >= 2 and prefix[-1] == "כ" and prefix[-2] in "בל" and after in "הד":
+        prefix = prefix[:-1]
+    ranks = [ORDER[c] for c in prefix]
+    return all(a < b for a, b in zip(ranks, ranks[1:]))
 
 def normalize_punct(s):
     """Unify gershayim variants to `"` and geresh variants to `'`; a maqaf becomes a space (דבר־ה' is two words)."""
@@ -35,6 +45,11 @@ def gematria_value(letters):
         return None
     if letters in ("טו", "טז"):
         return VALUES[letters[0]] + VALUES[letters[1]]
+    if len(letters) > 2 and letters.endswith(("טו", "טז")):     # קט"ו = 115, תקט"ז = 516: 15 / 16 after hundreds
+        hundreds = [VALUES[c] for c in letters[:-2]]
+        if all(v >= 100 for v in hundreds) and hundreds == sorted(hundreds, reverse=True) and all(c == "ת" or letters[:-2].count(c) == 1 for c in letters[:-2]):
+            return sum(hundreds) + VALUES[letters[-2]] + VALUES[letters[-1]]
+        return None
     vals = [VALUES[c] for c in letters]
     if vals != sorted(vals, reverse=True):
         return None

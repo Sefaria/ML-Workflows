@@ -11,6 +11,7 @@ Pairs these rules keep apart on purpose: רבי יוסה / רבי יוסי and s
 import re
 
 from .hebrew import PREFIX_LETTERS, medial
+from .numwords import words_value
 
 FOLD_PREFIXES = "והבכלמשד"
 
@@ -57,5 +58,11 @@ def fold_b(a: str, b: str) -> bool:
     return True
 
 
+def same_number(a: str, b: str) -> bool:
+    """Two spelled-out numbers with the same value, whatever the gender or spelling (שלשים ושש / שלשים וששה, ארבעה עשר / ארבע עשרה)."""
+    value = words_value(a)
+    return value is not None and value == words_value(b)
+
+
 def same_expansion(a: str, b: str) -> bool:
-    return a == b or stem_key(a) == stem_key(b) or fold_b(a, b)
+    return a == b or stem_key(a) == stem_key(b) or fold_b(a, b) or same_number(a, b)
