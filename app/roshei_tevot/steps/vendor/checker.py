@@ -1,4 +1,4 @@
-# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/checker.py @ b8160e4f; only imports were made relative. Re-sync rather than edit.
+# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/checker.py @ 7b4aa00; only imports were made relative. Re-sync rather than edit.
 """Hand-written alignment checker: does this expansion fit these abbreviation letters?
 
     fits(abbr, expansion) -> (bool, alignment)
@@ -19,7 +19,7 @@ Rules (PLAN step 2):
 """
 import re
 from functools import lru_cache
-from .hebrew import NIKUD, PREFIX_LETTERS, medial, normalize_punct
+from .hebrew import NIKUD, PREFIX_LETTERS, grammatical, medial, normalize_punct
 
 MAX_RUN = 3
 MAX_RUN_LAST = 5            # the last word may be truncated harder: ביהכנ"ס = בית הכנסת, אדמוה"ז = אדמור הזקן
@@ -44,7 +44,7 @@ def _stems(word):
     """Candidate stem start offsets: 0 and every position after 1..MAX_PREFIX prefix letters."""
     yield 0
     for p in range(1, min(MAX_PREFIX, len(word) - 1) + 1):
-        if all(c in STEM_PREFIXES for c in word[:p]):
+        if all(c in STEM_PREFIXES for c in word[:p]) and grammatical(word[:p], word[p]):
             yield p
         else:
             break
@@ -141,6 +141,8 @@ def token_fits(surface, expansion):
         if any(c not in STEM_PREFIXES for c in p):
             break
         rest = surface[n:]
+        if not rest or not grammatical(p, rest[0]):
+            continue
         if ws and ws[0].startswith(p) and len(ws[0]) > n and re.search(r'[א-ת]"[א-ת]|\'$', normalize_punct(rest)) and len(norm_letters(rest)) > 1:
             if fits(rest, " ".join([ws[0][n:]] + ws[1:]))[0]:
                 return True

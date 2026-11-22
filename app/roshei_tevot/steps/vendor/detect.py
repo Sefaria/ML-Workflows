@@ -1,10 +1,10 @@
-# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/detect.py @ b8160e4f; only imports were made relative. Re-sync rather than edit.
+# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/detect.py @ 7b4aa00; only imports were made relative. Re-sync rather than edit.
 """Rosh-tevot detector. Recall over precision: anything that looks like an abbreviation is emitted, including
 numerals and one-letter geresh forms; classification and prefix parsing are left ambiguous on purpose.
 
 Row per token: surface, normalised `abbr` (no-prefix reading), `parses` (every prefix split), `cls`, numeric info."""
 import re
-from .hebrew import PREFIX_LETTERS, clean, numeral_value
+from .hebrew import PREFIX_LETTERS, clean, grammatical, numeral_value
 
 # letters (+ internal gershayim, optional trailing geresh).  Gershayim only count between letters.
 TOKEN = re.compile(r"[א-ת]+(?:\"[א-ת]+)*'?")
@@ -23,6 +23,8 @@ def parses(core):
         prefix, rest = core[:n], core[n:]
         if any(c not in PREFIX_LETTERS for c in prefix):
             break
+        if prefix and rest and not grammatical(prefix, rest[0]):
+            continue                              # כומ"ס is not כו + מ"ס: ו comes before ב/כ/ל/מ, never after
         if '"' in rest:
             a, _, b = rest.partition('"')
             if not (a and b):                     # quote must sit between letters of the abbreviation itself
