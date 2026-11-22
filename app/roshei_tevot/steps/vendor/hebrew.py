@@ -1,4 +1,4 @@
-# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/hebrew.py @ 9cc2466; only imports were made relative. Re-sync rather than edit.
+# Vendored from Sefaria/translation-engine experiments/expand_roshei_tevot/hebrew.py @ 0af8ac5; only imports were made relative. Re-sync rather than edit.
 """Hebrew text helpers shared by the detector, the checker and the lexicon: normalisation, gematria, final forms."""
 import html, re
 
@@ -45,6 +45,11 @@ def gematria_value(letters):
         return None
     if letters in ("טו", "טז"):
         return VALUES[letters[0]] + VALUES[letters[1]]
+    if len(letters) > 2 and letters.endswith(("טו", "טז")):     # קט"ו = 115, תקט"ז = 516: 15 / 16 after hundreds
+        hundreds = [VALUES[c] for c in letters[:-2]]
+        if all(v >= 100 for v in hundreds) and hundreds == sorted(hundreds, reverse=True) and all(c == "ת" or letters[:-2].count(c) == 1 for c in letters[:-2]):
+            return sum(hundreds) + VALUES[letters[-2]] + VALUES[letters[-1]]
+        return None
     vals = [VALUES[c] for c in letters]
     if vals != sorted(vals, reverse=True):
         return None
