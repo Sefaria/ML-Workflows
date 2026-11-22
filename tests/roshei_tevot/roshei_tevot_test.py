@@ -133,6 +133,14 @@ def test_a_numeral_is_always_a_lexicon_candidate_for_its_own_number():
         assert number_reading(not_a_number) is None
 
 
+def test_a_numeral_behind_a_prefix_is_a_candidate_for_its_number():
+    lexicon = Lexicon(by_surface={}, by_bare={'י"ב': {"יש בו": 5}})
+    twelve = number_reading('י"ב')
+    assert twelve in lexicon.candidates('לי"ב')                                 # ל + 12: twelve is offered next to the abbreviation readings
+    assert twelve in lexicon.candidates('י"ב')                                  # and still for the bare numeral
+    assert twelve not in lexicon.candidates('לי"ג')                             # another numeral has another number
+
+
 @pytest.mark.parametrize("a,b", [("שלשים ושש", "שלשים וששה"), ("ארבעה עשר", "ארבע עשרה"), ("חמישים ושלושה", "חמשים ושלשה")])
 def test_number_words_with_the_same_value_are_the_same_expansion(a, b):
     assert same_expansion(a, b)

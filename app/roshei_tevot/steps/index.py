@@ -23,7 +23,7 @@ from .vendor.numwords import value_words
 def number_reading(surface: str) -> Optional[str]:
     """The number a token spells, as words, when the token is a numeral of two or more letters exactly as written (י"ד -> ארבעה עשר, קט"ו -> מאה וחמשה עשר), else None.
     A numeral is always a possible reading of itself, whether or not the lexicon lists an abbreviation for the same letters. One-letter numerals with a geresh (ג')
-    are left to the lexicon, which reads them as number words (א' = אחד); a prefix before a numeral (בכ"ד) is not handled."""
+    are left to the lexicon, which reads them as number words (א' = אחד); a prefix before a numeral (בכ"ד) is stripped by the caller (Lexicon.candidates)."""
     value = numeral_value(surface)
     if value is None or not 11 <= value <= 999 or len(surface.replace('"', "").replace("'", "")) < 2:
         return None
@@ -80,9 +80,10 @@ class Lexicon:
                 for text, freq in self.by_bare.get(bare, {}).items():
                     pool[text] = max(pool.get(text, 0), freq)
             found = {text: freq for text, freq in pool.items() if freq >= TRUSTED_FREQ or fits_cached(surface, text)}
-            number = number_reading(surface)
-            if number:
-                found.setdefault(number, 0)         # a numeral can always be the number; the model decides between it and the abbreviation readings
+            for _prefix, bare in parses(surface):           # a numeral (also behind a prefix: לי"ב, וקי"ד) can always be the number; the model decides between it and the abbreviation readings
+                number = number_reading(bare)
+                if number:
+                    found.setdefault(number, 0)
             self._cache[surface] = found
         return self._cache[surface]
 
