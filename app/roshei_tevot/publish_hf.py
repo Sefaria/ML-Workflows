@@ -4,7 +4,7 @@
     python -m roshei_tevot.publish_hf --run rt-numbers-v5b-siamese-2026-11-23 --index rt-numbers-v5b-2026-11-23 \\
         --dataset gs://sefaria-ml-models/roshei-tevot/data/berel-roshei-tevot-numbers-v5b --card /path/to/model_card.md \\
         --out /tmp/rt_release                       # build + check only
-    python -m roshei_tevot.publish_hf ... --upload Sefaria/berel-roshei-tevot-siamese --message "..."     # also upload (uses your `hf auth login`)
+    python -m roshei_tevot.publish_hf ... --upload Sefaria/BeRTevot --message "..."     # also upload (uses your `hf auth login`)
 
 Needs `gcloud` logged in (the model, the index and the dataset's train.jsonl are read from gs://sefaria-ml-models/roshei-tevot/) and, to upload, `huggingface_hub`.
 The release holds, so that the model, its lexicon and the code that makes candidates can never be paired wrongly:
@@ -105,7 +105,7 @@ for t in result["tokens"]:
         assert abs(total - 1) < 1e-3, (t["surface"], total)
     print(" ", t["surface"], "->", t["senses"][0]["text"] if t["senses"] else "(no reading offered)")
 '''
-    subprocess.run([sys.executable, "-I", "-c", script], check=True)
+    subprocess.run([sys.executable, "-I", "-B", "-c", script], check=True)      # -B: no __pycache__ in the release
 
 
 def main() -> None:
@@ -128,7 +128,7 @@ def main() -> None:
 
         if not a.message:
             raise SystemExit("--message is required with --upload")
-        info = HfApi().upload_folder(folder_path=str(out), repo_id=a.upload, repo_type="model", commit_message=a.message)
+        info = HfApi().upload_folder(folder_path=str(out), repo_id=a.upload, repo_type="model", commit_message=a.message, ignore_patterns=["__pycache__/**", "*.pyc"])
         print("uploaded:", info)
 
 

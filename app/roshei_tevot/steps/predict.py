@@ -1,7 +1,7 @@
 """Run a trained roshei tevot model on text: find the abbreviations, offer each one's readings, rank them in context, group them by sense.
 
     from roshei_tevot.steps.predict import RosheiTevot
-    rt = RosheiTevot.from_pretrained("Sefaria/berel-roshei-tevot-siamese")        # or a local folder with the same layout
+    rt = RosheiTevot.from_pretrained("Sefaria/BeRTevot")        # or a local folder with the same layout
     for token in rt.expand(text)["tokens"]:
         print(token["surface"], token["senses"][0]["text"], token["senses"][0]["probability"])
 
