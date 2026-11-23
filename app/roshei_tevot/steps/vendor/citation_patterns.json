@@ -1,0 +1,5667 @@
+[
+{
+"head": "ד",
+"prefix": "",
+"unit": "דף",
+"freq": 1876,
+"entries": 307,
+"sources": {
+"llm:sol+flash:agreed": 294,
+"llm:opus+flash:agreed": 181,
+"llm:sol+flash:opus": 94,
+"llm:opus+flash:pro": 51
+},
+"categories": {
+"Kabbalah": 262,
+"Reference": 76,
+"Halakhah": 406,
+"Mishnah": 126,
+"Midrash": 22,
+"Chasidut": 481,
+"Jewish Thought": 44,
+"Tanakh": 218,
+"Talmud": 58,
+"Responsa": 146,
+"Liturgy": 4,
+"Musar": 31,
+"Tosefta": 2
+}
+},
+{
+"head": "ס",
+"prefix": "",
+"unit": "סימן",
+"freq": 724,
+"entries": 257,
+"sources": {
+"llm:sol+flash:agreed": 238,
+"llm:opus+flash:agreed": 50,
+"llm:sol+flash:opus": 42,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Halakhah": 197,
+"Midrash": 17,
+"Reference": 103,
+"Talmud": 35,
+"Mishnah": 144,
+"Responsa": 125,
+"Tanakh": 40,
+"Kabbalah": 2,
+"Musar": 1,
+"Chasidut": 55,
+"Jewish Thought": 5
+}
+},
+{
+"head": "סק",
+"prefix": "",
+"unit": "סעיף קטן",
+"freq": 654,
+"entries": 100,
+"sources": {
+"llm:sol+flash:opus": 77,
+"llm:sol+flash:agreed": 96,
+"llm:opus+flash:agreed": 75,
+"llm:sol+flash:pro": 7,
+"llm:opus+flash:pro": 9
+},
+"categories": {
+"Halakhah": 248,
+"Responsa": 151,
+"Talmud": 79,
+"Mishnah": 55,
+"Tanakh": 65,
+"Jewish Thought": 31,
+"Reference": 11,
+"Chasidut": 11,
+"Tosefta": 2,
+"Liturgy": 1
+}
+},
+{
+"head": "פ",
+"prefix": "",
+"unit": "פרק",
+"freq": 356,
+"entries": 93,
+"sources": {
+"kizur:1": 1,
+"llm:sol+flash:agreed": 69,
+"llm:sol+flash:opus": 61,
+"parallel": 3,
+"llm:opus+flash:agreed": 38,
+"llm:opus+flash:pro": 1,
+"llm": 2
+},
+"categories": {
+"Musar": 10,
+"Responsa": 26,
+"Tosefta": 49,
+"Tanakh": 29,
+"Talmud": 22,
+"Kabbalah": 10,
+"Mishnah": 39,
+"Chasidut": 31,
+"Reference": 14,
+"Halakhah": 80,
+"Midrash": 9,
+"Jewish Thought": 37
+}
+},
+{
+"head": "בד",
+"prefix": "ב",
+"unit": "דף",
+"freq": 322,
+"entries": 97,
+"sources": {
+"llm:sol+flash:agreed": 90,
+"llm:sol+flash:opus": 30,
+"llm:opus+flash:agreed": 30
+},
+"categories": {
+"Kabbalah": 107,
+"Halakhah": 157,
+"Tanakh": 26,
+"Responsa": 18,
+"Talmud": 4,
+"Chasidut": 8,
+"Jewish Thought": 2
+}
+},
+{
+"head": "ס",
+"prefix": "",
+"unit": "סעיף",
+"freq": 313,
+"entries": 77,
+"sources": {
+"llm:opus+flash:agreed": 41,
+"llm:sol+flash:agreed": 66,
+"llm:sol+flash:opus": 36,
+"llm:opus+flash:pro": 6,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Halakhah": 143,
+"Tanakh": 13,
+"Chasidut": 35,
+"Musar": 2,
+"Jewish Thought": 11,
+"Reference": 2,
+"Mishnah": 40,
+"Liturgy": 1,
+"Responsa": 47,
+"Talmud": 18,
+"Tosefta": 1
+}
+},
+{
+"head": "פ",
+"prefix": "",
+"unit": "פרשה",
+"freq": 297,
+"entries": 80,
+"sources": {
+"kizur:1": 8,
+"llm:sol+flash:agreed": 54,
+"llm:sol+flash:opus": 50,
+"llm:opus+flash:agreed": 45,
+"llm:opus+flash:pro": 2,
+"llm": 1
+},
+"categories": {
+"Liturgy": 2,
+"Midrash": 74,
+"Jewish Thought": 16,
+"Tanakh": 31,
+"Musar": 9,
+"Reference": 13,
+"Kabbalah": 17,
+"Tosefta": 36,
+"Chasidut": 44,
+"Responsa": 6,
+"Halakhah": 10,
+"Mishnah": 17,
+"Talmud": 22
+}
+},
+{
+"head": "בס",
+"prefix": "ב",
+"unit": "סעיף",
+"freq": 259,
+"entries": 51,
+"sources": {
+"llm:sol+flash:agreed": 45,
+"llm:opus+flash:agreed": 37,
+"llm:opus+flash:pro": 2,
+"llm:sol+flash:opus": 29
+},
+"categories": {
+"Responsa": 27,
+"Halakhah": 226,
+"Mishnah": 2,
+"Talmud": 2,
+"Tanakh": 2
+}
+},
+{
+"head": "ופ",
+"prefix": "ו",
+"unit": "פרק",
+"freq": 240,
+"entries": 37,
+"sources": {
+"llm:sol+flash:opus": 34,
+"llm:opus+flash:agreed": 26,
+"llm:sol+flash:agreed": 23
+},
+"categories": {
+"Halakhah": 24,
+"Jewish Thought": 146,
+"Tosefta": 5,
+"Reference": 7,
+"Talmud": 9,
+"Midrash": 11,
+"Responsa": 9,
+"Chasidut": 7,
+"Mishnah": 18,
+"Tanakh": 4
+}
+},
+{
+"head": "בפ",
+"prefix": "ב",
+"unit": "פרק",
+"freq": 229,
+"entries": 41,
+"sources": {
+"llm:sol+flash:opus": 38,
+"llm:sol+flash:agreed": 15,
+"llm:opus+flash:agreed": 32
+},
+"categories": {
+"Tanakh": 30,
+"Halakhah": 35,
+"Kabbalah": 8,
+"Responsa": 19,
+"Reference": 4,
+"Midrash": 7,
+"Jewish Thought": 67,
+"Talmud": 13,
+"Tosefta": 13,
+"Mishnah": 30,
+"Chasidut": 3
+}
+},
+{
+"head": "ספ",
+"prefix": "",
+"unit": "סוף פרק",
+"freq": 200,
+"entries": 43,
+"sources": {
+"llm": 1,
+"llm:sol+flash:agreed": 31,
+"llm:sol+flash:opus": 34,
+"llm:opus+flash:agreed": 20,
+"llm:sol+flash:pro": 2
+},
+"categories": {
+"Kabbalah": 3,
+"Responsa": 11,
+"Reference": 7,
+"Tosefta": 54,
+"Talmud": 25,
+"Halakhah": 22,
+"Chasidut": 24,
+"Jewish Thought": 7,
+"Mishnah": 30,
+"Musar": 1,
+"Tanakh": 7,
+"Midrash": 9
+}
+},
+{
+"head": "דבפ",
+"prefix": "דב",
+"unit": "פרק",
+"freq": 195,
+"entries": 27,
+"sources": {
+"llm:opus+flash:agreed": 20,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:opus": 27,
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Halakhah": 107,
+"Tanakh": 9,
+"Mishnah": 27,
+"Talmud": 22,
+"Jewish Thought": 2,
+"Reference": 4,
+"Musar": 1,
+"Responsa": 21,
+"Midrash": 1,
+"Chasidut": 1
+}
+},
+{
+"head": "וד",
+"prefix": "ו",
+"unit": "דף",
+"freq": 186,
+"entries": 58,
+"sources": {
+"llm:opus+flash:agreed": 18,
+"llm:sol+flash:agreed": 55,
+"llm:sol+flash:opus": 14,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Mishnah": 6,
+"Halakhah": 95,
+"Tanakh": 9,
+"Talmud": 2,
+"Chasidut": 51,
+"Responsa": 10,
+"Reference": 8,
+"Kabbalah": 5
+}
+},
+{
+"head": "בסק",
+"prefix": "ב",
+"unit": "סעיף קטן",
+"freq": 158,
+"entries": 25,
+"sources": {
+"llm:sol+flash:agreed": 23,
+"llm:sol+flash:opus": 16,
+"llm:opus+flash:agreed": 16,
+"llm:sol+flash:pro": 2
+},
+"categories": {
+"Halakhah": 138,
+"Responsa": 13,
+"Tanakh": 3,
+"Talmud": 4
+}
+},
+{
+"head": "ח",
+"prefix": "",
+"unit": "חלק",
+"freq": 140,
+"entries": 42,
+"sources": {
+"llm:sol+flash:agreed": 21,
+"llm:sol+flash:opus": 34,
+"llm:opus+flash:agreed": 15,
+"llm:opus+flash:pro": 2,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Tosefta": 60,
+"Midrash": 8,
+"Mishnah": 1,
+"Jewish Thought": 7,
+"Halakhah": 9,
+"Tanakh": 3,
+"Responsa": 5,
+"Chasidut": 37,
+"Talmud": 10
+}
+},
+{
+"head": "נ",
+"prefix": "",
+"unit": "נתיב",
+"freq": 136,
+"entries": 22,
+"sources": {
+"llm:sol+flash:agreed": 16,
+"llm:opus+flash:agreed": 19,
+"llm:sol+flash:opus": 17
+},
+"categories": {
+"Halakhah": 108,
+"Mishnah": 2,
+"Responsa": 15,
+"Talmud": 5,
+"Tosefta": 6
+}
+},
+{
+"head": "בס",
+"prefix": "ב",
+"unit": "סימן",
+"freq": 129,
+"entries": 72,
+"sources": {
+"llm:sol+flash:agreed": 58,
+"llm:sol+flash:opus": 19,
+"llm:opus+flash:agreed": 12,
+"llm:opus+flash:pro": 2,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Midrash": 9,
+"Halakhah": 95,
+"Mishnah": 3,
+"Responsa": 20,
+"Chasidut": 2
+}
+},
+{
+"head": "סה",
+"prefix": "",
+"unit": "סוף הלכה",
+"freq": 128,
+"entries": 18,
+"sources": {
+"llm:opus+flash:agreed": 11,
+"llm:sol+flash:agreed": 18,
+"llm:sol+flash:opus": 15
+},
+"categories": {
+"Tosefta": 120,
+"Halakhah": 4,
+"Responsa": 1,
+"Midrash": 3
+}
+},
+{
+"head": "ועס",
+"prefix": "ו",
+"unit": "עיין סעיף",
+"freq": 126,
+"entries": 23,
+"sources": {
+"llm:sol+flash:agreed": 23,
+"llm:opus+flash:agreed": 10,
+"llm:sol+flash:opus": 3,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Halakhah": 125,
+"Responsa": 1
+}
+},
+{
+"head": "בנ",
+"prefix": "ב",
+"unit": "נתיב",
+"freq": 115,
+"entries": 20,
+"sources": {
+"llm:opus+flash:agreed": 13,
+"llm:sol+flash:agreed": 12,
+"llm:sol+flash:opus": 17
+},
+"categories": {
+"Musar": 2,
+"Halakhah": 102,
+"Responsa": 6,
+"Talmud": 5
+}
+},
+{
+"head": "דפ",
+"prefix": "ד",
+"unit": "פרק",
+"freq": 108,
+"entries": 21,
+"sources": {
+"llm:opus+flash:agreed": 14,
+"llm:sol+flash:opus": 20,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Midrash": 4,
+"Talmud": 13,
+"Halakhah": 48,
+"Mishnah": 27,
+"Responsa": 12,
+"Chasidut": 1,
+"Tanakh": 3
+}
+},
+{
+"head": "בספ",
+"prefix": "ב",
+"unit": "סוף פרק",
+"freq": 103,
+"entries": 18,
+"sources": {
+"llm:sol+flash:opus": 18,
+"llm:opus+flash:agreed": 10,
+"llm:sol+flash:agreed": 6
+},
+"categories": {
+"Halakhah": 42,
+"Mishnah": 26,
+"Tanakh": 3,
+"Tosefta": 12,
+"Reference": 1,
+"Responsa": 4,
+"Midrash": 3,
+"Jewish Thought": 1,
+"Chasidut": 3,
+"Talmud": 8
+}
+},
+{
+"head": "עס",
+"prefix": "",
+"unit": "עיין סעיף",
+"freq": 102,
+"entries": 22,
+"sources": {
+"llm:opus+flash:agreed": 8,
+"llm:sol+flash:agreed": 21,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:opus": 3
+},
+"categories": {
+"Halakhah": 102
+}
+},
+{
+"head": "וס",
+"prefix": "ו",
+"unit": "סעיף",
+"freq": 98,
+"entries": 15,
+"sources": {
+"llm:sol+flash:agreed": 14,
+"llm:opus+flash:agreed": 10,
+"llm:sol+flash:opus": 12
+},
+"categories": {
+"Mishnah": 7,
+"Chasidut": 1,
+"Halakhah": 72,
+"Talmud": 4,
+"Responsa": 14
+}
+},
+{
+"head": "ובפ",
+"prefix": "וב",
+"unit": "פרק",
+"freq": 91,
+"entries": 18,
+"sources": {
+"llm:sol+flash:opus": 15,
+"llm:opus+flash:agreed": 10,
+"llm:sol+flash:agreed": 7
+},
+"categories": {
+"Tanakh": 6,
+"Mishnah": 20,
+"Halakhah": 28,
+"Jewish Thought": 12,
+"Talmud": 9,
+"Tosefta": 4,
+"Responsa": 5,
+"Reference": 3,
+"Midrash": 2,
+"Chasidut": 2
+}
+},
+{
+"head": "דס",
+"prefix": "ד",
+"unit": "סעיף",
+"freq": 85,
+"entries": 20,
+"sources": {
+"llm:opus+flash:agreed": 8,
+"llm:sol+flash:agreed": 15,
+"llm:sol+flash:opus": 14,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Halakhah": 71,
+"Responsa": 14
+}
+},
+{
+"head": "דספ",
+"prefix": "ד",
+"unit": "סוף פרק",
+"freq": 79,
+"entries": 12,
+"sources": {
+"llm:opus+flash:agreed": 7,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:opus": 12,
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Mishnah": 24,
+"Halakhah": 28,
+"Talmud": 15,
+"Responsa": 8,
+"Midrash": 2,
+"Chasidut": 2
+}
+},
+{
+"head": "רפ",
+"prefix": "",
+"unit": "ריש פרק",
+"freq": 78,
+"entries": 31,
+"sources": {
+"llm:sol+flash:opus": 23,
+"llm:opus+flash:pro": 19,
+"llm:sol+flash:pro": 3,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Midrash": 5,
+"Tosefta": 25,
+"Mishnah": 21,
+"Jewish Thought": 1,
+"Halakhah": 6,
+"Chasidut": 10,
+"Responsa": 3,
+"Tanakh": 2,
+"Talmud": 5
+}
+},
+{
+"head": "כפ",
+"prefix": "כ",
+"unit": "פרק",
+"freq": 77,
+"entries": 10,
+"sources": {
+"llm:opus+flash:agreed": 9,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:opus": 10,
+"llm:sol+flash:agreed": 5
+},
+"categories": {
+"Mishnah": 77
+}
+},
+{
+"head": "ופ",
+"prefix": "ו",
+"unit": "פרשה",
+"freq": 69,
+"entries": 32,
+"sources": {
+"llm:opus+flash:pro": 2,
+"llm:sol+flash:agreed": 15,
+"llm:sol+flash:opus": 17,
+"llm:opus+flash:agreed": 16
+},
+"categories": {
+"Midrash": 54,
+"Reference": 6,
+"Jewish Thought": 1,
+"Tanakh": 1,
+"Halakhah": 3,
+"Chasidut": 2,
+"Talmud": 1,
+"Tosefta": 1
+}
+},
+{
+"head": "כרפ",
+"prefix": "כ",
+"unit": "ריש פרק",
+"freq": 64,
+"entries": 9,
+"sources": {
+"llm:opus+flash:agreed": 8,
+"llm:sol+flash:opus": 9,
+"llm:sol+flash:agreed": 6,
+"llm:opus+flash:pro": 2
+},
+"categories": {
+"Mishnah": 62,
+"Talmud": 1,
+"Tosefta": 1
+}
+},
+{
+"head": "סס",
+"prefix": "",
+"unit": "סוף סימן",
+"freq": 57,
+"entries": 33,
+"sources": {
+"llm:sol+flash:agreed": 31,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:opus": 5
+},
+"categories": {
+"Midrash": 7,
+"Halakhah": 10,
+"Tanakh": 1,
+"Reference": 2,
+"Mishnah": 20,
+"Responsa": 13,
+"Talmud": 3,
+"Chasidut": 1
+}
+},
+{
+"head": "רה",
+"prefix": "",
+"unit": "ריש הלכה",
+"freq": 56,
+"entries": 9,
+"sources": {
+"llm:opus+flash:pro": 6,
+"llm:sol+flash:agreed": 8,
+"llm:opus+flash:agreed": 5,
+"llm:sol+flash:opus": 7
+},
+"categories": {
+"Tosefta": 50,
+"Talmud": 4,
+"Midrash": 2
+}
+},
+{
+"head": "ספ",
+"prefix": "",
+"unit": "סוף פרשה",
+"freq": 55,
+"entries": 30,
+"sources": {
+"llm:sol+flash:agreed": 25,
+"llm:sol+flash:opus": 6,
+"llm:opus+flash:pro": 2,
+"llm:opus+flash:agreed": 4
+},
+"categories": {
+"Chasidut": 12,
+"Reference": 6,
+"Midrash": 15,
+"Kabbalah": 1,
+"Tosefta": 16,
+"Tanakh": 3,
+"Talmud": 1,
+"Halakhah": 1
+}
+},
+{
+"head": "סס",
+"prefix": "",
+"unit": "סוף סעיף",
+"freq": 53,
+"entries": 18,
+"sources": {
+"llm:sol+flash:agreed": 17,
+"llm:opus+flash:agreed": 4,
+"llm:sol+flash:opus": 4
+},
+"categories": {
+"Halakhah": 48,
+"Mishnah": 1,
+"Responsa": 4
+}
+},
+{
+"head": "דבס",
+"prefix": "דב",
+"unit": "סעיף",
+"freq": 52,
+"entries": 11,
+"sources": {
+"llm:opus+flash:agreed": 4,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:agreed": 8,
+"llm:sol+flash:opus": 7
+},
+"categories": {
+"Halakhah": 49,
+"Responsa": 3
+}
+},
+{
+"head": "ועפ",
+"prefix": "ו",
+"unit": "עיין פרק",
+"freq": 51,
+"entries": 12,
+"sources": {
+"llm:sol+flash:opus": 11,
+"llm:sol+flash:agreed": 6,
+"llm:opus+flash:agreed": 4
+},
+"categories": {
+"Mishnah": 19,
+"Halakhah": 27,
+"Talmud": 1,
+"Responsa": 3,
+"Midrash": 1
+}
+},
+{
+"head": "ה",
+"prefix": "",
+"unit": "הלכה",
+"freq": 50,
+"entries": 26,
+"sources": {
+"kizur:1": 4,
+"llm:sol+flash:agreed": 5,
+"llm:sol+flash:opus": 17,
+"llm:opus+flash:agreed": 3
+},
+"categories": {
+"Tosefta": 15,
+"Halakhah": 11,
+"Tanakh": 3,
+"Mishnah": 6,
+"Jewish Thought": 4,
+"Midrash": 2,
+"Talmud": 3,
+"Musar": 1,
+"Liturgy": 2,
+"Responsa": 3
+}
+},
+{
+"head": "עפ",
+"prefix": "",
+"unit": "עיין פרק",
+"freq": 49,
+"entries": 12,
+"sources": {
+"llm:opus+flash:agreed": 6,
+"llm:sol+flash:agreed": 10,
+"llm:sol+flash:opus": 11
+},
+"categories": {
+"Halakhah": 28,
+"Tanakh": 1,
+"Mishnah": 16,
+"Musar": 1,
+"Responsa": 1,
+"Talmud": 2
+}
+},
+{
+"head": "ברפ",
+"prefix": "ב",
+"unit": "ריש פרק",
+"freq": 48,
+"entries": 17,
+"sources": {
+"llm:sol+flash:opus": 14,
+"llm:opus+flash:agreed": 6,
+"llm:opus+flash:pro": 11
+},
+"categories": {
+"Tanakh": 1,
+"Responsa": 3,
+"Midrash": 2,
+"Mishnah": 19,
+"Talmud": 4,
+"Halakhah": 17,
+"Tosefta": 2
+}
+},
+{
+"head": "ובס",
+"prefix": "וב",
+"unit": "סעיף",
+"freq": 48,
+"entries": 13,
+"sources": {
+"llm:opus+flash:agreed": 5,
+"llm:sol+flash:agreed": 10,
+"llm:sol+flash:opus": 8
+},
+"categories": {
+"Halakhah": 45,
+"Talmud": 1,
+"Responsa": 2
+}
+},
+{
+"head": "דבמ",
+"prefix": "דב",
+"unit": "משנה",
+"freq": 47,
+"entries": 10,
+"sources": {
+"llm:opus+flash:agreed": 8,
+"llm:sol+flash:agreed": 9,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Mishnah": 44,
+"Talmud": 3
+}
+},
+{
+"head": "סופ",
+"prefix": "",
+"unit": "סוף פרק",
+"freq": 45,
+"entries": 12,
+"sources": {
+"llm:sol+flash:agreed": 8,
+"llm:sol+flash:opus": 10,
+"llm:opus+flash:agreed": 2
+},
+"categories": {
+"Halakhah": 5,
+"Chasidut": 6,
+"Responsa": 8,
+"Talmud": 13,
+"Mishnah": 2,
+"Musar": 2,
+"Jewish Thought": 3,
+"Tanakh": 6
+}
+},
+{
+"head": "ססק",
+"prefix": "",
+"unit": "סוף סעיף קטן",
+"freq": 42,
+"entries": 14,
+"sources": {
+"llm:sol+flash:agreed": 12,
+"llm:sol+flash:opus": 9
+},
+"categories": {
+"Responsa": 18,
+"Halakhah": 18,
+"Talmud": 4,
+"Mishnah": 1,
+"Tanakh": 1
+}
+},
+{
+"head": "בפ",
+"prefix": "ב",
+"unit": "פרשה",
+"freq": 41,
+"entries": 26,
+"sources": {
+"llm:sol+flash:opus": 13,
+"llm:sol+flash:agreed": 16,
+"llm:opus+flash:agreed": 8
+},
+"categories": {
+"Midrash": 41
+}
+},
+{
+"head": "ובד",
+"prefix": "וב",
+"unit": "דף",
+"freq": 39,
+"entries": 28,
+"sources": {
+"llm:sol+flash:agreed": 24,
+"llm:sol+flash:opus": 8
+},
+"categories": {
+"Tanakh": 10,
+"Halakhah": 9,
+"Responsa": 2,
+"Chasidut": 3,
+"Kabbalah": 4,
+"Reference": 10,
+"Midrash": 1
+}
+},
+{
+"head": "ח",
+"prefix": "",
+"unit": "חוברת",
+"freq": 38,
+"entries": 26,
+"sources": {
+"llm:sol+flash:opus": 7,
+"llm:opus+flash:pro": 3,
+"llm:opus+flash:agreed": 10,
+"llm:sol+flash:agreed": 13
+},
+"categories": {
+"Midrash": 2,
+"Tosefta": 35,
+"Halakhah": 1
+}
+},
+{
+"head": "ב",
+"prefix": "ב",
+"unit": "סימן",
+"freq": 37,
+"entries": 24,
+"sources": {
+"llm:sol+flash:agreed": 17,
+"llm:sol+flash:opus": 10,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:pro": 1,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 37
+}
+},
+{
+"head": "דבספ",
+"prefix": "דב",
+"unit": "סוף פרק",
+"freq": 37,
+"entries": 7,
+"sources": {
+"llm:opus+flash:agreed": 3,
+"llm:sol+flash:opus": 7
+},
+"categories": {
+"Mishnah": 13,
+"Talmud": 7,
+"Halakhah": 14,
+"Responsa": 2,
+"Jewish Thought": 1
+}
+},
+{
+"head": "ורפ",
+"prefix": "ו",
+"unit": "ריש פרק",
+"freq": 37,
+"entries": 10,
+"sources": {
+"llm:opus+flash:agreed": 3,
+"llm:opus+flash:pro": 7,
+"llm:sol+flash:opus": 10,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 13,
+"Halakhah": 8,
+"Tosefta": 4,
+"Talmud": 4,
+"Responsa": 3,
+"Reference": 1,
+"Chasidut": 3,
+"Midrash": 1
+}
+},
+{
+"head": "סע",
+"prefix": "",
+"unit": "סעיף",
+"freq": 37,
+"entries": 12,
+"sources": {
+"llm:sol+flash:agreed": 12,
+"llm:opus+flash:agreed": 3,
+"llm:sol+flash:opus": 4,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Responsa": 17,
+"Halakhah": 15,
+"Tanakh": 1,
+"Midrash": 1,
+"Talmud": 1,
+"Mishnah": 1,
+"Chasidut": 1
+}
+},
+{
+"head": "הל",
+"prefix": "",
+"unit": "הלכה",
+"freq": 36,
+"entries": 4,
+"sources": {
+"llm:opus+flash:agreed": 4,
+"llm:sol+flash:opus": 4,
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Talmud": 18,
+"Halakhah": 13,
+"Responsa": 3,
+"Mishnah": 2
+}
+},
+{
+"head": "מס",
+"prefix": "מ",
+"unit": "סעיף",
+"freq": 36,
+"entries": 9,
+"sources": {
+"llm:opus+flash:agreed": 8,
+"llm:sol+flash:agreed": 7,
+"llm:sol+flash:opus": 5
+},
+"categories": {
+"Halakhah": 34,
+"Responsa": 2
+}
+},
+{
+"head": "ובספ",
+"prefix": "וב",
+"unit": "סוף פרק",
+"freq": 34,
+"entries": 8,
+"sources": {
+"llm:sol+flash:opus": 7,
+"llm:opus+flash:agreed": 3,
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Mishnah": 11,
+"Halakhah": 15,
+"Tosefta": 4,
+"Talmud": 1,
+"Responsa": 2,
+"Reference": 1
+}
+},
+{
+"head": "מבחי",
+"prefix": "מ",
+"unit": "בחינה",
+"freq": 34,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 34
+}
+},
+{
+"head": "דרפ",
+"prefix": "ד",
+"unit": "ריש פרק",
+"freq": 30,
+"entries": 8,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:opus": 8,
+"llm:opus+flash:pro": 3
+},
+"categories": {
+"Responsa": 3,
+"Halakhah": 8,
+"Talmud": 4,
+"Midrash": 1,
+"Mishnah": 13,
+"Tanakh": 1
+}
+},
+{
+"head": "כספ",
+"prefix": "כ",
+"unit": "סוף פרק",
+"freq": 30,
+"entries": 4,
+"sources": {
+"llm:opus+flash:agreed": 3,
+"llm:sol+flash:agreed": 3,
+"llm:sol+flash:opus": 4
+},
+"categories": {
+"Mishnah": 30
+}
+},
+{
+"head": "לבחי",
+"prefix": "ל",
+"unit": "בחינה",
+"freq": 30,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Kabbalah": 30
+}
+},
+{
+"head": "דסופ",
+"prefix": "ד",
+"unit": "סוף פרק",
+"freq": 29,
+"entries": 5,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:opus": 5,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 25,
+"Responsa": 4
+}
+},
+{
+"head": "רס",
+"prefix": "",
+"unit": "ריש סימן",
+"freq": 29,
+"entries": 10,
+"sources": {
+"llm:sol+flash:agreed": 6,
+"llm:sol+flash:opus": 7,
+"llm:sol+flash:pro": 1,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 14,
+"Jewish Thought": 1,
+"Mishnah": 1,
+"Chasidut": 13
+}
+},
+{
+"head": "בבחי",
+"prefix": "ב",
+"unit": "בחינה",
+"freq": 26,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 26
+}
+},
+{
+"head": "וספ",
+"prefix": "ו",
+"unit": "סוף פרק",
+"freq": 26,
+"entries": 6,
+"sources": {
+"llm:opus+flash:agreed": 3,
+"llm:sol+flash:opus": 6
+},
+"categories": {
+"Halakhah": 10,
+"Talmud": 3,
+"Mishnah": 9,
+"Responsa": 1,
+"Tosefta": 1,
+"Chasidut": 2
+}
+},
+{
+"head": "שנ",
+"prefix": "",
+"unit": "שנת",
+"freq": 26,
+"entries": 9,
+"sources": {
+"llm:sol+flash:agreed": 8,
+"llm:sol+flash:opus": 5,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Responsa": 26
+}
+},
+{
+"head": "דברפ",
+"prefix": "דב",
+"unit": "ריש פרק",
+"freq": 24,
+"entries": 6,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 6,
+"llm:opus+flash:agreed": 2,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Talmud": 5,
+"Halakhah": 7,
+"Mishnah": 12
+}
+},
+{
+"head": "לפ",
+"prefix": "ל",
+"unit": "פרק",
+"freq": 24,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 4,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Jewish Thought": 1,
+"Tosefta": 2,
+"Talmud": 8,
+"Mishnah": 9,
+"Tanakh": 3,
+"Halakhah": 1
+}
+},
+{
+"head": "הבחי",
+"prefix": "ה",
+"unit": "בחינה",
+"freq": 23,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 4,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Kabbalah": 23
+}
+},
+{
+"head": "ובחי",
+"prefix": "ו",
+"unit": "בחינה",
+"freq": 23,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 23
+}
+},
+{
+"head": "מ",
+"prefix": "מ",
+"unit": "סימן",
+"freq": 23,
+"entries": 19,
+"sources": {
+"llm:sol+flash:agreed": 19,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 23
+}
+},
+{
+"head": "ר",
+"prefix": "",
+"unit": "רמז",
+"freq": 23,
+"entries": 13,
+"sources": {
+"llm:sol+flash:agreed": 13
+},
+"categories": {
+"Midrash": 23
+}
+},
+{
+"head": "רפ",
+"prefix": "",
+"unit": "ריש פרשה",
+"freq": 23,
+"entries": 17,
+"sources": {
+"llm:sol+flash:opus": 14,
+"llm:sol+flash:pro": 4,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Midrash": 5,
+"Chasidut": 9,
+"Reference": 2,
+"Tosefta": 4,
+"Talmud": 3
+}
+},
+{
+"head": "וסק",
+"prefix": "ו",
+"unit": "סעיף קטן",
+"freq": 22,
+"entries": 7,
+"sources": {
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:agreed": 5,
+"llm:sol+flash:opus": 5
+},
+"categories": {
+"Responsa": 11,
+"Halakhah": 7,
+"Mishnah": 1,
+"Talmud": 2,
+"Tanakh": 1
+}
+},
+{
+"head": "ועבפ",
+"prefix": "",
+"unit": "ועיין בפרק",
+"freq": 22,
+"entries": 7,
+"sources": {
+"llm:sol+flash:opus": 7,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 21,
+"Chasidut": 1
+}
+},
+{
+"head": "ס",
+"prefix": "",
+"unit": "ספר",
+"freq": 22,
+"entries": 21,
+"sources": {
+"llm:sol+flash:agreed": 9,
+"llm:sol+flash:opus": 11,
+"llm:opus+flash:agreed": 2
+},
+"categories": {
+"Tosefta": 22
+}
+},
+{
+"head": "בה",
+"prefix": "ב",
+"unit": "הלכה",
+"freq": 21,
+"entries": 5,
+"sources": {
+"llm:sol+flash:agreed": 3,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:opus": 4
+},
+"categories": {
+"Tanakh": 2,
+"Tosefta": 3,
+"Mishnah": 2,
+"Responsa": 2,
+"Halakhah": 8,
+"Talmud": 4
+}
+},
+{
+"head": "דבה",
+"prefix": "דב",
+"unit": "הלכה",
+"freq": 20,
+"entries": 10,
+"sources": {
+"llm:sol+flash:agreed": 6,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:opus": 4
+},
+"categories": {
+"Talmud": 8,
+"Halakhah": 9,
+"Responsa": 3
+}
+},
+{
+"head": "שבפ",
+"prefix": "ש",
+"unit": "בפרק",
+"freq": 20,
+"entries": 4,
+"sources": {
+"llm:opus+flash:agreed": 3,
+"llm:sol+flash:opus": 4,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 16,
+"Responsa": 1,
+"Talmud": 2,
+"Jewish Thought": 1
+}
+},
+{
+"head": "בת",
+"prefix": "",
+"unit": "בתיקון",
+"freq": 18,
+"entries": 12,
+"sources": {
+"llm:sol+flash:agreed": 8,
+"llm:sol+flash:opus": 4,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Kabbalah": 13,
+"Jewish Thought": 3,
+"Chasidut": 1,
+"Midrash": 1
+}
+},
+{
+"head": "דב",
+"prefix": "דב",
+"unit": "סימן",
+"freq": 18,
+"entries": 10,
+"sources": {
+"llm:sol+flash:agreed": 10,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 18
+}
+},
+{
+"head": "וס",
+"prefix": "ו",
+"unit": "סימן",
+"freq": 17,
+"entries": 15,
+"sources": {
+"llm:sol+flash:opus": 3,
+"llm:sol+flash:agreed": 11,
+"llm:opus+flash:agreed": 2
+},
+"categories": {
+"Midrash": 3,
+"Halakhah": 7,
+"Reference": 2,
+"Mishnah": 2,
+"Chasidut": 1,
+"Responsa": 2
+}
+},
+{
+"head": "מ",
+"prefix": "",
+"unit": "משנה",
+"freq": 17,
+"entries": 8,
+"sources": {
+"llm:sol+flash:agreed": 6,
+"llm:sol+flash:opus": 6,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 3,
+"Jewish Thought": 5,
+"Kabbalah": 2,
+"Chasidut": 2,
+"Musar": 2,
+"Mishnah": 1,
+"Tanakh": 2
+}
+},
+{
+"head": "מרפ",
+"prefix": "מ",
+"unit": "ריש פרק",
+"freq": 17,
+"entries": 5,
+"sources": {
+"llm:sol+flash:opus": 5,
+"llm:sol+flash:pro": 1,
+"llm:opus+flash:agreed": 2,
+"llm:opus+flash:pro": 2
+},
+"categories": {
+"Halakhah": 6,
+"Talmud": 4,
+"Mishnah": 5,
+"Responsa": 2
+}
+},
+{
+"head": "ערפ",
+"prefix": "",
+"unit": "עיין ריש פרק",
+"freq": 17,
+"entries": 4,
+"sources": {
+"llm:sol+flash:opus": 4,
+"llm:sol+flash:agreed": 2,
+"llm:opus+flash:agreed": 1,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Mishnah": 10,
+"Halakhah": 5,
+"Midrash": 1,
+"Responsa": 1
+}
+},
+{
+"head": "סוע",
+"prefix": "",
+"unit": "סוף עמוד",
+"freq": 16,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Talmud": 13,
+"Responsa": 2,
+"Chasidut": 1
+}
+},
+{
+"head": "וברפ",
+"prefix": "וב",
+"unit": "ריש פרק",
+"freq": 15,
+"entries": 4,
+"sources": {
+"llm:opus+flash:pro": 4,
+"llm:sol+flash:opus": 2,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 8,
+"Halakhah": 3,
+"Midrash": 1,
+"Tanakh": 1,
+"Talmud": 1,
+"Tosefta": 1
+}
+},
+{
+"head": "במ",
+"prefix": "ב",
+"unit": "משנה",
+"freq": 14,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 3,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 5,
+"Talmud": 1,
+"Tosefta": 2,
+"Jewish Thought": 6
+}
+},
+{
+"head": "ע",
+"prefix": "",
+"unit": "עיין",
+"freq": 14,
+"entries": 8,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 5,
+"llm:opus+flash:agreed": 1,
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Halakhah": 8,
+"Tanakh": 3,
+"Talmud": 1,
+"Reference": 1,
+"Midrash": 1
+}
+},
+{
+"head": "עספ",
+"prefix": "",
+"unit": "עיין סוף פרק",
+"freq": 14,
+"entries": 6,
+"sources": {
+"llm:sol+flash:opus": 5,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 8,
+"Mishnah": 5,
+"Midrash": 1
+}
+},
+{
+"head": "בפ",
+"prefix": "ב",
+"unit": "פסוק",
+"freq": 13,
+"entries": 12,
+"sources": {
+"llm:sol+flash:agreed": 11,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Tanakh": 13
+}
+},
+{
+"head": "בש",
+"prefix": "",
+"unit": "בשער",
+"freq": 13,
+"entries": 9,
+"sources": {
+"llm:sol+flash:opus": 5,
+"llm:sol+flash:agreed": 5,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 3,
+"Halakhah": 8,
+"Midrash": 1,
+"Chasidut": 1
+}
+},
+{
+"head": "מ",
+"prefix": "",
+"unit": "מצוה",
+"freq": 13,
+"entries": 11,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 9,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 7,
+"Reference": 1,
+"Tanakh": 5
+}
+},
+{
+"head": "ע",
+"prefix": "",
+"unit": "עמוד",
+"freq": 13,
+"entries": 13,
+"sources": {
+"kizur:1": 1,
+"llm:sol+flash:opus": 2,
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 8,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Reference": 12,
+"Responsa": 1
+}
+},
+{
+"head": "סי",
+"prefix": "",
+"unit": "סימן",
+"freq": 12,
+"entries": 6,
+"sources": {
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Responsa": 3,
+"Midrash": 1,
+"Halakhah": 7,
+"Talmud": 1
+}
+},
+{
+"head": "סמ",
+"prefix": "",
+"unit": "סוף משנה",
+"freq": 12,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Tosefta": 12
+}
+},
+{
+"head": "בח",
+"prefix": "ב",
+"unit": "חלק",
+"freq": 11,
+"entries": 6,
+"sources": {
+"llm:sol+flash:opus": 5,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 10,
+"Musar": 1
+}
+},
+{
+"head": "בסופ",
+"prefix": "ב",
+"unit": "סוף פרק",
+"freq": 11,
+"entries": 3,
+"sources": {
+"llm:sol+flash:opus": 3,
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Talmud": 7,
+"Chasidut": 1,
+"Halakhah": 3
+}
+},
+{
+"head": "ובמ",
+"prefix": "וב",
+"unit": "משנה",
+"freq": 11,
+"entries": 3,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Mishnah": 6,
+"Tosefta": 3,
+"Halakhah": 1,
+"Talmud": 1
+}
+},
+{
+"head": "ובפ",
+"prefix": "וב",
+"unit": "פסוק",
+"freq": 11,
+"entries": 9,
+"sources": {
+"llm:sol+flash:agreed": 8,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Tanakh": 11
+}
+},
+{
+"head": "וערפ",
+"prefix": "ו",
+"unit": "עיין ריש פרק",
+"freq": 11,
+"entries": 6,
+"sources": {
+"llm:sol+flash:opus": 6,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 5,
+"Mishnah": 4,
+"Midrash": 2
+}
+},
+{
+"head": "סד",
+"prefix": "",
+"unit": "סוף דף",
+"freq": 11,
+"entries": 7,
+"sources": {
+"llm:sol+flash:agreed": 5,
+"llm:sol+flash:opus": 3
+},
+"categories": {
+"Mishnah": 2,
+"Responsa": 3,
+"Talmud": 5,
+"Halakhah": 1
+}
+},
+{
+"head": "סוסק",
+"prefix": "",
+"unit": "סוף סעיף קטן",
+"freq": 11,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4
+},
+"categories": {
+"Responsa": 11
+}
+},
+{
+"head": "דד",
+"prefix": "ד",
+"unit": "דף",
+"freq": 10,
+"entries": 5,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 4
+},
+"categories": {
+"Responsa": 5,
+"Halakhah": 4,
+"Tanakh": 1
+}
+},
+{
+"head": "ובה",
+"prefix": "וב",
+"unit": "הלכה",
+"freq": 10,
+"entries": 2,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Halakhah": 7,
+"Tosefta": 2,
+"Mishnah": 1
+}
+},
+{
+"head": "ועספ",
+"prefix": "ו",
+"unit": "עיין סוף פרק",
+"freq": 10,
+"entries": 5,
+"sources": {
+"llm:sol+flash:opus": 5,
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Halakhah": 6,
+"Mishnah": 3,
+"Talmud": 1
+}
+},
+{
+"head": "לס",
+"prefix": "ל",
+"unit": "סעיף",
+"freq": 10,
+"entries": 3,
+"sources": {
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:agreed": 3,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 8,
+"Talmud": 1,
+"Tanakh": 1
+}
+},
+{
+"head": "סע",
+"prefix": "",
+"unit": "סוף עמוד",
+"freq": 10,
+"entries": 2,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Halakhah": 1,
+"Tosefta": 3,
+"Midrash": 1,
+"Talmud": 2,
+"Mishnah": 1,
+"Chasidut": 1,
+"Reference": 1
+}
+},
+{
+"head": "שבחי",
+"prefix": "ש",
+"unit": "בחינה",
+"freq": 10,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Kabbalah": 10
+}
+},
+{
+"head": "או",
+"prefix": "",
+"unit": "אות",
+"freq": 9,
+"entries": 4,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 3,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 3,
+"Responsa": 2,
+"Tanakh": 4
+}
+},
+{
+"head": "בחי",
+"prefix": "",
+"unit": "בחינה",
+"freq": 9,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Kabbalah": 9
+}
+},
+{
+"head": "וע",
+"prefix": "ו",
+"unit": "עיין",
+"freq": 9,
+"entries": 4,
+"sources": {
+"llm:sol+flash:opus": 4,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 6,
+"Talmud": 1,
+"Mishnah": 2
+}
+},
+{
+"head": "מס",
+"prefix": "מ",
+"unit": "סימן",
+"freq": 9,
+"entries": 6,
+"sources": {
+"llm:sol+flash:opus": 3,
+"llm:opus+flash:pro": 2,
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Halakhah": 8,
+"Responsa": 1
+}
+},
+{
+"head": "אס",
+"prefix": "",
+"unit": "אסעיף",
+"freq": 8,
+"entries": 5,
+"sources": {
+"llm:sol+flash:opus": 5,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 8
+}
+},
+{
+"head": "ובס",
+"prefix": "וב",
+"unit": "סימן",
+"freq": 8,
+"entries": 8,
+"sources": {
+"llm:sol+flash:agreed": 8
+},
+"categories": {
+"Halakhah": 7,
+"Responsa": 1
+}
+},
+{
+"head": "ובסק",
+"prefix": "וב",
+"unit": "סעיף קטן",
+"freq": 8,
+"entries": 5,
+"sources": {
+"llm:sol+flash:agreed": 3,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Responsa": 4,
+"Tanakh": 2,
+"Halakhah": 2
+}
+},
+{
+"head": "ות",
+"prefix": "",
+"unit": "ותיקון",
+"freq": 8,
+"entries": 6,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:pro": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1,
+"Chasidut": 3,
+"Midrash": 4
+}
+},
+{
+"head": "כמ",
+"prefix": "כ",
+"unit": "משנה",
+"freq": 8,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 3,
+"llm:opus+flash:agreed": 2
+},
+"categories": {
+"Mishnah": 8
+}
+},
+{
+"head": "פ",
+"prefix": "",
+"unit": "פסוק",
+"freq": 8,
+"entries": 15,
+"sources": {
+"kizur:1": 8,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:opus": 1,
+"llm:sol+flash:agreed": 3,
+"llm": 1
+},
+"categories": {
+"Tanakh": 5,
+"Halakhah": 1,
+"Midrash": 1,
+"Mishnah": 1
+}
+},
+{
+"head": "שבמ",
+"prefix": "ש",
+"unit": "במשנה",
+"freq": 8,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Talmud": 7,
+"Tosefta": 1
+}
+},
+{
+"head": "וברכ",
+"prefix": "",
+"unit": "וברכת",
+"freq": 7,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 7
+}
+},
+{
+"head": "ועח",
+"prefix": "",
+"unit": "ועיין חלק",
+"freq": 7,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Reference": 7
+}
+},
+{
+"head": "סוה",
+"prefix": "",
+"unit": "סוף הלכה",
+"freq": 7,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 6,
+"Tanakh": 1
+}
+},
+{
+"head": "פר",
+"prefix": "",
+"unit": "פרק",
+"freq": 7,
+"entries": 4,
+"sources": {
+"llm:sol+flash:opus": 4,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 2,
+"Responsa": 1,
+"Mishnah": 3,
+"Jewish Thought": 1
+}
+},
+{
+"head": "בס",
+"prefix": "ב",
+"unit": "ספר",
+"freq": 6,
+"entries": 6,
+"sources": {
+"llm:sol+flash:opus": 3,
+"llm:sol+flash:agreed": 2,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1,
+"Tosefta": 4,
+"Talmud": 1
+}
+},
+{
+"head": "דבד",
+"prefix": "דב",
+"unit": "דף",
+"freq": 6,
+"entries": 5,
+"sources": {
+"llm:sol+flash:agreed": 5
+},
+"categories": {
+"Halakhah": 3,
+"Talmud": 1,
+"Responsa": 1,
+"Tanakh": 1
+}
+},
+{
+"head": "ודפ",
+"prefix": "וד",
+"unit": "פרק",
+"freq": 6,
+"entries": 4,
+"sources": {
+"llm:sol+flash:opus": 4
+},
+"categories": {
+"Mishnah": 2,
+"Talmud": 4
+}
+},
+{
+"head": "כ",
+"prefix": "",
+"unit": "כרך",
+"freq": 6,
+"entries": 5,
+"sources": {
+"llm:sol+flash:opus": 4,
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Tosefta": 6
+}
+},
+{
+"head": "כבס",
+"prefix": "כ",
+"unit": "בסעיף",
+"freq": 6,
+"entries": 2,
+"sources": {
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Halakhah": 6
+}
+},
+{
+"head": "למ",
+"prefix": "ל",
+"unit": "משנה",
+"freq": 6,
+"entries": 2,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 4,
+"Talmud": 2
+}
+},
+{
+"head": "מחס",
+"prefix": "",
+"unit": "מחודש סעיף",
+"freq": 6,
+"entries": 6,
+"sources": {
+"llm:sol+flash:agreed": 6
+},
+"categories": {
+"Halakhah": 6
+}
+},
+{
+"head": "סופ",
+"prefix": "",
+"unit": "סוף פרשה",
+"freq": 6,
+"entries": 6,
+"sources": {
+"llm:sol+flash:agreed": 3,
+"llm:sol+flash:opus": 3
+},
+"categories": {
+"Tanakh": 4,
+"Chasidut": 2
+}
+},
+{
+"head": "סח",
+"prefix": "",
+"unit": "סוף חלק",
+"freq": 6,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 3,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Halakhah": 2,
+"Tosefta": 4
+}
+},
+{
+"head": "רד",
+"prefix": "",
+"unit": "ריש דף",
+"freq": 6,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Talmud": 5,
+"Mishnah": 1
+}
+},
+{
+"head": "שהבחי",
+"prefix": "ש",
+"unit": "הבחינה",
+"freq": 6,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 6
+}
+},
+{
+"head": "א",
+"prefix": "",
+"unit": "אות",
+"freq": 5,
+"entries": 5,
+"sources": {
+"llm:sol+flash:agreed": 4,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 3,
+"Midrash": 2
+}
+},
+{
+"head": "בהתפ",
+"prefix": "",
+"unit": "בהתפשטות",
+"freq": 5,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 5
+}
+},
+{
+"head": "דבח",
+"prefix": "דב",
+"unit": "חלק",
+"freq": 5,
+"entries": 2,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Responsa": 2,
+"Halakhah": 3
+}
+},
+{
+"head": "ועס",
+"prefix": "",
+"unit": "ועיין סימן",
+"freq": 5,
+"entries": 4,
+"sources": {
+"llm:sol+flash:pro": 1,
+"llm:sol+flash:opus": 2,
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Mishnah": 1,
+"Halakhah": 4
+}
+},
+{
+"head": "סת",
+"prefix": "",
+"unit": "סוף תיקון",
+"freq": 5,
+"entries": 4,
+"sources": {
+"llm:sol+flash:agreed": 4
+},
+"categories": {
+"Midrash": 3,
+"Chasidut": 2
+}
+},
+{
+"head": "פ",
+"prefix": "",
+"unit": "פיסקא",
+"freq": 5,
+"entries": 4,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Halakhah": 1,
+"Tanakh": 1,
+"Midrash": 3
+}
+},
+{
+"head": "ק",
+"prefix": "",
+"unit": "קיצור",
+"freq": 5,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 5
+}
+},
+{
+"head": "רת",
+"prefix": "",
+"unit": "ריש תיקון",
+"freq": 5,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Chasidut": 4,
+"Kabbalah": 1
+}
+},
+{
+"head": "שבס",
+"prefix": "ש",
+"unit": "בסעיף",
+"freq": 5,
+"entries": 4,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Halakhah": 2,
+"Responsa": 3
+}
+},
+{
+"head": "בד",
+"prefix": "",
+"unit": "בדין",
+"freq": 4,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2,
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 4
+}
+},
+{
+"head": "בסס",
+"prefix": "ב",
+"unit": "סוף סעיף",
+"freq": 4,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 4
+}
+},
+{
+"head": "בסע",
+"prefix": "ב",
+"unit": "סעיף",
+"freq": 4,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1,
+"Responsa": 2,
+"Halakhah": 1
+}
+},
+{
+"head": "דמפ",
+"prefix": "דמ",
+"unit": "פרק",
+"freq": 4,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1,
+"Responsa": 2,
+"Talmud": 1
+}
+},
+{
+"head": "ועבס",
+"prefix": "",
+"unit": "ועיין בסעיף",
+"freq": 4,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Halakhah": 4
+}
+},
+{
+"head": "חו",
+"prefix": "",
+"unit": "חוברת",
+"freq": 4,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Tanakh": 4
+}
+},
+{
+"head": "ממ",
+"prefix": "מ",
+"unit": "משנה",
+"freq": 4,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Mishnah": 4
+}
+},
+{
+"head": "ספ",
+"prefix": "",
+"unit": "סוף פיסקא",
+"freq": 4,
+"entries": 4,
+"sources": {
+"llm:sol+flash:opus": 1,
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 3,
+"Midrash": 1
+}
+},
+{
+"head": "עח",
+"prefix": "",
+"unit": "עיין חלק",
+"freq": 4,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Reference": 4
+}
+},
+{
+"head": "עסס",
+"prefix": "",
+"unit": "עיין סוף סעיף",
+"freq": 4,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 4
+}
+},
+{
+"head": "פרק",
+"prefix": "",
+"unit": "פרק",
+"freq": 4,
+"entries": 3,
+"sources": {
+"llm:sol+flash:opus": 3
+},
+"categories": {
+"Chasidut": 1,
+"Halakhah": 1,
+"Musar": 1,
+"Midrash": 1
+}
+},
+{
+"head": "שבבחי",
+"prefix": "ש",
+"unit": "בבחינה",
+"freq": 4,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 4
+}
+},
+{
+"head": "אוק",
+"prefix": "",
+"unit": "אות קטן",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tanakh": 3
+}
+},
+{
+"head": "אפ",
+"prefix": "",
+"unit": "אפרק",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Halakhah": 2,
+"Mishnah": 1
+}
+},
+{
+"head": "בברכ",
+"prefix": "",
+"unit": "בברכת",
+"freq": 3,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 3
+}
+},
+{
+"head": "במחס",
+"prefix": "ב",
+"unit": "מחודש סעיף",
+"freq": 3,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 3
+}
+},
+{
+"head": "בס",
+"prefix": "ב",
+"unit": "סוף סימן",
+"freq": 3,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 3
+}
+},
+{
+"head": "בסה",
+"prefix": "ב",
+"unit": "סוף הלכה",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Tosefta": 3
+}
+},
+{
+"head": "בעמ",
+"prefix": "ב",
+"unit": "עמוד",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Chasidut": 2,
+"Halakhah": 1
+}
+},
+{
+"head": "ברס",
+"prefix": "",
+"unit": "בריש סעיף",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Halakhah": 3
+}
+},
+{
+"head": "ד",
+"prefix": "",
+"unit": "דין",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:opus+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1,
+"Halakhah": 2
+}
+},
+{
+"head": "דה",
+"prefix": "ד",
+"unit": "הלכה",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 2,
+"Talmud": 1
+}
+},
+{
+"head": "דס",
+"prefix": "ד",
+"unit": "סימן",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:opus": 2,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 2,
+"Halakhah": 1
+}
+},
+{
+"head": "וב",
+"prefix": "וב",
+"unit": "סימן",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 3
+}
+},
+{
+"head": "ובשמ",
+"prefix": "",
+"unit": "ובשמואל",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Midrash": 1,
+"Tanakh": 2
+}
+},
+{
+"head": "וש",
+"prefix": "",
+"unit": "ושער",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 3
+},
+"categories": {
+"Chasidut": 2,
+"Tanakh": 1
+}
+},
+{
+"head": "ירמ",
+"prefix": "",
+"unit": "יהי רצון מלפניך",
+"freq": 3,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 2,
+"Kabbalah": 1
+}
+},
+{
+"head": "כב",
+"prefix": "",
+"unit": "כמו בסימן",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 3
+}
+},
+{
+"head": "לרפ",
+"prefix": "ל",
+"unit": "ריש פרק",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:opus": 3
+},
+"categories": {
+"Halakhah": 1,
+"Mishnah": 2
+}
+},
+{
+"head": "לשמ",
+"prefix": "",
+"unit": "לשמואל",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Mishnah": 1,
+"Jewish Thought": 2
+}
+},
+{
+"head": "ססי",
+"prefix": "",
+"unit": "סוף סימן",
+"freq": 3,
+"entries": 2,
+"sources": {
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Midrash": 1,
+"Mishnah": 1,
+"Halakhah": 1
+}
+},
+{
+"head": "עבפ",
+"prefix": "",
+"unit": "עיין בפרק",
+"freq": 3,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 3
+}
+},
+{
+"head": "רח",
+"prefix": "",
+"unit": "ריש חלק",
+"freq": 3,
+"entries": 3,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 1,
+"Tosefta": 2
+}
+},
+{
+"head": "אות",
+"prefix": "",
+"unit": "אות",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "אמ",
+"prefix": "",
+"unit": "אמשנה",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1,
+"Talmud": 1
+}
+},
+{
+"head": "באד",
+"prefix": "",
+"unit": "באדר",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 2
+}
+},
+{
+"head": "בהל",
+"prefix": "ב",
+"unit": "הלכה",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 2
+}
+},
+{
+"head": "ביט",
+"prefix": "",
+"unit": "ביום טוב",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Talmud": 1,
+"Halakhah": 1
+}
+},
+{
+"head": "במח",
+"prefix": "",
+"unit": "במחודש",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "במשג",
+"prefix": "",
+"unit": "במחברת שם גדולים",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Talmud": 2
+}
+},
+{
+"head": "במשג",
+"prefix": "",
+"unit": "במערכת שם הגדולים",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1,
+"Reference": 1
+}
+},
+{
+"head": "בסי",
+"prefix": "ב",
+"unit": "סימן",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Responsa": 1,
+"Halakhah": 1
+}
+},
+{
+"head": "ברפ",
+"prefix": "",
+"unit": "בראש פרק",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Tosefta": 2
+}
+},
+{
+"head": "בשמ",
+"prefix": "",
+"unit": "בשמואל",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Midrash": 1,
+"Chasidut": 1
+}
+},
+{
+"head": "בתו",
+"prefix": "",
+"unit": "בתוספות",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1,
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Halakhah": 1,
+"Responsa": 1
+}
+},
+{
+"head": "דבפ",
+"prefix": "דב",
+"unit": "פסוק",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Tanakh": 2
+}
+},
+{
+"head": "דהל",
+"prefix": "ד",
+"unit": "הלכה",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Talmud": 2
+}
+},
+{
+"head": "דח",
+"prefix": "ד",
+"unit": "חלק",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1,
+"Responsa": 1
+}
+},
+{
+"head": "דמ",
+"prefix": "ד",
+"unit": "משנה",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Mishnah": 2
+}
+},
+{
+"head": "דמהר",
+"prefix": "",
+"unit": "דמורנו הרב",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1,
+"Halakhah": 1
+}
+},
+{
+"head": "דפ",
+"prefix": "",
+"unit": "דף",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1,
+"Responsa": 1
+}
+},
+{
+"head": "החר",
+"prefix": "",
+"unit": "החכם רבי",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "הסת",
+"prefix": "",
+"unit": "הסתכלות",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 1,
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 2
+}
+},
+{
+"head": "ובמע",
+"prefix": "",
+"unit": "ובמעשה",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Liturgy": 2
+}
+},
+{
+"head": "ובפ",
+"prefix": "וב",
+"unit": "פרשה",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Midrash": 2
+}
+},
+{
+"head": "וה",
+"prefix": "ו",
+"unit": "הלכה",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Jewish Thought": 1,
+"Tosefta": 1
+}
+},
+{
+"head": "וח",
+"prefix": "ו",
+"unit": "חלק",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 2
+}
+},
+{
+"head": "ומ",
+"prefix": "ו",
+"unit": "משנה",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Mishnah": 1,
+"Jewish Thought": 1
+}
+},
+{
+"head": "ועסס",
+"prefix": "",
+"unit": "ועיין סוף סעיף",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "ורד",
+"prefix": "ו",
+"unit": "ריש דף",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Talmud": 1,
+"Mishnah": 1
+}
+},
+{
+"head": "ורע",
+"prefix": "",
+"unit": "וריש עמוד",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Midrash": 1,
+"Chasidut": 1
+}
+},
+{
+"head": "חל",
+"prefix": "",
+"unit": "חלק",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Tosefta": 2
+}
+},
+{
+"head": "מד",
+"prefix": "מ",
+"unit": "דף",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 2
+},
+"categories": {
+"Halakhah": 1,
+"Kabbalah": 1
+}
+},
+{
+"head": "מהדו",
+"prefix": "",
+"unit": "מהדורה",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "מח",
+"prefix": "",
+"unit": "מחודש",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 1,
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "עב",
+"prefix": "",
+"unit": "עבד",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 2
+}
+},
+{
+"head": "עצ",
+"prefix": "",
+"unit": "עצרת צום",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "פסק",
+"prefix": "",
+"unit": "פסולי קהל",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "צת",
+"prefix": "",
+"unit": "צום תקיעה",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "רמ",
+"prefix": "",
+"unit": "ריש משנה",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 2
+}
+},
+{
+"head": "רסק",
+"prefix": "",
+"unit": "ריש סעיף קטן",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 2
+}
+},
+{
+"head": "רפ",
+"prefix": "",
+"unit": "ריש פיסקא",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:opus": 2
+},
+"categories": {
+"Tosefta": 2
+}
+},
+{
+"head": "רפ",
+"prefix": "",
+"unit": "ריש פסקא",
+"freq": 2,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Tosefta": 2
+}
+},
+{
+"head": "שע",
+"prefix": "",
+"unit": "שער",
+"freq": 2,
+"entries": 2,
+"sources": {
+"llm:sol+flash:agreed": 1,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 2
+}
+},
+{
+"head": "א",
+"prefix": "",
+"unit": "אמשטרדם",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Reference": 1
+}
+},
+{
+"head": "א",
+"prefix": "",
+"unit": "אף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "א",
+"prefix": "",
+"unit": "אפילו",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "אד",
+"prefix": "",
+"unit": "אדר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "אי",
+"prefix": "",
+"unit": "אם ירצה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "אלו",
+"prefix": "",
+"unit": "אלו",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "אנ",
+"prefix": "",
+"unit": "אל נקמות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "ארפ",
+"prefix": "",
+"unit": "אריש פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "ארצ",
+"prefix": "",
+"unit": "ארץ",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "בא",
+"prefix": "",
+"unit": "ברוך אתה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Jewish Thought": 1
+}
+},
+{
+"head": "באוק",
+"prefix": "",
+"unit": "באות קטן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "בגב",
+"prefix": "",
+"unit": "בגבורות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "בדבר",
+"prefix": "",
+"unit": "בדבר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "בדר",
+"prefix": "",
+"unit": "בדרוש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Reference": 1
+}
+},
+{
+"head": "בהר",
+"prefix": "",
+"unit": "בהר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "בזבל",
+"prefix": "",
+"unit": "בזה בורר לו",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "בטוב",
+"prefix": "",
+"unit": "בטוב",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "בכיר",
+"prefix": "",
+"unit": "בכתב יד רומי",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 1
+}
+},
+{
+"head": "במ",
+"prefix": "",
+"unit": "במאמר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Midrash": 1
+}
+},
+{
+"head": "במדבר",
+"prefix": "",
+"unit": "במדבר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "במל",
+"prefix": "",
+"unit": "ברית מילה ליום",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "בנ",
+"prefix": "ב",
+"unit": "משנה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "בסס",
+"prefix": "ב",
+"unit": "סוף סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "בעמ",
+"prefix": "",
+"unit": "בעל מעשי",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Liturgy": 1
+}
+},
+{
+"head": "בפ",
+"prefix": "",
+"unit": "בפחות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "בפר",
+"prefix": "ב",
+"unit": "פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "בצרת",
+"prefix": "",
+"unit": "בצרת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "בק",
+"prefix": "",
+"unit": "בבבא קמא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "ברס",
+"prefix": "ב",
+"unit": "ריש סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "בש",
+"prefix": "",
+"unit": "בשלישי",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Midrash": 1
+}
+},
+{
+"head": "בשנ",
+"prefix": "ב",
+"unit": "שנת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "בת",
+"prefix": "",
+"unit": "בתוספות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "בת",
+"prefix": "",
+"unit": "בתפילת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "בתר",
+"prefix": "",
+"unit": "בתר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "דב",
+"prefix": "",
+"unit": "דבן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "דב",
+"prefix": "דב",
+"unit": "דף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "דבס",
+"prefix": "דב",
+"unit": "סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "דבסק",
+"prefix": "דב",
+"unit": "סעיף קטן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "דמהרי",
+"prefix": "",
+"unit": "דמורנו הרב רבי יוסף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "דמס",
+"prefix": "דמ",
+"unit": "סעיף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "דפ",
+"prefix": "ד",
+"unit": "פרשה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Midrash": 1
+}
+},
+{
+"head": "דש",
+"prefix": "",
+"unit": "דשער",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "דת",
+"prefix": "",
+"unit": "דתפלת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "הגה",
+"prefix": "",
+"unit": "הגהה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "ההתפ",
+"prefix": "",
+"unit": "ההתפשטות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "הע",
+"prefix": "ה",
+"unit": "עמוד",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Reference": 1
+}
+},
+{
+"head": "הרר",
+"prefix": "",
+"unit": "הרב רבי",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Midrash": 1
+}
+},
+{
+"head": "התו",
+"prefix": "",
+"unit": "התוספות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "התפ",
+"prefix": "",
+"unit": "התפשטות",
+"freq": 1,
+"entries": 2,
+"sources": {
+"kizur:1": 2,
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "וב",
+"prefix": "וב",
+"unit": "פסוק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "ובברכ",
+"prefix": "",
+"unit": "ובברכת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "ובגב",
+"prefix": "",
+"unit": "ובגבורות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Jewish Thought": 1
+}
+},
+{
+"head": "ובהתפ",
+"prefix": "",
+"unit": "ובהתפשטות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "ובנ",
+"prefix": "וב",
+"unit": "נתיב",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "ובנו",
+"prefix": "",
+"unit": "ובנוסחא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 1
+}
+},
+{
+"head": "ובס",
+"prefix": "וב",
+"unit": "ספר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Reference": 1
+}
+},
+{
+"head": "ובסופ",
+"prefix": "וב",
+"unit": "סוף פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "ובע",
+"prefix": "וב",
+"unit": "עמוד",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 1
+}
+},
+{
+"head": "ובש",
+"prefix": "ו",
+"unit": "בשער",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "ובת",
+"prefix": "ו",
+"unit": "בתיקון",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Midrash": 1
+}
+},
+{
+"head": "וד",
+"prefix": "",
+"unit": "ודין",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "ודס",
+"prefix": "וד",
+"unit": "סעיף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "והבחי",
+"prefix": "וה",
+"unit": "בחינה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "והסת",
+"prefix": "",
+"unit": "והסתכלות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "וירא",
+"prefix": "",
+"unit": "ויראת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "ויש",
+"prefix": "",
+"unit": "ויש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "וכמ",
+"prefix": "וכ",
+"unit": "משנה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "וכפ",
+"prefix": "וכ",
+"unit": "פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "וכרפ",
+"prefix": "וכ",
+"unit": "ריש פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "ולפ",
+"prefix": "ול",
+"unit": "פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "ולפי",
+"prefix": "",
+"unit": "ולפירוש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "וסה",
+"prefix": "ו",
+"unit": "סוף הלכה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 1
+}
+},
+{
+"head": "וסי",
+"prefix": "ו",
+"unit": "סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "וסס",
+"prefix": "ו",
+"unit": "סוף סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "וסס",
+"prefix": "ו",
+"unit": "סוף סעיף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "וססק",
+"prefix": "ו",
+"unit": "סוף סעיף קטן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "וסע",
+"prefix": "ו",
+"unit": "סעיף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "וע",
+"prefix": "ו",
+"unit": "עמוד",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "ועא",
+"prefix": "",
+"unit": "ועיין אות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "ועבספ",
+"prefix": "",
+"unit": "ועיין בסוף פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "ועמ",
+"prefix": "",
+"unit": "ועיין משנה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "ועפ",
+"prefix": "",
+"unit": "ועל פסוק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "ופ",
+"prefix": "",
+"unit": "ופסקא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "ופ",
+"prefix": "ו",
+"unit": "פסוק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "ופ",
+"prefix": "וב",
+"unit": "פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "ופי",
+"prefix": "",
+"unit": "ופירש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "ור",
+"prefix": "",
+"unit": "וריש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "ורס",
+"prefix": "ו",
+"unit": "ריש סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "ורפ",
+"prefix": "",
+"unit": "וראש פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:pro": 1
+},
+"categories": {
+"Midrash": 1
+}
+},
+{
+"head": "ורפ",
+"prefix": "ו",
+"unit": "ריש פרשה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "וש",
+"prefix": "",
+"unit": "ושמעתתא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Jewish Thought": 1
+}
+},
+{
+"head": "ח",
+"prefix": "",
+"unit": "חדר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "חר",
+"prefix": "",
+"unit": "חלונות רבוא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "ט",
+"prefix": "",
+"unit": "טעם",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "יט",
+"prefix": "",
+"unit": "יום טוב",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "כב",
+"prefix": "כ",
+"unit": "בסימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "כדפ",
+"prefix": "",
+"unit": "כדפירש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "כיר",
+"prefix": "",
+"unit": "כתב יד רומי,",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Tosefta": 1
+}
+},
+{
+"head": "כמהרר",
+"prefix": "",
+"unit": "כבוד מורנו הרב רבי",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "כס",
+"prefix": "כ",
+"unit": "סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "כסס",
+"prefix": "כ",
+"unit": "סוף סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "כפ",
+"prefix": "ב",
+"unit": "פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "כשבחי",
+"prefix": "",
+"unit": "כשבחינה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "ל",
+"prefix": "ל",
+"unit": "סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "לה",
+"prefix": "ל",
+"unit": "הלכה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "לט",
+"prefix": "",
+"unit": "לטעם",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "לפי",
+"prefix": "",
+"unit": "לפירוש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "לק",
+"prefix": "ל",
+"unit": "סעיף קטן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "לרה",
+"prefix": "",
+"unit": "לראש הלכה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tosefta": 1
+}
+},
+{
+"head": "לשמ",
+"prefix": "",
+"unit": "לשם",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "מ",
+"prefix": "מ",
+"unit": "דף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "מהבחי",
+"prefix": "מ",
+"unit": "הבחינה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "מהדו",
+"prefix": "",
+"unit": "מהדורא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "מהמ",
+"prefix": "",
+"unit": "מהמשנה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "מהרד",
+"prefix": "",
+"unit": "מורנו הרב רבי דוד",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "מהרז",
+"prefix": "",
+"unit": "מורנו הרב רבי זלמן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "מוהרר",
+"prefix": "",
+"unit": "מורנו הרב רבי",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "מחז",
+"prefix": "",
+"unit": "מלאכי חגי זכריה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "מחס",
+"prefix": "",
+"unit": "מחצי סעיף",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "מחס",
+"prefix": "",
+"unit": "מיוחסות סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "מלמעל",
+"prefix": "",
+"unit": "מלמעל",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "ממרפ",
+"prefix": "",
+"unit": "ממרדכי פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "מפ",
+"prefix": "מ",
+"unit": "פרשה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "מצו",
+"prefix": "",
+"unit": "מצוה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "משג",
+"prefix": "",
+"unit": "משלים שם גדולים",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Reference": 1
+}
+},
+{
+"head": "משע",
+"prefix": "",
+"unit": "משער",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Jewish Thought": 1
+}
+},
+{
+"head": "מת",
+"prefix": "",
+"unit": "מתוך",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "נו",
+"prefix": "",
+"unit": "נוסחא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Midrash": 1
+}
+},
+{
+"head": "נת",
+"prefix": "",
+"unit": "נתיב",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "סח",
+"prefix": "",
+"unit": "ספר חלק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "ע",
+"prefix": "",
+"unit": "על",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "עד",
+"prefix": "",
+"unit": "עד",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "על",
+"prefix": "",
+"unit": "על",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "עס",
+"prefix": "",
+"unit": "עיין סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "עסי",
+"prefix": "",
+"unit": "עיין סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "עע",
+"prefix": "",
+"unit": "עיין עמוד",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Mishnah": 1
+}
+},
+{
+"head": "עפ",
+"prefix": "",
+"unit": "על פסוק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "עק",
+"prefix": "",
+"unit": "על קדושת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "פ",
+"prefix": "",
+"unit": "פסקה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "פ",
+"prefix": "",
+"unit": "פעמים",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "פס",
+"prefix": "",
+"unit": "פיסקא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "צת",
+"prefix": "",
+"unit": "צום תשרי",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "קמא",
+"prefix": "",
+"unit": "קמא",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "רה",
+"prefix": "",
+"unit": "ראש הלכה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Tosefta": 1
+}
+},
+{
+"head": "רסי",
+"prefix": "",
+"unit": "ריש סימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "רפ",
+"prefix": "",
+"unit": "ראש פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "רפ",
+"prefix": "",
+"unit": "רבה פרשה",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Tanakh": 1
+}
+},
+{
+"head": "שבס",
+"prefix": "ש",
+"unit": "בסימן",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "שבס",
+"prefix": "ש",
+"unit": "בספר",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "שבת",
+"prefix": "",
+"unit": "שבת",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Responsa": 1
+}
+},
+{
+"head": "שג",
+"prefix": "",
+"unit": "שגדלות",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Kabbalah": 1
+}
+},
+{
+"head": "שפ",
+"prefix": "ש",
+"unit": "פרק",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "שפ",
+"prefix": "",
+"unit": "שפירש",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:opus+flash:pro": 1
+},
+"categories": {
+"Talmud": 1
+}
+},
+{
+"head": "ת",
+"prefix": "",
+"unit": "תיקון",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:agreed": 1
+},
+"categories": {
+"Chasidut": 1
+}
+},
+{
+"head": "תו",
+"prefix": "",
+"unit": "תוך",
+"freq": 1,
+"entries": 1,
+"sources": {
+"llm:sol+flash:opus": 1
+},
+"categories": {
+"Halakhah": 1
+}
+},
+{
+"head": "במ",
+"prefix": "",
+"unit": "בספר מלכים",
+"freq": 0,
+"entries": 2,
+"sources": {
+"kizur:1": 2
+},
+"categories": {}
+},
+{
+"head": "חד",
+"prefix": "",
+"unit": "חומש דפוס",
+"freq": 0,
+"entries": 1,
+"sources": {
+"kizur:1": 1
+},
+"categories": {}
+},
+{
+"head": "מק",
+"prefix": "",
+"unit": "מקבים",
+"freq": 0,
+"entries": 2,
+"sources": {
+"kizur:1": 2
+},
+"categories": {}
+},
+{
+"head": "ע",
+"prefix": "",
+"unit": "עבד",
+"freq": 0,
+"entries": 1,
+"sources": {
+"kizur:1": 1
+},
+"categories": {}
+},
+{
+"head": "שמ",
+"prefix": "",
+"unit": "שמואל",
+"freq": 0,
+"entries": 2,
+"sources": {
+"kizur:1": 2
+},
+"categories": {}
+},
+{
+"head": "שנא",
+"prefix": "",
+"unit": "שור, נשר, אריה,",
+"freq": 0,
+"entries": 1,
+"sources": {
+"kizur:1": 1
+},
+"categories": {}
+},
+{
+"head": "תוס",
+"prefix": "",
+"unit": "תוספת",
+"freq": 0,
+"entries": 1,
+"sources": {
+"kizur:1": 1
+},
+"categories": {}
+}
+]
