@@ -46,8 +46,15 @@ def dataset_file(repo: str, filename: str) -> str:
     return str(local)
 
 
+VOCAB_FILE = "lexicon/vocab.jsonl"
+
+
 def load_lexicon(repo: str = DATASET_REPO) -> Lexicon:
-    return Lexicon.load(dataset_file(repo, LEXICON_FILE))
+    try:
+        vocab = dataset_file(repo, VOCAB_FILE)      # the words a truncated token can complete to; datasets before v4 have none
+    except Exception:
+        vocab = None
+    return Lexicon.load(dataset_file(repo, LEXICON_FILE), vocab)
 
 
 def load_hebrew_names(repo: str = DATASET_REPO) -> dict:

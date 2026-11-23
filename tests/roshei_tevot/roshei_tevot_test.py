@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "app"))
 from roshei_tevot.steps.data import CrossCollator, ResampledDataset, SiameseCollator, attach_candidates, sampling_weights  # noqa: E402
 from roshei_tevot.steps.encoding import add_markers, encode_candidate, encode_query, marker_ids  # noqa: E402
 from roshei_tevot.steps.evaluation import balanced_top1, evaluate_splits, outcomes, score_records, sense_share_band, summarise  # noqa: E402
-from roshei_tevot.steps.index import ExpansionIndex, Lexicon, decide, number_reading  # noqa: E402
+from roshei_tevot.steps.index import ExpansionIndex, Lexicon, decide, geresh_number_reading, number_reading, sk_reading  # noqa: E402
 from roshei_tevot.steps.model import CrossExpander, SiameseExpander  # noqa: E402
 from roshei_tevot.steps.vendor.spelling import same_expansion, stem_key  # noqa: E402
 
@@ -376,3 +376,23 @@ def test_fold_split_holds_out_the_rows_training_skips(tmp_path, monkeypatch):
     assert all(r["source"] != "swapped" for r in data.load_split("train_fold:2/5", "x", hebrew_names=names))
     real = {r["id"] for r in rows if r["source"] != "swapped"}
     assert held | (trained & real) == real
+
+
+def test_a_one_letter_numeral_with_a_geresh_has_its_number_with_or_without_a_prefix():
+    assert geresh_number_reading("ג'") == "שלשה" and geresh_number_reading("מ'") == "ארבעים" and geresh_number_reading("ק'") == "מאה"
+    assert geresh_number_reading('ג"ב') is None and geresh_number_reading("ג") is None
+    lexicon = Lexicon(by_surface={}, by_bare={})
+    assert "שלשה" in lexicon.candidates("בג'") and "שלשה" in lexicon.candidates("ג'")
+    assert "ארבעה" in lexicon.candidates("מד'")
+
+
+def test_sk_numeral_is_a_small_paragraph_reading():
+    assert sk_reading('סק"ח') == "סעיף קטן ח'" and sk_reading('סקי"ג') == 'סעיף קטן י"ג' and sk_reading("סק") is None
+    assert "סעיף קטן כ\"ג" in Lexicon(by_surface={}, by_bare={}).candidates('בסקכ"ג')
+
+
+def test_a_truncated_word_completes_to_the_most_frequent_words_that_start_with_it():
+    lexicon = Lexicon(by_surface={}, by_bare={}, vocab={"כתחילה": 50, "כתחיל": 3, "כתיבה": 900, "כתבו": 800})
+    assert list(lexicon.completions("כתחי")) == ["כתחילה", "כתחיל"]
+    assert lexicon.completions("כת") == {}                     # a stem of fewer than 3 letters completes to nothing
+    assert "כתחילה" in lexicon.candidates("לכתחי'") and "כתחילה" not in lexicon.candidates('לכתחי"')
