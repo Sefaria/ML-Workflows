@@ -9,6 +9,7 @@ The model only RANKS the readings it is given, so the folder holds more than wei
     config.json, model.safetensors, tokenizer files, roshei_tevot_config.json    the siamese model (`logit_scale`, `pooling`)
     index/lexicon.json, index/embeddings.npy                                      the lexicon (which readings a token can have, with library frequencies) and one embedding per reading
     senses.json                                                                   key -> sense index -> {label, texts, expansions}: readings of one sense (spelling variants) are one answer
+    train_counts.json                                                             key -> reading -> number of training examples it labels (the frequency prior; optional)
 
 What happens to a text, in order (each step is something the model does not do for itself):
   1. `find`: detect tokens that look like abbreviations (prefix letters allowed), clean quote marks, drop letter and divine names written with gershayim (nonabbrev.py).
@@ -16,7 +17,8 @@ What happens to a text, in order (each step is something the model does not do f
      geresh numerals too), `סעיף קטן X` for `סק"X`, the library's most frequent completions of a truncated word (לכתחי'), and citation readings (`סקי"א`) except for a bare
      numeral or a token ending in a geresh (there they would win at p~1 with `קיצור` / `סימן י'`).
   3. query: the token wrapped in the `<abbr>` markers, 200 words either side (`CONTEXT_WORDS`), no title / category (empty `| `); the model pools over the marked span.
-  4. score: softmax over `logit_scale * cosine + prior_weight * log(1 + frequency)`; the prior (off by default) is the lexicon's library frequency of the reading, which does not help (see DEFAULT_PRIOR_WEIGHT).
+  4. score: softmax over `logit_scale * cosine + prior_weight * log(1 + count)`, `count` = how many TRAIN-set examples of the key the reading labels (`train_counts.json`), as in the
+     evaluation. A reading the training set never saw has count 0 and is therefore pushed down by up to `prior_weight * log(1 + the other readings' counts)`: that is the price of the prior.
   5. senses: probabilities of readings of one sense class are summed and the classes ranked.
 """
 import json
@@ -34,23 +36,26 @@ from .vendor.hebrew import clean, numeral_value
 
 CONTEXT_WORDS = 200
 MAX_LENGTH = 512
-DEFAULT_PRIOR_WEIGHT = 0.0      # the model alone. The evaluation gains about 1.5 points top-1 from a prior of 0.25-1.0 on TRAIN-SET counts of each reading; the lexicon frequency used here is the library count, and on 700 held-out val rows it LOWERED top-1 (92.4 at 0, 91.3 at 0.25, 89.6 at 0.5, 86.9 at 1.0)
+DEFAULT_PRIOR_WEIGHT = 0.5      # with train counts. On the evaluation (v5b) top-1 is 94.3 / 95.2 / 95.7 / 95.8 / 95.7 at weight 0 / 0.25 / 0.5 / 1 / 2 (val), but from 1.0 up the minority readings
+                                # and rare keys lose: val rare-key accuracy 79 / 79 / 79 / 70 / 55, so 0.5 is the knee. The model alone (0) is the right choice with no counts.
 CONFIG_FILE = "roshei_tevot_config.json"
+COUNTS_FILE = "train_counts.json"
 
 
 class RosheiTevot:
     def __init__(self, model, tokenizer, config: dict, index: ExpansionIndex, senses: Optional[dict] = None,
-                 prior_weight: float = DEFAULT_PRIOR_WEIGHT, device: str = "cpu"):
+                 prior_weight: Optional[float] = None, device: str = "cpu", train_counts: Optional[dict] = None):
         self.model, self.tokenizer, self.index, self.senses = model.to(device).eval(), tokenizer, index, senses or {}
         self.pooling = config.get("pooling", "span")
         self.scale = float(config["logit_scale"])
-        self.prior_weight = prior_weight
+        self.train_counts = train_counts or {}
+        self.prior_weight = prior_weight if prior_weight is not None else (DEFAULT_PRIOR_WEIGHT if self.train_counts else 0.0)       # no counts: the model alone
         self.device = device
         self._embeddings: dict[str, torch.Tensor] = {}           # readings the index lacks (citation readings), embedded on demand
         self._sense_of: dict[str, dict[str, int]] = {}
 
     @classmethod
-    def from_pretrained(cls, path: str, device: str = "cpu", prior_weight: float = DEFAULT_PRIOR_WEIGHT, threads: Optional[int] = None) -> "RosheiTevot":
+    def from_pretrained(cls, path: str, device: str = "cpu", prior_weight: Optional[float] = None, threads: Optional[int] = None) -> "RosheiTevot":
         """`path`: a folder laid out as in the module docstring, or a Hugging Face repo id (downloaded with `huggingface_hub.snapshot_download`, needs a login for a private repo)."""
         from transformers import AutoModel, AutoTokenizer
 
@@ -69,7 +74,26 @@ class RosheiTevot:
         index = ExpansionIndex.load(str(folder / "index"))
         senses_file = folder / "senses.json"
         senses = json.loads(senses_file.read_text()) if senses_file.exists() else {}
-        return cls(model, tokenizer, config, index, senses, prior_weight, device)
+        counts_file = folder / COUNTS_FILE
+        counts = json.loads(counts_file.read_text()) if counts_file.exists() else {}
+        return cls(model, tokenizer, config, index, senses, prior_weight, device, counts)
+
+    def train_count(self, surface: str, reading: str) -> int:
+        """How many training examples of this token's key the reading labels (the key may be the token itself or its prefix-stripped form; a prefixed reading counts as its bare one).
+        Training counts a SENSE through one spelling, so a spelling variant of a counted reading takes the count of its sense class."""
+        for bare in [surface] + [b for _, b in parses(surface)]:
+            table = self.train_counts.get(bare)
+            if table:
+                forms = [reading] + [reading[len(p):] for p, b in parses(surface) if b == bare and reading.startswith(p)]
+                for form in forms:
+                    if form in table:
+                        return table[form]
+                for form in forms:
+                    idx = self._expansion_to_sense(bare).get(form)
+                    if idx is not None:
+                        entry = self.senses.get(bare, {}).get(str(idx), {})
+                        return max((table.get(t, 0) for t in entry.get("expansions", []) + entry.get("texts", [])), default=0)
+        return 0
 
     # ---- senses -----------------------------------------------------------------------------------------------------------------
 
@@ -152,7 +176,8 @@ class RosheiTevot:
         queries = self._encode_queries([rows[i] for i, _ in live])
         for (i, found), q in zip(live, queries):
             texts = list(found)
-            logits = self.scale * (self._expansion_vectors(texts) @ q) + w * torch.tensor([prior(found[t]) for t in texts])
+            counts = [self.train_count(rows[i]["surface"], t) for t in texts] if self.train_counts else [found[t] for t in texts]      # without the table: library frequencies (they do not help, see the model card)
+            logits = self.scale * (self._expansion_vectors(texts) @ q) + w * torch.tensor([prior(c) for c in counts])
             probs = torch.softmax(logits, dim=0).tolist()
             results[i] = {"senses": self._describe(rows[i]["surface"], dict(zip(texts, probs)), found), "n_readings": len(texts)}
         return results

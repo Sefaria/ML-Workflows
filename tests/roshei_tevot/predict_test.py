@@ -91,3 +91,30 @@ def test_build_senses_collects_classes_from_train_rows():
     senses = build_senses(rows)
     assert senses['ר"ש']["0"] == {"label": "Rabbi Yehuda", "texts": ["רבי יהודה"], "expansions": ["רבי יהודה"]}
     assert senses['ר"ש']["1"]["expansions"] == ["רבי יוסי"]
+
+
+def test_collect_tables_gathers_train_counts_per_key():
+    from roshei_tevot.publish_hf import collect_tables
+    rows = ['{"key": "ר\\"ש", "candidates": ["רבי יוסי", "רבי יהודה"], "candidate_train_counts": [30, 0]}',
+            '{"key": "ר\\"ש", "candidates": ["רבי יוסי", "רבי יהודה"], "candidate_train_counts": [30, 4]}', '{"key": "א\\"ב", "candidates": ["אב"], "candidate_train_counts": [0]}']
+    _, counts = collect_tables(rows)
+    assert counts == {'ר"ש': {"רבי יוסי": 30, "רבי יהודה": 4}}              # a key with no training example has no table
+
+
+def test_train_count_finds_the_key_through_a_prefix_and_strips_the_prefix_from_the_reading(tokenizer):
+    rt = make(tokenizer)
+    rt.train_counts = {'ר"ש': {"רבי יוסי": 30}}
+    assert rt.train_count('ר"ש', "רבי יוסי") == 30
+    assert rt.train_count('ור"ש', "ורבי יוסי") == 30                       # the prefix ו attached to both
+    assert rt.train_count('ר"ש', "רבי יהודה") == 0
+
+
+def test_train_counts_switch_the_default_prior_on_and_a_reading_never_seen_in_training_loses(tokenizer):
+    plain = make(tokenizer)
+    assert plain.prior_weight == 0.0                                       # no counts: the model alone
+    counted = make(tokenizer)
+    counted.train_counts = {'ר"ש': {"רבי יוסי": 1000}}
+    counted.prior_weight = 0.5
+    row = [{"surface": 'ר"ש', "before": "א", "after": "ב"}]
+    share = lambda r: next(g["probability"] for g in r["senses"] if g["text"] == "רבי יוסי")       # noqa: E731
+    assert share(counted.score(row)[0]) > share(plain.score(row)[0])

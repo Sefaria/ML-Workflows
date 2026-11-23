@@ -10,7 +10,7 @@ Needs `gcloud` logged in (the model, the index and the dataset's train.jsonl are
 The release holds, so that the model, its lexicon and the code that makes candidates can never be paired wrongly:
     <model files>                    config.json, model.safetensors, tokenizer, roshei_tevot_config.json   (runs/<run>/final)
     index/lexicon.json, embeddings.npy   the lexicon and one embedding per reading                          (index/<index>)
-    senses.json                      sense classes, from the dataset's train rows                           (build_senses)
+    senses.json, train_counts.json   sense classes and the frequency prior's counts, from the dataset's train rows   (collect_tables)
     roshei_tevot/                    the inference code: predict.py, index.py, encoding.py, nonabbrev.py, citations.py, vendor/   (copied from steps/)
     README.md                        the model card (--card)
 Use it with `sys.path.insert(0, folder)`; `from roshei_tevot.predict import RosheiTevot; RosheiTevot.from_pretrained(folder)`.
@@ -29,14 +29,24 @@ CODE = ["predict.py", "index.py", "encoding.py", "nonabbrev.py", "citations.py"]
 
 
 def build_senses(lines) -> dict:
-    """Stream the training rows once and collect the lexicon's sense classes: key -> sense index -> {label, texts, expansions}.
-    A row carries `candidates` + `candidate_senses` (a sense index per candidate) and, for its label, `sense`, `sense_label` (English gloss) and `sense_texts`."""
+    return collect_tables(lines)[0]
+
+
+def collect_tables(lines) -> tuple[dict, dict]:
+    """Stream the training rows once and collect (a) the lexicon's sense classes: key -> sense index -> {label, texts, expansions},
+    (b) the frequency prior's counts: key -> reading -> number of training examples it labels.
+    A row carries `candidates` + `candidate_senses` (a sense index per candidate) + `candidate_train_counts` (built from train only, the same for every row of a key)
+    and, for its label, `sense`, `sense_label` (English gloss) and `sense_texts`."""
     senses = defaultdict(lambda: defaultdict(lambda: {"label": "", "texts": set(), "expansions": set()}))
+    counts: dict[str, dict[str, int]] = defaultdict(dict)
     for line in lines:
         row = json.loads(line)
         key = row.get("key")
         if not key:
             continue
+        for exp, n in zip(row.get("candidates") or [], row.get("candidate_train_counts") or []):
+            if n and n > counts[key].get(exp, 0):
+                counts[key][exp] = n
         for exp, s in zip(row.get("candidates") or [], row.get("candidate_senses") or []):
             if s is not None:
                 senses[key][s]["expansions"].add(exp)
@@ -45,7 +55,8 @@ def build_senses(lines) -> dict:
             entry = senses[key][s]
             entry["label"] = entry["label"] or row.get("sense_label") or ""
             entry["texts"].update(row.get("sense_texts") or [])
-    return {k: {str(i): {"label": e["label"], "texts": sorted(e["texts"]), "expansions": sorted(e["expansions"])} for i, e in v.items()} for k, v in senses.items()}
+    return ({k: {str(i): {"label": e["label"], "texts": sorted(e["texts"]), "expansions": sorted(e["expansions"])} for i, e in v.items()} for k, v in senses.items()},
+            {k: v for k, v in counts.items() if v})
 
 
 def gcloud(*args: str) -> None:
@@ -60,12 +71,13 @@ def assemble(run: str, index: str, dataset: str, card: Path, out: Path) -> Path:
     (out / "_SUCCESS").unlink(missing_ok=True)
     (out / "index").mkdir()
     gcloud("cp", f"{BUCKET}/index/{index}/embeddings.npy", f"{BUCKET}/index/{index}/lexicon.json", str(out / "index"))
-    print("collecting sense classes from the dataset's train rows ...")
+    print("collecting sense classes and train counts from the dataset's train rows ...")
     cat = subprocess.Popen(["gcloud", "storage", "cat", f"{dataset}/train.jsonl"], stdout=subprocess.PIPE, text=True, encoding="utf-8")
-    senses = build_senses(cat.stdout)
+    senses, counts = collect_tables(cat.stdout)
     if cat.wait():
         raise RuntimeError("could not read train.jsonl from the dataset")
     (out / "senses.json").write_text(json.dumps(senses, ensure_ascii=False), encoding="utf-8")
+    (out / "train_counts.json").write_text(json.dumps(counts, ensure_ascii=False), encoding="utf-8")
     code = out / "roshei_tevot"
     (code / "vendor").mkdir(parents=True)
     (code / "__init__.py").write_text("")
