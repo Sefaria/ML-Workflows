@@ -496,23 +496,12 @@ deployments:
     work_pool:
       name: sefaria-k8s
       job_variables:
-        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows-gpu-train:latest
-        image_pull_policy: Always
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
         namespace: ml-infra
         service_account_name: ml-workflows-runner
-        volumes: []
-        volume_mounts: []
-        tolerations:
-          - key: nvidia.com/gpu
-            operator: Exists
-            effect: NoSchedule
-        node_selector:
-          sefaria-pool: l4-ondemand
-        gpu_limit: "1"
-        cpu_request: "4"
-        memory_request: 16Gi
-        memory_limit: 24Gi
-        pod_watch_timeout_seconds: 3600
+        cpu_request: "2"
+        memory_request: 8Gi
+        memory_limit: 12Gi
     schedules: []
 
   - name: train-embeddings
