@@ -507,8 +507,7 @@ deployments:
             operator: Exists
             effect: NoSchedule
         node_selector:
-          cloud.google.com/gke-accelerator: nvidia-tesla-a100
-          cloud.google.com/gke-provisioning: spot
+          sefaria-pool: l4-ondemand
         gpu_limit: "1"
         cpu_request: "4"
         memory_request: 16Gi
