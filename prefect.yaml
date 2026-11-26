@@ -476,6 +476,34 @@ deployments:
         service_account_name: ml-workflows-runner
     schedules: []
 
+  - name: lemmatize-corpus
+    tags: ["allusion-detection"]
+    description: "Lemmatize the allusion-detection source and citing corpora with Shoshan (full-bank top-K candidates with scores, not top-1), reading pre-staged tokenized input and model weights from GCS"
+    entrypoint: allusion_detection/flows/lemmatize_corpus.py:lemmatize_corpus_flow
+    parameters:
+      data_bucket: sefaria-ml-models
+      source_segments_blob: allusion-detection/data/source_segments_raw.pkl
+      citing_tokens_blob: allusion-detection/data/citing_corpus_tokens.pkl
+      model_bucket: sefaria-ml-models
+      model_prefix: allusion-detection/models/shoshan/model
+      bank_prefix: allusion-detection/models/shoshan/bank
+      dest_bucket: sefaria-ml-models
+      source_dest_blob: allusion-detection/output/source_lemmas.pkl
+      citing_dest_blob: allusion-detection/output/citing_lemmas_chunks.pkl
+      citing_chunk_words: 15
+      run_source: true
+      run_citing: true
+    work_pool:
+      name: sefaria-k8s
+      job_variables:
+        image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
+        namespace: ml-infra
+        service_account_name: ml-workflows-runner
+        cpu_request: "8"
+        memory_request: 16Gi
+        memory_limit: 24Gi
+    schedules: []
+
   - name: train-embeddings
     tags: ["embedding", "embedding-training-pipeline"]
     description: "Fine-tune a SentenceTransformers embedding model from generated query/document pairs"
