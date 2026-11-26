@@ -499,9 +499,8 @@ deployments:
         image: us-east1-docker.pkg.dev/YOUR_GKE_PROJECT/containers/mlworkflows:latest
         namespace: ml-infra
         service_account_name: ml-workflows-runner
-        cpu_request: "8"
-        memory_request: 16Gi
-        memory_limit: 24Gi
+        memory_request: 8Gi
+        memory_limit: 12Gi
     schedules: []
 
   - name: train-embeddings
