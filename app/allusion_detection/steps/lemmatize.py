@@ -66,12 +66,15 @@ def build_items(units: list[tuple[str, list[str]]]):
 
 
 @task(log_prints=True)
-def load_shoshan_model(model_dir: str, bank_dir: str, device: str = "cpu"):
+def load_shoshan_model(model_dir: str, bank_dir: str, device: str | None = None):
+    import torch
     from shoshan import Lemmatizer
 
-    print(f"Loading Shoshan model from {model_dir}, bank from {bank_dir}")
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Loading Shoshan model from {model_dir}, bank from {bank_dir}, device={device}")
     model = Lemmatizer(Path(model_dir), Path(bank_dir), device=device, blank_function_words=False)
-    return model
+    return model, device
 
 
 def lemmatize_units(

@@ -62,6 +62,7 @@ def _save_checkpoint(bucket: str, checkpoint_blob: str, all_topk: list, done_ite
 @task(log_prints=True)
 def lemmatize_and_upload(
     model,
+    device: str,
     units: list,
     *,
     label: str,
@@ -70,10 +71,13 @@ def lemmatize_and_upload(
     dest_blob: str,
     workflow_name: str,
 ):
+    # GPU memory can comfortably hold much larger batches than the batch=256 default
+    # (tuned for CPU); bigger batches mean fewer, better-utilized forward passes.
+    batch = 1024 if device == "cuda" else 256
     resume_all_topk, resume_done_items = _load_checkpoint(bucket, checkpoint_blob)
     items_total = sum(len(words) for _, words in units)
     reporter = SlackProgressReporter(workflow_name=workflow_name, total_units=items_total, unit_label="words")
-    reporter.notify_start({"stage": label, "units": len(units)})
+    reporter.notify_start({"stage": label, "units": len(units), "device": device, "batch": batch})
 
     def on_progress(done, total):
         reporter.notify_progress_if_due(done, {"stage": label})
@@ -85,6 +89,7 @@ def lemmatize_and_upload(
         out = lemmatize_units(
             model,
             units,
+            batch=batch,
             on_progress=on_progress,
             resume_all_topk=resume_all_topk,
             resume_done_items=resume_done_items,
@@ -120,12 +125,13 @@ def lemmatize_corpus_flow(
 ) -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
         model_dir, bank_dir = download_shoshan(model_bucket, model_prefix, bank_prefix, tmp_dir)
-        model = load_shoshan_model(model_dir, bank_dir)
+        model, device = load_shoshan_model(model_dir, bank_dir)
 
         if run_source:
             source_segments = download_pickle(data_bucket, source_segments_blob)
             lemmatize_and_upload(
                 model,
+                device,
                 source_segments,
                 label="source",
                 bucket=dest_bucket,
@@ -139,6 +145,7 @@ def lemmatize_corpus_flow(
             citing_units = chunk_citing_corpus(citing_corpus, chunk=citing_chunk_words)
             lemmatize_and_upload(
                 model,
+                device,
                 citing_units,
                 label="citing",
                 bucket=dest_bucket,
