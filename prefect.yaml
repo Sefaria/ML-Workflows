@@ -491,7 +491,7 @@ deployments:
       source_dest_blob: allusion-detection/output/source_lemmas.pkl
       citing_dest_blob: allusion-detection/output/citing_lemmas_chunks.pkl
       citing_chunk_words: 15
-      run_source: true
+      run_source: false
       run_citing: true
     work_pool:
       name: sefaria-k8s
@@ -500,8 +500,8 @@ deployments:
         namespace: ml-infra
         service_account_name: ml-workflows-runner
         cpu_request: "2"
-        memory_request: 8Gi
-        memory_limit: 12Gi
+        memory_request: 16Gi
+        memory_limit: 24Gi
     schedules: []
 
   - name: train-embeddings
